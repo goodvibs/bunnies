@@ -16,7 +16,7 @@ pub fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
     let mut zobrist: [[Bitboard; 12]; 64] = [[0; 12]; 64];
     for i in 0..64 {
         for j in 0..12 {
-            zobrist[i][j] = rng.gen();
+            zobrist[i][j] = rng.random();
         }
     }
     zobrist
