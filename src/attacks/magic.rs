@@ -4,7 +4,6 @@ use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
 use static_init::dynamic;
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
 use crate::bitboard::{get_bit_combinations_iter, Bitboard};
-use crate::piece_type::SlidingPieceType;
 use crate::square::Square;
 
 /// The size of the attack table for rooks
@@ -13,6 +12,12 @@ const ROOK_ATTACK_TABLE_SIZE: usize = 36 * 2usize.pow(10) + 28 * 2usize.pow(11) 
 const BISHOP_ATTACK_TABLE_SIZE: usize = 4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
 const RNG_SEED: u64 = 0;
+
+#[derive(Clone, Copy)]
+enum ElementarySlidingPieceType {
+    Rook,
+    Bishop
+}
 
 /// Precomputed masks for rook relevant squares
 #[dynamic]
@@ -36,11 +41,11 @@ static BISHOP_RELEVANT_MASKS: [Bitboard; 64] = {
 
 /// Magic dictionaries for rooks
 #[dynamic]
-static ROOK_MAGIC_DICT: MagicDict = MagicDict::new(SlidingPieceType::Rook, ROOK_ATTACK_TABLE_SIZE);
+static ROOK_MAGIC_DICT: MagicDict = MagicDict::new(ElementarySlidingPieceType::Rook, ROOK_ATTACK_TABLE_SIZE);
 
 /// Magic dictionaries for bishops
 #[dynamic]
-static BISHOP_MAGIC_DICT: MagicDict = MagicDict::new(SlidingPieceType::Bishop, BISHOP_ATTACK_TABLE_SIZE);
+static BISHOP_MAGIC_DICT: MagicDict = MagicDict::new(ElementarySlidingPieceType::Bishop, BISHOP_ATTACK_TABLE_SIZE);
 
 /// Calculate the relevant mask for a rook on a given square
 fn calc_rook_relevant_mask(square: Square) -> Bitboard {
@@ -104,7 +109,7 @@ impl MagicDict {
     }
 
     /// Create a new magic dictionary for a sliding piece
-    pub fn new(sliding_piece: SlidingPieceType, size: usize) -> Self {
+    pub fn new(sliding_piece: ElementarySlidingPieceType, size: usize) -> Self {
         let mut res = Self::init_empty(size);
         res.fill_magic_numbers_and_attacks(sliding_piece);
         res
@@ -123,7 +128,7 @@ impl MagicDict {
     }
 
     /// Fill the magic numbers and attack tables for all squares
-    pub fn fill_magic_numbers_and_attacks(&mut self, sliding_piece: SlidingPieceType) {
+    pub fn fill_magic_numbers_and_attacks(&mut self, sliding_piece: ElementarySlidingPieceType) {
         let mut current_offset = 0;
         for square in Square::iter_all() {
             unsafe { self.fill_magic_numbers_and_attacks_for_square(*square, sliding_piece, &mut current_offset) };
@@ -131,12 +136,12 @@ impl MagicDict {
     }
 
     /// Fill the magic numbers and attack tables for a single square
-    unsafe fn fill_magic_numbers_and_attacks_for_square(&mut self, square: Square, sliding_piece: SlidingPieceType, current_offset: &mut u32) -> Bitboard {
+    unsafe fn fill_magic_numbers_and_attacks_for_square(&mut self, square: Square, sliding_piece: ElementarySlidingPieceType, current_offset: &mut u32) -> Bitboard {
         let mut rng = fastrand::Rng::with_seed(RNG_SEED);
 
         let relevant_mask = match sliding_piece {
-            SlidingPieceType::Rook => get_rook_relevant_mask(square),
-            SlidingPieceType::Bishop => get_bishop_relevant_mask(square),
+            ElementarySlidingPieceType::Rook => get_rook_relevant_mask(square),
+            ElementarySlidingPieceType::Bishop => get_bishop_relevant_mask(square),
         };
 
         let mut magic_number: Bitboard;
@@ -159,8 +164,8 @@ impl MagicDict {
 
             for (_i, occupied_mask) in get_bit_combinations_iter(relevant_mask).enumerate() {
                 let attack_mask = match sliding_piece {
-                    SlidingPieceType::Rook => manual_single_rook_attacks(square, occupied_mask),
-                    SlidingPieceType::Bishop => manual_single_bishop_attacks(square, occupied_mask),
+                    ElementarySlidingPieceType::Rook => manual_single_rook_attacks(square, occupied_mask),
+                    ElementarySlidingPieceType::Bishop => manual_single_bishop_attacks(square, occupied_mask),
                 };
                 assert_ne!(attack_mask, 0);
 
@@ -241,11 +246,10 @@ fn gen_random_magic_number(rng: &mut fastrand::Rng) -> Bitboard {
 }
 
 mod tests {
-    use crate::attacks::{magic, manual};
+    use super::*;
     use crate::attacks::magic::{get_bishop_relevant_mask, get_rook_relevant_mask, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::bitboard::get_bit_combinations_iter;
     use crate::charboard::print_bb_pretty;
-    use crate::piece_type::SlidingPieceType;
     use crate::square::Square;
 
     #[test]
@@ -266,21 +270,21 @@ mod tests {
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {
-        for sliding_piece in [SlidingPieceType::Rook, SlidingPieceType::Bishop] {
+        for sliding_piece in [ElementarySlidingPieceType::Rook, ElementarySlidingPieceType::Bishop] {
             for src_square in Square::iter_all() {
                 let relevant_mask = match sliding_piece {
-                    SlidingPieceType::Rook => get_rook_relevant_mask(*src_square),
-                    SlidingPieceType::Bishop => get_bishop_relevant_mask(*src_square),
+                    ElementarySlidingPieceType::Rook => get_rook_relevant_mask(*src_square),
+                    ElementarySlidingPieceType::Bishop => get_bishop_relevant_mask(*src_square),
                 };
                 let occupied_masks_iter = get_bit_combinations_iter(relevant_mask);
                 for occupied_mask in occupied_masks_iter {
                     let magic_attacks = match sliding_piece {
-                        SlidingPieceType::Rook => magic::magic_single_rook_attacks(*src_square, occupied_mask),
-                        SlidingPieceType::Bishop => magic::magic_single_bishop_attacks(*src_square, occupied_mask),
+                        ElementarySlidingPieceType::Rook => magic_single_rook_attacks(*src_square, occupied_mask),
+                        ElementarySlidingPieceType::Bishop => magic_single_bishop_attacks(*src_square, occupied_mask),
                     };
                     let manual_attacks = match sliding_piece {
-                        SlidingPieceType::Rook => manual::manual_single_rook_attacks(*src_square, occupied_mask),
-                        SlidingPieceType::Bishop => manual::manual_single_bishop_attacks(*src_square, occupied_mask),
+                        ElementarySlidingPieceType::Rook => manual_single_rook_attacks(*src_square, occupied_mask),
+                        ElementarySlidingPieceType::Bishop => manual_single_bishop_attacks(*src_square, occupied_mask),
                     };
                     if magic_attacks != manual_attacks {
                         println!("Square mask:");

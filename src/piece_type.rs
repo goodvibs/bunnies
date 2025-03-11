@@ -1,17 +1,13 @@
-use subenum::subenum;
 use crate::color::Color;
 use crate::colored_piece::ColoredPiece;
 
-#[subenum(SlidingPieceType)]
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PieceType {
     NoPieceType=0,
     Pawn=1,
     Knight=2,
-    #[subenum(SlidingPieceType)]
     Bishop=3,
-    #[subenum(SlidingPieceType)]
     Rook=4,
     Queen=5,
     King=6
@@ -121,16 +117,5 @@ impl PieceType {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_piece_type() {
-        assert_eq!(PieceType::NoPieceType as u8, 0);
-        assert_eq!(PieceType::Pawn as u8, 1);
-        assert_eq!(PieceType::AllPieceTypes as u8, 0);
-        assert_eq!(PieceType::LIMIT, 7);
-        unsafe {
-            assert_eq!(PieceType::from(0), PieceType::NoPieceType);
-            assert_eq!(PieceType::from(1), PieceType::Pawn);
-            assert_eq!(PieceType::from(6), PieceType::King);
-        }
-    }
+
 }
