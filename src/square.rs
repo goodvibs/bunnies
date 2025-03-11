@@ -175,12 +175,253 @@ impl Display for Square {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::Color;
 
     #[test]
-    fn test_square() {
+    fn test_square_values() {
+        // Test corners
         assert_eq!(Square::A8 as u8, 0);
         assert_eq!(Square::H8 as u8, 7);
         assert_eq!(Square::A1 as u8, 56);
         assert_eq!(Square::H1 as u8, 63);
+
+        // Test middle squares
+        assert_eq!(Square::E4 as u8, 36);
+        assert_eq!(Square::D5 as u8, 27);
+    }
+
+    #[test]
+    fn test_from_square_number() {
+        unsafe {
+            assert_eq!(Square::from(0), Square::A8);
+            assert_eq!(Square::from(7), Square::H8);
+            assert_eq!(Square::from(56), Square::A1);
+            assert_eq!(Square::from(63), Square::H1);
+            assert_eq!(Square::from(36), Square::E4);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Square number out of bounds")]
+    fn test_from_square_number_out_of_bounds() {
+        unsafe {
+            let _ = Square::from(64);
+        }
+    }
+
+    #[test]
+    fn test_from_rank_file() {
+        unsafe {
+            assert_eq!(Square::from_rank_file(7, 0), Square::A8);
+            assert_eq!(Square::from_rank_file(7, 7), Square::H8);
+            assert_eq!(Square::from_rank_file(0, 0), Square::A1);
+            assert_eq!(Square::from_rank_file(0, 7), Square::H1);
+            assert_eq!(Square::from_rank_file(3, 4), Square::E4);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Rank or file out of bounds")]
+    fn test_from_rank_file_out_of_bounds() {
+        unsafe {
+            let _ = Square::from_rank_file(8, 0);
+        }
+    }
+
+    #[test]
+    fn test_get_mask() {
+        assert_eq!(Square::A8.get_mask(), 1u64 << 63);
+        assert_eq!(Square::H1.get_mask(), 1u64);
+        assert_eq!(Square::E4.get_mask(), 1u64 << 27);
+    }
+
+    #[test]
+    fn test_get_file() {
+        assert_eq!(Square::A8.get_file(), 0);
+        assert_eq!(Square::H8.get_file(), 7);
+        assert_eq!(Square::E4.get_file(), 4);
+    }
+
+    #[test]
+    fn test_get_file_mask() {
+        // This test assumes FILES is correctly implemented
+        // Testing that the correct file mask is returned
+        let a_file_mask = Square::A1.get_file_mask();
+        let h_file_mask = Square::H1.get_file_mask();
+
+        assert_eq!(a_file_mask, FILES[0]);
+        assert_eq!(h_file_mask, FILES[7]);
+
+        // Check that all squares in the same file return the same mask
+        assert_eq!(Square::A1.get_file_mask(), Square::A8.get_file_mask());
+        assert_eq!(Square::H1.get_file_mask(), Square::H8.get_file_mask());
+    }
+
+    #[test]
+    fn test_get_rank() {
+        assert_eq!(Square::A8.get_rank(), 7);
+        assert_eq!(Square::A1.get_rank(), 0);
+        assert_eq!(Square::E4.get_rank(), 3);
+    }
+
+    #[test]
+    fn test_get_rank_mask() {
+        // This test assumes RANKS is correctly implemented
+        // Testing that the correct rank mask is returned
+        let rank_1_mask = Square::A1.get_rank_mask();
+        let rank_8_mask = Square::A8.get_rank_mask();
+
+        assert_eq!(rank_1_mask, RANKS[0]);
+        assert_eq!(rank_8_mask, RANKS[7]);
+
+        // Check that all squares in the same rank return the same mask
+        assert_eq!(Square::A1.get_rank_mask(), Square::H1.get_rank_mask());
+        assert_eq!(Square::A8.get_rank_mask(), Square::H8.get_rank_mask());
+    }
+
+    #[test]
+    fn test_up() {
+        // Middle of board
+        assert_eq!(Square::E4.up(), Some(Square::E5));
+
+        // Edge cases
+        assert_eq!(Square::E8.up(), None);
+        assert_eq!(Square::A1.up(), Some(Square::A2));
+    }
+
+    #[test]
+    fn test_down() {
+        // Middle of board
+        assert_eq!(Square::E4.down(), Some(Square::E3));
+
+        // Edge cases
+        assert_eq!(Square::E1.down(), None);
+        assert_eq!(Square::A8.down(), Some(Square::A7));
+    }
+
+    #[test]
+    fn test_left() {
+        // Middle of board
+        assert_eq!(Square::E4.left(), Some(Square::D4));
+
+        // Edge cases
+        assert_eq!(Square::A4.left(), None);
+        assert_eq!(Square::H1.left(), Some(Square::G1));
+    }
+
+    #[test]
+    fn test_right() {
+        // Middle of board
+        assert_eq!(Square::E4.right(), Some(Square::F4));
+
+        // Edge cases
+        assert_eq!(Square::H4.right(), None);
+        assert_eq!(Square::A1.right(), Some(Square::B1));
+    }
+
+    #[test]
+    fn test_diagonal_moves() {
+        // Test up_left
+        assert_eq!(Square::E4.up_left(), Some(Square::D5));
+        assert_eq!(Square::A4.up_left(), None); // Left edge
+        assert_eq!(Square::E8.up_left(), None); // Top edge
+        assert_eq!(Square::A8.up_left(), None); // Top-left corner
+
+        // Test up_right
+        assert_eq!(Square::E4.up_right(), Some(Square::F5));
+        assert_eq!(Square::H4.up_right(), None); // Right edge
+        assert_eq!(Square::E8.up_right(), None); // Top edge
+        assert_eq!(Square::H8.up_right(), None); // Top-right corner
+
+        // Test down_left
+        assert_eq!(Square::E4.down_left(), Some(Square::D3));
+        assert_eq!(Square::A4.down_left(), None); // Left edge
+        assert_eq!(Square::E1.down_left(), None); // Bottom edge
+        assert_eq!(Square::A1.down_left(), None); // Bottom-left corner
+
+        // Test down_right
+        assert_eq!(Square::E4.down_right(), Some(Square::F3));
+        assert_eq!(Square::H4.down_right(), None); // Right edge
+        assert_eq!(Square::E1.down_right(), None); // Bottom edge
+        assert_eq!(Square::H1.down_right(), None); // Bottom-right corner
+    }
+
+    #[test]
+    fn test_reflect_rank() {
+        assert_eq!(Square::A1.reflect_rank(), Square::A8);
+        assert_eq!(Square::H1.reflect_rank(), Square::H8);
+        assert_eq!(Square::E4.reflect_rank(), Square::E5);
+        assert_eq!(Square::D5.reflect_rank(), Square::D4);
+    }
+
+    #[test]
+    fn test_rotated_perspective() {
+        assert_eq!(Square::A8.rotated_perspective(), Square::H1);
+        assert_eq!(Square::H8.rotated_perspective(), Square::A1);
+        assert_eq!(Square::E4.rotated_perspective(), Square::D5);
+        assert_eq!(Square::A1.rotated_perspective(), Square::H8);
+    }
+
+    #[test]
+    fn test_perspective_transforms() {
+        // White perspective
+        assert_eq!(Square::E2.to_perspective_from_white(Color::White), Square::E2);
+        assert_eq!(Square::E2.to_perspective_from_white(Color::Black), Square::D7);
+
+        // Black perspective
+        assert_eq!(Square::E7.to_perspective_from_black(Color::White), Square::D2);
+        assert_eq!(Square::E7.to_perspective_from_black(Color::Black), Square::E7);
+    }
+
+    #[test]
+    fn test_get_file_char() {
+        assert_eq!(Square::A1.get_file_char(), 'a');
+        assert_eq!(Square::H8.get_file_char(), 'h');
+        assert_eq!(Square::E4.get_file_char(), 'e');
+    }
+
+    #[test]
+    fn test_get_rank_char() {
+        assert_eq!(Square::A1.get_rank_char(), '1');
+        assert_eq!(Square::H8.get_rank_char(), '8');
+        assert_eq!(Square::E4.get_rank_char(), '4');
+    }
+
+    #[test]
+    fn test_readable() {
+        assert_eq!(Square::A1.readable(), "a1");
+        assert_eq!(Square::H8.readable(), "h8");
+        assert_eq!(Square::E4.readable(), "e4");
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!(format!("{}", Square::A1), "a1");
+        assert_eq!(format!("{}", Square::H8), "h8");
+        assert_eq!(format!("{}", Square::E4), "e4");
+    }
+
+    #[test]
+    fn test_iter_all() {
+        let all_squares: Vec<&Square> = Square::iter_all().collect();
+        assert_eq!(all_squares.len(), 64);
+        assert_eq!(*all_squares[0], Square::A8);
+        assert_eq!(*all_squares[63], Square::H1);
+    }
+
+    #[test]
+    fn test_iter_between() {
+        let e4_to_a3: Vec<&Square> = Square::iter_between(Square::E4, Square::A3).collect();
+        assert_eq!(e4_to_a3.len(), 5);
+        assert_eq!(*e4_to_a3[0], Square::E4);
+        assert_eq!(*e4_to_a3[1], Square::F4);
+        assert_eq!(*e4_to_a3[2], Square::G4);
+        assert_eq!(*e4_to_a3[3], Square::H4);
+        assert_eq!(*e4_to_a3[4], Square::A3);
+
+        let a8_to_h1: Vec<&Square> = Square::iter_between(Square::A8, Square::H1).collect();
+        assert_eq!(a8_to_h1.len(), 64);
+        assert_eq!(*a8_to_h1[0], Square::A8);
+        assert_eq!(*a8_to_h1[63], Square::H1);
     }
 }
