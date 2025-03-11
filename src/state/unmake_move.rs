@@ -1,11 +1,12 @@
 //! Contains the implementation of the `State::unmake_move` method.
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::color::Color;
+use crate::colored_piece::ColoredPiece;
 use crate::r#move::{Move, MoveFlag};
-use crate::state::{Context, State, Termination};
-use crate::utils::{Bitboard, Color, ColoredPiece, PieceType, Square};
-use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
+use crate::masks::{STARTING_KING_ROOK_GAP_SHORT};
+use crate::piece_type::PieceType;
+use crate::square::Square;
+use crate::state::State;
 
 impl State {
     fn unprocess_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType) {

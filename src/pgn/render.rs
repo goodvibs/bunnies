@@ -1,10 +1,10 @@
 use crate::pgn::state_tree_node::{PgnStateTreeNode};
 use std::fmt::{Display, Formatter};
-use crate::utils::Color;
 use crate::pgn::tokenize::PgnToken;
 use crate::state::{Termination};
 
 use std::fmt::Write;
+use crate::color::Color;
 use crate::pgn::state_tree::PgnStateTree;
 
 pub fn render_tokens(tokens: Vec<PgnToken>) -> String {

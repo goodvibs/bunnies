@@ -2,8 +2,9 @@
 
 use rand::Rng;
 use static_init::dynamic;
-use crate::utils::{get_squares_from_mask_iter, Bitboard};
-use crate::utils::{PieceType, Square};
+use crate::bitboard::{get_squares_from_mask_iter, Bitboard};
+use crate::piece_type::PieceType;
+use crate::square::Square;
 use crate::state::board::Board;
 
 /// A table of random bitboards for each piece type on each square.
@@ -12,7 +13,7 @@ static ZOBRIST_TABLE: [[Bitboard; 12]; 64] = generate_zobrist_table();
 
 /// Generates a table of random bitboards for each piece type on each square.
 pub fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut zobrist: [[Bitboard; 12]; 64] = [[0; 12]; 64];
     for i in 0..64 {
         for j in 0..12 {

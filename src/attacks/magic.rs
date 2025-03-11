@@ -1,10 +1,11 @@
 //! Magic bitboard generation and attack calculation for sliding pieces
 
-use crate::utils::{get_bit_combinations_iter, Bitboard};
-use crate::utils::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
-use crate::utils::{SlidingPieceType, Square};
+use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
 use static_init::dynamic;
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
+use crate::bitboard::{get_bit_combinations_iter, Bitboard};
+use crate::piece_type::SlidingPieceType;
+use crate::square::Square;
 
 /// The size of the attack table for rooks
 const ROOK_ATTACK_TABLE_SIZE: usize = 36 * 2usize.pow(10) + 28 * 2usize.pow(11) + 4 * 2usize.pow(12);
@@ -242,9 +243,10 @@ fn gen_random_magic_number(rng: &mut fastrand::Rng) -> Bitboard {
 mod tests {
     use crate::attacks::{magic, manual};
     use crate::attacks::magic::{get_bishop_relevant_mask, get_rook_relevant_mask, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
-    use crate::utils::get_bit_combinations_iter;
-    use crate::utils::charboard::print_bb_pretty;
-    use crate::utils::{SlidingPieceType, Square};
+    use crate::bitboard::get_bit_combinations_iter;
+    use crate::charboard::print_bb_pretty;
+    use crate::piece_type::SlidingPieceType;
+    use crate::square::Square;
 
     #[test]
     fn test_calc_rook_relevant_mask() {

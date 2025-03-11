@@ -1,4 +1,7 @@
-use crate::utils::{Color, ColoredPiece, PieceType, Square};
+use crate::color::Color;
+use crate::colored_piece::ColoredPiece;
+use crate::piece_type::PieceType;
+use crate::square::Square;
 use crate::state::State;
 
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -324,9 +327,9 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::get_squares_from_mask_iter;
+    use crate::bitboard::get_squares_from_mask_iter;
     use super::*;
-    use crate::utils::masks::{RANK_2, RANK_3, RANK_6, RANK_7};
+    use crate::masks::{RANK_2, RANK_3, RANK_6, RANK_7};
     use crate::state::board::Board;
     use crate::state::State;
 

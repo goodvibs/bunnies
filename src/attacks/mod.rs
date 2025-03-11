@@ -1,11 +1,12 @@
 //! This module contains functions to calculate attack bitboards for different pieces.
 
+use crate::bitboard::Bitboard;
+use crate::color::Color;
+use crate::square::Square;
+
 mod magic;
 mod manual;
 mod precomputed;
-
-use crate::utils::{Bitboard, Square};
-use crate::utils::Color;
 
 /// Returns an attack mask encoding all squares attacked by a knight on `src_square`
 pub fn single_knight_attacks(src_square: Square) -> Bitboard {

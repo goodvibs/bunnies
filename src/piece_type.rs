@@ -1,5 +1,6 @@
 use subenum::subenum;
-use crate::utils::{Color, ColoredPiece};
+use crate::color::Color;
+use crate::colored_piece::ColoredPiece;
 
 #[subenum(SlidingPieceType)]
 #[repr(u8)]

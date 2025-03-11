@@ -1,6 +1,7 @@
-use crate::utils::{PieceType, Square};
+use crate::piece_type::PieceType;
 use crate::r#move::{Move};
 use crate::r#move::move_flag::MoveFlag;
+use crate::square::Square;
 use crate::state::{Board, State, Termination};
 
 impl Move {

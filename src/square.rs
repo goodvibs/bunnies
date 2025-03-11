@@ -1,7 +1,8 @@
 use std::fmt::Display;
-use crate::utils::{Bitboard, Color};
-use crate::utils::charboard::SQUARE_NAMES;
-use crate::utils::masks::{FILES, RANKS};
+use crate::bitboard::Bitboard;
+use crate::charboard::SQUARE_NAMES;
+use crate::color::Color;
+use crate::masks::{FILES, RANKS};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

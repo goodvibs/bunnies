@@ -1,9 +1,9 @@
 //! Precomputed attack tables for non-sliding pieces.
 
-use crate::utils::Bitboard;
-use crate::utils::Square;
 use static_init::dynamic;
 use crate::attacks::manual;
+use crate::bitboard::Bitboard;
+use crate::square::Square;
 
 /// Precomputed attacks table for kings.
 #[dynamic]
@@ -40,7 +40,6 @@ pub fn precomputed_single_knight_attacks(src_square: Square) -> Bitboard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::Square;
 
     #[test]
     fn test_single_king_attacks() {

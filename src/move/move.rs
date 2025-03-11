@@ -1,5 +1,6 @@
+use crate::piece_type::PieceType;
 use crate::r#move::MoveFlag;
-use crate::utils::{PieceType, Square};
+use crate::square::Square;
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.
@@ -88,8 +89,9 @@ impl std::fmt::Debug for Move {
 
 #[cfg(test)]
 mod tests {
+    use crate::piece_type::PieceType;
+    use crate::square::Square;
     use super::{Move, MoveFlag};
-    use crate::utils::{PieceType, Square};
 
     #[test]
     fn test_move() {

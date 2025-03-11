@@ -1,10 +1,10 @@
+use crate::color::Color;
 use crate::pgn::error::PgnParseError;
 use crate::pgn::state_tree::PgnStateTree;
 use crate::pgn::state_tree_node::PgnStateTreeNode;
 use crate::pgn::tokenize::{PgnToken};
 use crate::r#move::Move;
 use crate::state::{State, Termination};
-use crate::utils::Color;
 
 fn validate_tag_placement(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
     let mut can_tag_be_placed = true;

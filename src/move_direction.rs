@@ -1,6 +1,6 @@
 //! Move direction related enums and functions.
 
-use crate::utils::Square;
+use crate::square::Square;
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
