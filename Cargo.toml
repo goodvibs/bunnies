@@ -14,5 +14,4 @@ categories = ["games", "mathematics"]
 rand = "0.9.0"
 indexmap = "2.2.5"
 fastrand = "2.3.0"
-subenum = "1.1.2"
 static_init = "1.0.3"
