@@ -76,6 +76,18 @@ impl PieceType {
         std::mem::transmute::<u8, PieceType>(piece_type_number)
     }
 
+    pub const unsafe fn from_char(piece_char: char) -> PieceType {
+        match piece_char {
+            'P' => PieceType::Pawn,
+            'N' => PieceType::Knight,
+            'B' => PieceType::Bishop,
+            'R' => PieceType::Rook,
+            'Q' => PieceType::Queen,
+            'K' => PieceType::King,
+            _ => PieceType::NoPieceType
+        }
+    }
+
     pub const fn to_char(&self) -> char {
         ColoredPiece::from(Color::White, *self).to_char()
     }
