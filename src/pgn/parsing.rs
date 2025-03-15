@@ -2,7 +2,7 @@ use crate::color::Color;
 use crate::pgn::error::PgnParseError;
 use crate::pgn::state_tree::PgnStateTree;
 use crate::pgn::state_tree_node::PgnStateTreeNode;
-use crate::pgn::tokenize::{PgnToken};
+use crate::pgn::lexing::{PgnToken};
 use crate::r#move::Move;
 use crate::state::{State, Termination};
 

@@ -1,6 +1,6 @@
 use crate::pgn::state_tree_node::{PgnStateTreeNode};
 use std::fmt::{Display, Formatter};
-use crate::pgn::tokenize::PgnToken;
+use crate::pgn::lexing::PgnToken;
 use crate::state::{Termination};
 
 use std::fmt::Write;
