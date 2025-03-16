@@ -28,9 +28,15 @@ impl PgnCommonMoveInfo {
             None => (false, false)
         };
 
-        let annotation = annotation.map(|m| m.as_str().to_string());
+        let annotation = match annotation {
+            Some(m) => Some(m.as_str().to_string()),
+            None => None
+        };
 
-        let nag = nag.map(|m| m.as_str().parse().unwrap());
+        let nag = match nag {
+            Some(m) => m.as_str().parse().ok(),
+            None => None
+        };
 
         PgnCommonMoveInfo {
             is_check,

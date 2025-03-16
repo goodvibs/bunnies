@@ -66,16 +66,6 @@ fn parse_comment(lex: &mut Lexer<PgnToken>) -> Option<String> {
     }
 }
 
-fn parse_nag(lex: &mut Lexer<PgnToken>) -> Option<u8> {
-    let text = lex.slice();
-    let nag_regex = Regex::new(r"\$([0-9]+)").unwrap();
-
-    match nag_regex.captures(text) {
-        Some(captures) => captures.get(1).unwrap().as_str().parse::<u8>().ok(),
-        None => None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
