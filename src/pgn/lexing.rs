@@ -2,13 +2,15 @@ use logos::{Logos, Lexer};
 use regex::{Match, Regex};
 use crate::color::Color;
 use crate::piece_type::PieceType;
+use crate::r#move::{Move, MoveFlag};
 use crate::square::Square;
+use crate::state::State;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct CommonMoveInfo {
     pub is_check: bool,
     pub is_checkmate: bool,
-    pub annotation: String
+    pub annotation: Option<String>
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -87,6 +89,36 @@ impl NonCastlingMove {
             None
         }
     }
+
+    pub fn matches_move(&self, mv: &Move, initial_state: &State) -> bool {
+        let dst = mv.get_destination();
+        let src = mv.get_source();
+        let flag = mv.get_flag();
+        let promotion = match flag {
+            MoveFlag::Promotion => mv.get_promotion(),
+            _ => PieceType::NoPieceType
+        };
+
+        if self.to != dst {
+            return false
+        } else if self.promoted_to != promotion {
+            return false
+        } else if self.piece_moved != initial_state.board.get_piece_type_at(src) {
+            return false
+        } else if self.is_capture != mv.is_capture(initial_state) {
+            return false
+        } else if let Some(file) = self.disambiguation_file {
+            if src.get_file() != file as u8 - 'a' as u8 {
+                return false
+            }
+        } else if let Some(rank) = self.disambiguation_rank {
+            if src.get_rank() != rank as u8 - '1' as u8 {
+                return false
+            }
+        }
+
+        true
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -96,7 +128,7 @@ pub(crate) struct CastlingMove {
 }
 
 impl CastlingMove {
-    fn parse_castling_move(lex: &mut Lexer<PgnToken>) -> Option<CastlingMove> {
+    pub fn parse_castling_move(lex: &mut Lexer<PgnToken>) -> Option<CastlingMove> {
         let text = lex.slice();
         let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)").unwrap();
         if let Some(captures) = move_regex.captures(text) {
@@ -112,6 +144,17 @@ impl CastlingMove {
             None
         }
     }
+
+    pub fn matches_move(&self, mv: &Move, initial_state: &State) -> bool {
+        let flag = mv.get_flag();
+        if flag != MoveFlag::Castling {
+            return false
+        } else if self.is_kingside != (mv.get_destination().get_file() == 6) {
+            return false
+        }
+
+        true
+    }
 }
 
 impl CommonMoveInfo {
@@ -123,13 +166,12 @@ impl CommonMoveInfo {
             },
             None => (false, false)
         };
-        let annotation = annotation.map(|m| m.as_str().to_string()).unwrap_or_default();
 
-        CommonMoveInfo { is_check, is_checkmate, annotation }
+        CommonMoveInfo { is_check, is_checkmate, annotation: annotation.map(|m| m.as_str().to_string()) }
     }
 }
 
-#[derive(Logos, Debug, PartialEq)]
+#[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[\s\t\n]+")]
 pub enum PgnToken {
     // Tags [TagName "TagValue"]
@@ -275,7 +317,7 @@ mod tests {
             assert_eq!(is_capture, false);
             assert_eq!(common_move_info.is_check, false);
             assert_eq!(common_move_info.is_checkmate, false);
-            assert_eq!(common_move_info.annotation, "");
+            assert_eq!(common_move_info.annotation, None);
         } else {
             panic!("Failed to parse e4");
         }
@@ -623,7 +665,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "!");
+            assert_eq!(common_move_info.annotation, Some("!".to_string()));
         } else {
             panic!("Failed to parse e4!");
         }
@@ -633,7 +675,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "?");
+            assert_eq!(common_move_info.annotation, Some("?".to_string()));
         } else {
             panic!("Failed to parse d5?");
         }
@@ -643,7 +685,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "!?");
+            assert_eq!(common_move_info.annotation, Some("!?".to_string()));
         } else {
             panic!("Failed to parse Nf3!?");
         }
@@ -653,7 +695,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "?!");
+            assert_eq!(common_move_info.annotation, Some("?!".to_string()));
         } else {
             panic!("Failed to parse Nc6?!");
         }
@@ -663,7 +705,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "!!");
+            assert_eq!(common_move_info.annotation, Some("!!".to_string()));
         } else {
             panic!("Failed to parse O-O!!");
         }
@@ -673,7 +715,7 @@ mod tests {
                         common_move_info,
                         ..
                     })) = lex.next() {
-            assert_eq!(common_move_info.annotation, "??");
+            assert_eq!(common_move_info.annotation, Some("??".to_string()));
         } else {
             panic!("Failed to parse e5??");
         }
@@ -730,21 +772,21 @@ mod tests {
         let mut lex = PgnToken::lexer("e4 e5 (d5 Nf3)");
 
         // e4
-        if let Some(PgnToken::NonCastlingMove (NonCastlingMove { to, .. })) = lex.next() {
+        if let Some(PgnToken::NonCastlingMove (NonCastlingMove { to, .. })) = lex.next().unwrap() {
             assert_eq!(to, Square::E4);
         } else {
             panic!("Failed to parse e4");
         }
 
         // e5
-        if let Some(PgnToken::NonCastlingMove (NonCastlingMove { to, .. })) = lex.next() {
+        if let Some(PgnToken::NonCastlingMove (NonCastlingMove { to, .. })) = lex.next().unwrap() {
             assert_eq!(to, Square::E5);
         } else {
             panic!("Failed to parse e5");
         }
 
         // (
-        if let Some(PgnToken::StartVariation) = lex.next() {
+        if let Some(PgnToken::StartVariation) = lex.next().unwrap() {
             // success
         } else {
             panic!("Failed to parse start variation");
@@ -765,7 +807,7 @@ mod tests {
         }
 
         // )
-        if let Some(PgnToken::EndVariation) = lex.next() {
+        if let Some(PgnToken::EndVariation) = lex.next().unwrap() {
             // success
         } else {
             panic!("Failed to parse end variation");
@@ -796,7 +838,7 @@ mod tests {
             panic!("Failed to parse 1/2-1/2");
         }
 
-        if let Some(PgnToken::Incomplete) = lex.next() {
+        if let Some(PgnToken::Incomplete) = lex.next().unwrap() {
             // success
         } else {
             panic!("Failed to parse *");

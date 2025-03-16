@@ -237,6 +237,11 @@ impl Board {
         }
         PieceType::NoPieceType
     }
+
+    pub fn is_occupied_at(&self, square: Square) -> bool {
+        let mask = square.get_mask();
+        self.piece_type_masks[PieceType::AllPieceTypes as usize] & mask != 0
+    }
     
     /// Returns the color at `square`.
     pub fn get_color_at(&self, square: Square) -> Color {

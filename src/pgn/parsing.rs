@@ -1,265 +1,168 @@
+use std::cmp::{Ordering, PartialOrd};
+use logos::Logos;
 use crate::color::Color;
 use crate::pgn::error::PgnParseError;
-use crate::pgn::state_tree::PgnStateTree;
-use crate::pgn::state_tree_node::PgnStateTreeNode;
 use crate::pgn::lexing::{PgnToken};
+use crate::pgn::pgn_object::PgnObject;
+use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
+use crate::pgn::{NonCastlingMove, Tag};
 use crate::r#move::Move;
 use crate::state::{State, Termination};
 
-fn validate_tag_placement(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut can_tag_be_placed = true;
-    
-    for token in tokens {
-        match token {
-            PgnToken::Tag(tag) => {
-                if !can_tag_be_placed {
-                    return Err(PgnParseError::InvalidTagPlacement(tag.clone()));
-                }
-            }
-            _ => {
-                can_tag_be_placed = false;
-            }
-        }
-    }
-    
-    Ok(())
+#[derive(Debug, PartialEq)]
+pub enum PgnParseState {
+    Tags,
+    Moves {
+        is_move_expected: bool,
+    },
+    ResultFound
 }
 
-fn validate_result_placement(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut results_placed = false;
-    
-    for token in tokens {
-        match token {
-            PgnToken::Result(result) => {
-                if results_placed {
-                    return Err(PgnParseError::InvalidResultPlacement(result.clone()));
-                }
-                results_placed = true;
-            }
-            _ => {}
-        }
-    }
-    
-    Ok(())
+pub struct EnrichedMoveTreeNode<'a> {
+    pub node: &'a MoveTreeNode,
+    pub state_after_move: State,
 }
 
-/// Ensure that all variations start after a move
-fn validate_variation_start_placement(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut last_token_was_move = false;
-    
-    for token in tokens {
-        match token {
-            PgnToken::Move(_) => {
-                last_token_was_move = true;
-            }
-            PgnToken::StartVariation => {
-                if !last_token_was_move {
-                    return Err(PgnParseError::InvalidVariationStart("Variation does not start after a move".to_string()));
-                }
-                last_token_was_move = false;
-            }
-            PgnToken::MoveNumberAndPeriods(_, _) | PgnToken::Tag(_) | PgnToken::Result(_) => {
-                last_token_was_move = false;
-            }
-            _ => {}
-        }
-    }
-    
-    Ok(())
+pub struct PgnParser<'a> {
+    pub parse_state: PgnParseState,
+
+    pub move_tree: PgnObject,
+    pub current: EnrichedMoveTreeNode<'a>,
+    pub stack: Vec<EnrichedMoveTreeNode<'a>>,
 }
 
-/// Ensure that all variations end after a move
-fn validate_variation_end_placement(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut last_token_was_move = false;
-    
-    for token in tokens {
-        match token {
-            PgnToken::Move(_) => {
-                last_token_was_move = true;
-            }
-            PgnToken::EndVariation => {
-                if !last_token_was_move {
-                    return Err(PgnParseError::InvalidVariationClosure("Variation does not end after a move".to_string()));
-                }
-            }
-            PgnToken::StartVariation | PgnToken::MoveNumberAndPeriods(_, _) | PgnToken::Tag(_) | PgnToken::Result(_) => {
-                last_token_was_move = false;
-            }
-            _ => {}
+impl PgnParser {
+    pub fn new() -> PgnParser {
+        let move_tree = PgnObject::new();
+        let current_node = move_tree.tree_root.borrow();
+        PgnParser {
+            parse_state: PgnParseState::Tags,
+            move_tree,
+            current: EnrichedMoveTreeNode {
+                node: &current_node,
+                state_after_move: State::initial(),
+            },
+            stack: Vec::new(),
         }
     }
-    
-    Ok(())
-}
 
-fn validate_variation_closure(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut open_variations = 0;
-    
-    for token in tokens {
-        match token {
-            PgnToken::StartVariation => {
-                open_variations += 1;
-            }
-            PgnToken::EndVariation => {
-                open_variations -= 1;
-            }
-            _ => {}
-        }
-    }
-    
-    if open_variations != 0 {
-        return Err(PgnParseError::InvalidVariationClosure("Variation is not closed".to_string()));
-    }
-    
-    Ok(())
-}
-
-fn validate_move_numbers(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    let mut stack = Vec::new();
-    let mut halfmove = 1;
-    
-    for token in tokens {
-        match token {
-            PgnToken::MoveNumberAndPeriods(found_fullmove, _) => {
-                let expected_fullmove = (halfmove + 1) / 2;
-                if found_fullmove != &expected_fullmove {
-                    return Err(PgnParseError::IncorrectMoveNumber(found_fullmove.to_string()));
-                }
-            }
-            PgnToken::Move(_) => {
-                halfmove += 1;
-            }
-            PgnToken::StartVariation => {
-                stack.push(halfmove);
-                halfmove -= 1;
-            }
-            PgnToken::EndVariation => {
-                halfmove = match stack.pop() {
-                    Some(halfmove) => halfmove,
-                    None => return Err(PgnParseError::InvalidVariationClosure("Variation is not closed".to_string()))
-                };
-            }
-            _ => {}
-        }
-    }
-    
-    Ok(())
-}
-
-fn validate(tokens: &[PgnToken]) -> Result<(), PgnParseError> {
-    validate_tag_placement(tokens)?;
-    validate_result_placement(tokens)?;
-    validate_variation_start_placement(tokens)?;
-    validate_variation_end_placement(tokens)?;
-    validate_variation_closure(tokens)?;
-    validate_move_numbers(tokens)?;
-    
-    Ok(())
-}
-
-fn find_san_match(initial_state: &State, legal_moves: &[Move], expected_san: &str) -> Option<(Move, String, State)> {
-    let update_termination = expected_san.ends_with("#");
-    
-    for legal_move in legal_moves {
-        let mut new_state = initial_state.clone();
-        new_state.make_move(*legal_move);
-        if update_termination {
-            new_state.check_and_update_termination();
-        }
-        
-        let san = legal_move.to_san(&initial_state, &new_state, legal_moves);
-        if san == expected_san {
-            return Some((*legal_move, san, new_state));
-        }
-    }
-    
-    None
-}
-
-impl PgnStateTree {
-    pub fn from_tokens(tokens: &[PgnToken]) -> Result<PgnStateTree, PgnParseError> {
-        validate(tokens)?;
-
-        let pgn_move_tree = PgnStateTree::new();
-
-        let mut current_node = pgn_move_tree.head.clone();
-        let mut node_stack = Vec::new();
-        
-        let mut tokens = tokens.iter().peekable();
-        
-        while let Some(token) = tokens.next() {
+    pub fn parse(&mut self, pgn: &str) -> Result<(), PgnParseError> {
+        let mut tokens = PgnToken::lexer(pgn);
+        if let Some(token) = tokens.next() {
             match token {
                 PgnToken::Tag(tag) => {
-                    // let (key, value) = parse_tag(tag)?;
-                    // pgn_move_tree.tags.insert(key, value);
+                    self.process_tag(tag)?;
                 }
-                PgnToken::MoveNumberAndPeriods(move_number, num_periods) => {
-                    // todo!()
+                PgnToken::MoveNumber(move_number) => {
+                    self.process_move_number(move_number)?;
                 }
-                PgnToken::Move(mv) => {
-                    let initial_state = (*current_node).borrow().state_after_move.clone();
-                    let legal_moves = initial_state.calc_legal_moves();
-                    
-                    match find_san_match(&initial_state, &legal_moves, mv) {
-                        Some((found_move, _, new_state)) => {
-                            current_node = PgnStateTreeNode::new_linked_to_previous(found_move, mv.to_string(), current_node, new_state);
-                        }
-                        None => return Err(PgnParseError::IllegalMove(mv.to_string()))
-                    }
+                PgnToken::NonCastlingMove(mv) => {
+                    self.process_non_castling_move(mv)?;
+                }
+                PgnToken::CastlingMove(mv) => {
+                    self.process_castling_move(mv)?;
+                }
+                PgnToken::Nag(nag) => {
+                    self.process_nag(nag)?;
                 }
                 PgnToken::StartVariation => {
-                    node_stack.push(current_node.clone());
-                    let move_and_san_and_previous_node = &current_node.borrow().move_and_san_and_previous_node.clone();
-                    current_node = match move_and_san_and_previous_node {
-                        Some((_, _, previous_node)) => previous_node.clone(), // Clone the Rc to get a new reference
-                        None => return Err(PgnParseError::InvalidVariationStart("Variation does not start after a move".to_string())),
-                    };
+                    self.process_start_variation()?;
                 }
                 PgnToken::EndVariation => {
-                    current_node = match node_stack.pop() {
-                        Some(node) => node,
-                        None => return Err(PgnParseError::InvalidVariationClosure("There is no open variation".to_string()))
-                    }
+                    self.process_end_variation()?;
                 }
-                PgnToken::Comment(_) => {
-                    // todo!()
-                }
-                PgnToken::Annotation(_) => {
-                    // todo!()
+                PgnToken::Comment(comment) => {
+                    self.process_comment(comment)?;
                 }
                 PgnToken::Result(result) => {
-                    match result.as_str() {
-                        "1-0" => { // Todo: Add support for time-related game results
-                            let mut node = current_node.borrow_mut();
-                            if node.state_after_move.side_to_move == Color::Black {
-                                node.state_after_move.termination = Some(Termination::Checkmate);
-                            }
-                            // node.state_after_move.termination = Some(Termination::Checkmate);
-                            // assert_eq!(node.state_after_move.side_to_move, Color::Black);
-                        }
-                        "0-1" => {
-                            let mut node = current_node.borrow_mut();
-                            if node.state_after_move.side_to_move == Color::White {
-                                node.state_after_move.termination = Some(Termination::Checkmate);
-                            }
-                            // node.state_after_move.termination = Some(Termination::Checkmate);
-                            // assert_eq!(node.state_after_move.side_to_move, Color::White);
-                        }
-                        "1/2-1/2" => {
-                            let mut node = current_node.borrow_mut();
-                            node.state_after_move.termination = Some(Termination::Stalemate);
-                        }
-                        "*" => {
-                            // Todo: add support
-                        }
-                        _ => {
-                            return Err(PgnParseError::InvalidResult(result.to_string()));
-                        }
-                    }
+                    self.process_result(result)?;
+                }
+                PgnToken::Incomplete => {
+                    self.process_incomplete()?;
                 }
             }
         }
-        
-        Ok(pgn_move_tree)
+        Ok(())
+    }
+
+    fn process_tag(&mut self, tag: Tag) -> Result<(), PgnParseError> {
+        if self.parse_state != PgnParseState::Tags {
+            return Err(PgnParseError::UnexpectedToken(format!("Unexpected tag token: {:?}", tag)));
+        }
+        self.move_tree.add_tag(tag.name, tag.value);
+        Ok(())
+    }
+
+    fn process_move_number(&mut self, move_number: u16) -> Result<(), PgnParseError> {
+        match self.parse_state {
+            PgnParseState::Tags => {
+                self.parse_state = PgnParseState::Moves { is_move_expected: true };
+                let expected_fullmove = self.current.state_after_move.get_fullmove();
+                if move_number == expected_fullmove {
+                    Ok(())
+                } else {
+                    Err(PgnParseError::IncorrectMoveNumber(move_number.to_string()))
+                }
+            }
+            PgnParseState::Moves { is_move_expected } => {
+                if is_move_expected {
+                    Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {}", move_number)))
+                }
+                else {
+                    let expected_fullmove = self.current.state_after_move.get_fullmove();
+                    if move_number == expected_fullmove {
+                        self.parse_state = PgnParseState::Moves { is_move_expected: true };
+                        Ok(())
+                    } else {
+                        Err(PgnParseError::IncorrectMoveNumber(move_number.to_string()))
+                    }
+                }
+            }
+            PgnParseState::ResultFound => {
+                Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {}", move_number)))
+            }
+        }
+    }
+
+    fn process_non_castling_move(&mut self, non_castling_move: NonCastlingMove) -> Result<(), PgnParseError> {
+        if let Some(PgnParseState::Moves { is_move_expected }) = self.parse_state {
+            if is_move_expected {
+                let mut current_state = &self.current.state_after_move;
+                let possible_moves = current_state.calc_legal_moves();
+                let mut matched_move = None;
+                for possible_move in possible_moves {
+                    if non_castling_move.matches_move(&possible_move, current_state) {
+                        if matched_move.is_some() {
+                            return Err(PgnParseError::AmbiguousMove(format!("Ambiguous move: {:?}", non_castling_move)));
+                        } else {
+                            matched_move = Some(possible_move);
+                        }
+                    }
+                }
+                if let Some(matched_move) = matched_move {
+                    let new_state = {
+                        let mut state = current_state.clone();
+                        state.make_move(matched_move);
+                        state
+                    };
+                    let move_data = MoveData {
+                        mv: matched_move,
+                        annotation: non_castling_move.common_move_info.annotation,
+                        nag: non_castling_move.common_move_info.nag,
+                    };
+                    let new_node = MoveTreeNode::new(move_data, None);
+                    self.current.node.add_continuation(new_node);
+                    self.current.state_after_move = new_state;
+                    self.parse_state = PgnParseState::Moves { is_move_expected: false };
+                    Ok(())
+                } else {
+                    Err(PgnParseError::IllegalMove(format!("Illegal move: {:?}", non_castling_move)))
+                }
+            } else {
+                Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", non_castling_move)))
+            }
+        } else {
+            Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", non_castling_move)))
+        }
     }
 }

@@ -5,6 +5,8 @@ mod parsing;
 mod lexing;
 mod error;
 mod state_tree;
+mod move_tree_node;
+mod pgn_object;
 
 pub use render::*;
 pub use parsing::*;

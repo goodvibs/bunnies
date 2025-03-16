@@ -1,6 +1,7 @@
 use crate::piece_type::PieceType;
 use crate::r#move::MoveFlag;
 use crate::square::Square;
+use crate::state::State;
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.
@@ -54,6 +55,14 @@ impl Move {
     /// Unpacks the move into its components.
     pub const fn unpack(&self) -> (Square, Square, PieceType, MoveFlag) {
         (self.get_destination(), self.get_source(), self.get_promotion(), self.get_flag())
+    }
+
+    pub fn is_capture(&self, initial_state: &State) -> bool {
+        match self.get_flag() {
+            MoveFlag::NormalMove | MoveFlag::Promotion => initial_state.board.is_occupied_at(self.get_destination()),
+            MoveFlag::EnPassant => true,
+            MoveFlag::Castling => false
+        }
     }
 
     /// Returns a readable representation of the move.
