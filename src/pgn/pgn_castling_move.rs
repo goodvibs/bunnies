@@ -14,14 +14,14 @@ pub(crate) struct PgnCastlingMove {
 impl PgnCastlingMove {
     pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<PgnCastlingMove> {
         let text = lex.slice();
-        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)").unwrap();
+        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)\s*($[0-9]+)?").unwrap();
         if let Some(captures) = move_regex.captures(text) {
             let is_kingside = captures.get(1).is_some();
 
             Some(
                 PgnCastlingMove {
                     is_kingside,
-                    common_move_info: PgnCommonMoveInfo::from(captures.get(4), captures.get(5))
+                    common_move_info: PgnCommonMoveInfo::from(captures.get(4), captures.get(5), captures.get(6))
                 }
             )
         } else {

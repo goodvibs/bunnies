@@ -14,11 +14,12 @@ pub trait PgnMove: std::fmt::Debug {
 pub(crate) struct PgnCommonMoveInfo {
     pub is_check: bool,
     pub is_checkmate: bool,
-    pub annotation: Option<String>
+    pub annotation: Option<String>,
+    pub nag: Option<String>
 }
 
 impl PgnCommonMoveInfo {
-    pub fn from(check_or_checkmate: Option<Match>, annotation: Option<Match>) -> PgnCommonMoveInfo {
+    pub fn from(check_or_checkmate: Option<Match>, annotation: Option<Match>, nag: Option<Match>) -> PgnCommonMoveInfo {
         let (is_check, is_checkmate) = match check_or_checkmate {
             Some(m) => {
                 let check_or_checkmate_char = m.as_str().chars().next().unwrap();
@@ -27,6 +28,15 @@ impl PgnCommonMoveInfo {
             None => (false, false)
         };
 
-        PgnCommonMoveInfo { is_check, is_checkmate, annotation: annotation.map(|m| m.as_str().to_string()) }
+        let annotation = annotation.map(|m| m.as_str().to_string());
+
+        let nag = nag.map(|m| m.as_str().to_string());
+
+        PgnCommonMoveInfo {
+            is_check,
+            is_checkmate,
+            annotation,
+            nag
+        }
     }
 }

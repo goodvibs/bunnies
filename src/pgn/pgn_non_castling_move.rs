@@ -21,7 +21,7 @@ pub(crate) struct PgnNonCastlingMove {
 impl PgnNonCastlingMove {
     pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<PgnNonCastlingMove> {
         let text = lex.slice();
-        let move_regex = Regex::new(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(=[NBRQ])?([+#])?([?!]*)").unwrap();
+        let move_regex = Regex::new(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(=[NBRQ])?([+#])?([?!]*)\s*($[0-9]+)?").unwrap();
         if let Some(captures) = move_regex.captures(text) {
             let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
                 None => PieceType::Pawn,
@@ -55,7 +55,7 @@ impl PgnNonCastlingMove {
                     piece_moved,
                     promoted_to,
                     is_capture,
-                    common_move_info: PgnCommonMoveInfo::from(captures.get(8), captures.get(9))
+                    common_move_info: PgnCommonMoveInfo::from(captures.get(8), captures.get(9), captures.get(10))
                 }
             )
         } else {

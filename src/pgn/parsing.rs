@@ -36,12 +36,12 @@ pub struct PgnParser<'a> {
 impl<'a> PgnParser<'a> {
     pub fn new() -> PgnParser<'a> {
         let move_tree = PgnObject::new();
-        let current_node = &move_tree.tree_root;
+        let current_node = move_tree.tree_root.as_ref();
         PgnParser {
             parse_state: PgnParseState::Tags,
             move_tree,
             current: EnrichedMoveTreeNode {
-                node: &current_node,
+                node: current_node,
                 state_after_move: State::initial(),
             },
             stack: Vec::new(),
@@ -67,9 +67,6 @@ impl<'a> PgnParser<'a> {
                 }
                 PgnToken::CastlingMove(mv) => {
                     self.process_move::<PgnCastlingMove>(mv)?;
-                }
-                PgnToken::Nag(nag) => {
-                    // self.process_nag(nag)?;
                 }
                 PgnToken::StartVariation => {
                     // self.process_start_variation()?;

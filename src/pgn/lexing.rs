@@ -19,19 +19,15 @@ pub enum PgnToken {
     MoveNumber(u16),
 
     // Moves like g4, Nf6, exd5+?!, etc.
-    #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*", PgnNonCastlingMove::parse)]
+    #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*(\s+$[0-9]+)?", PgnNonCastlingMove::parse)]
     NonCastlingMove(PgnNonCastlingMove),
 
-    #[regex(r"((O-O(-O)?)|(0-0(-0)?))[+#]?[?!]*", PgnCastlingMove::parse)]
+    #[regex(r"((O-O(-O)?)|(0-0(-0)?))[+#]?[?!]*(\s+$[0-9]+)?", PgnCastlingMove::parse)]
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
     #[regex(r"\{[^}]*\}", parse_comment)]
     Comment(String), // Regular comment
-
-    // NAG (Numeric Annotation Glyph)
-    #[regex(r"\$([0-9]+)", parse_nag)]
-    Nag(u8),
 
     // Start of variation
     #[token("(")]
