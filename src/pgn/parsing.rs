@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use logos::Logos;
+use crate::color::Color;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParseError;
 use crate::pgn::lexing::{PgnToken};
@@ -16,7 +17,7 @@ use crate::state::{State};
 pub enum PgnParseState {
     Tags,
     Moves {
-        is_move_expected: bool,
+        move_number_just_seen: bool,
     },
     ResultFound
 }
@@ -99,17 +100,17 @@ impl PgnParser {
     fn process_move_number(&mut self, pgn_move_number: PgnMoveNumber) -> Result<(), PgnParseError> {
         match self.parse_state {
             PgnParseState::Tags => {
-                self.parse_state = PgnParseState::Moves { is_move_expected: false };
+                self.parse_state = PgnParseState::Moves { move_number_just_seen: false };
                 self.process_move_number(pgn_move_number)
             }
-            PgnParseState::Moves { is_move_expected } => {
-                if is_move_expected {
+            PgnParseState::Moves { move_number_just_seen } => {
+                if move_number_just_seen {
                     Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
                 }
                 else {
                     let expected_fullmove = self.current.state_after_move.get_fullmove();
                     if pgn_move_number.fullmove_number == expected_fullmove {
-                        self.parse_state = PgnParseState::Moves { is_move_expected: true };
+                        self.parse_state = PgnParseState::Moves { move_number_just_seen: true };
                         Ok(())
                     } else {
                         Err(PgnParseError::IncorrectMoveNumber(format!("{:?}", pgn_move_number)))
@@ -124,8 +125,11 @@ impl PgnParser {
 
     fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParseError> {
         match self.parse_state {
-            PgnParseState::Moves { is_move_expected: true } => {
+            PgnParseState::Moves { move_number_just_seen } => {
                 let mut current_state = &self.current.state_after_move;
+                if !(move_number_just_seen || current_state.side_to_move == Color::Black) {
+                    return Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
+                }
                 let possible_moves = current_state.calc_legal_moves();
 
                 let mut matched_move = None;
@@ -156,7 +160,7 @@ impl PgnParser {
                         node: new_node,
                         state_after_move: new_state,
                     };
-                    self.parse_state = PgnParseState::Moves { is_move_expected: false };
+                    self.parse_state = PgnParseState::Moves { move_number_just_seen: false };
                     Ok(())
                 } else {
                     Err(PgnParseError::IllegalMove(format!("Illegal move: {:?}", pgn_move)))
