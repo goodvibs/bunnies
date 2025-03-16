@@ -28,7 +28,6 @@ pub struct EnrichedMoveTreeNode {
 
 pub struct PgnParser {
     pub parse_state: PgnParseState,
-
     pub move_tree: PgnObject,
     pub current: EnrichedMoveTreeNode,
     pub stack: Vec<EnrichedMoveTreeNode>,
@@ -124,10 +123,11 @@ impl PgnParser {
     }
 
     fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParseError> {
-        if let PgnParseState::Moves { is_move_expected } = self.parse_state {
-            if is_move_expected {
+        match self.parse_state {
+            PgnParseState::Moves { is_move_expected: true } => {
                 let mut current_state = &self.current.state_after_move;
                 let possible_moves = current_state.calc_legal_moves();
+
                 let mut matched_move = None;
                 for possible_move in possible_moves {
                     if pgn_move.matches_move(possible_move, current_state) {
@@ -138,6 +138,7 @@ impl PgnParser {
                         }
                     }
                 }
+
                 if let Some(matched_move) = matched_move {
                     let new_state = {
                         let mut state = current_state.clone();
@@ -160,11 +161,10 @@ impl PgnParser {
                 } else {
                     Err(PgnParseError::IllegalMove(format!("Illegal move: {:?}", pgn_move)))
                 }
-            } else {
+            }
+            _ => {
                 Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)))
             }
-        } else {
-            Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)))
         }
     }
 }
