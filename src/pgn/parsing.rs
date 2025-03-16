@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use logos::Logos;
-use crate::color::Color;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParseError;
 use crate::pgn::lexing::{PgnToken};
@@ -9,9 +8,9 @@ use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
 use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
 use crate::pgn::pgn_move::PgnMove;
+use crate::pgn::pgn_move_number::PgnMoveNumber;
 use crate::pgn::pgn_tag::PgnTag;
-use crate::r#move::Move;
-use crate::state::{State, Termination};
+use crate::state::{State};
 
 #[derive(Debug, PartialEq)]
 pub enum PgnParseState {
@@ -98,33 +97,28 @@ impl PgnParser {
         Ok(())
     }
 
-    fn process_move_number(&mut self, move_number: u16) -> Result<(), PgnParseError> {
+    fn process_move_number(&mut self, pgn_move_number: PgnMoveNumber) -> Result<(), PgnParseError> {
         match self.parse_state {
             PgnParseState::Tags => {
-                self.parse_state = PgnParseState::Moves { is_move_expected: true };
-                let expected_fullmove = self.current.state_after_move.get_fullmove();
-                if move_number == expected_fullmove {
-                    Ok(())
-                } else {
-                    Err(PgnParseError::IncorrectMoveNumber(move_number.to_string()))
-                }
+                self.parse_state = PgnParseState::Moves { is_move_expected: false };
+                self.process_move_number(pgn_move_number)
             }
             PgnParseState::Moves { is_move_expected } => {
                 if is_move_expected {
-                    Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {}", move_number)))
+                    Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
                 }
                 else {
                     let expected_fullmove = self.current.state_after_move.get_fullmove();
-                    if move_number == expected_fullmove {
+                    if pgn_move_number.fullmove_number == expected_fullmove {
                         self.parse_state = PgnParseState::Moves { is_move_expected: true };
                         Ok(())
                     } else {
-                        Err(PgnParseError::IncorrectMoveNumber(move_number.to_string()))
+                        Err(PgnParseError::IncorrectMoveNumber(pgn_move_number.to_string()))
                     }
                 }
             }
             PgnParseState::ResultFound => {
-                Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {}", move_number)))
+                Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
             }
         }
     }

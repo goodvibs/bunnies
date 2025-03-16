@@ -7,7 +7,7 @@ pub enum PgnLexingError {
     InvalidTag(String),
     InvalidComment,
     InvalidVariation,
-    InvalidMoveNumber,
+    InvalidMoveNumber(String),
     InvalidCastlingMove(String),
     InvalidPromotion,
     InvalidAnnotation,
