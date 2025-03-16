@@ -128,7 +128,7 @@ pub(crate) struct CastlingMove {
 }
 
 impl CastlingMove {
-    pub fn parse_castling_move(lex: &mut Lexer<PgnToken>) -> Option<CastlingMove> {
+    pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<CastlingMove> {
         let text = lex.slice();
         let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)").unwrap();
         if let Some(captures) = move_regex.captures(text) {
