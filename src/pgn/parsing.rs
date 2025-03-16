@@ -151,7 +151,7 @@ impl<'a> PgnParser<'a> {
                     let move_data = MoveData {
                         mv: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
-                        nag: None,
+                        nag: pgn_move.get_common_move_info().nag.clone(),
                     };
                     let new_node = MoveTreeNode::new(move_data, None);
                     self.current.node.add_continuation(new_node);

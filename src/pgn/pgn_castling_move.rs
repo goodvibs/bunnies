@@ -14,7 +14,7 @@ pub(crate) struct PgnCastlingMove {
 impl PgnCastlingMove {
     pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<PgnCastlingMove> {
         let text = lex.slice();
-        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)\s*($[0-9]+)?").unwrap();
+        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
         if let Some(captures) = move_regex.captures(text) {
             let is_kingside = captures.get(1).is_some();
 

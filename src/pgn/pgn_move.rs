@@ -15,7 +15,7 @@ pub(crate) struct PgnCommonMoveInfo {
     pub is_check: bool,
     pub is_checkmate: bool,
     pub annotation: Option<String>,
-    pub nag: Option<String>
+    pub nag: Option<u8>
 }
 
 impl PgnCommonMoveInfo {
@@ -30,7 +30,7 @@ impl PgnCommonMoveInfo {
 
         let annotation = annotation.map(|m| m.as_str().to_string());
 
-        let nag = nag.map(|m| m.as_str().to_string());
+        let nag = nag.map(|m| m.as_str().parse().unwrap());
 
         PgnCommonMoveInfo {
             is_check,

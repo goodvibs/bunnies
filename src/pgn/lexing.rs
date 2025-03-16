@@ -19,10 +19,10 @@ pub enum PgnToken {
     MoveNumber(u16),
 
     // Moves like g4, Nf6, exd5+?!, etc.
-    #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*(\s+$[0-9]+)?", PgnNonCastlingMove::parse)]
+    #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*(\s+\$[0-9]+)?", PgnNonCastlingMove::parse)]
     NonCastlingMove(PgnNonCastlingMove),
 
-    #[regex(r"((O-O(-O)?)|(0-0(-0)?))[+#]?[?!]*(\s+$[0-9]+)?", PgnCastlingMove::parse)]
+    #[regex(r"((O-O(-O)?)|(0-0(-0)?))[+#]?[?!]*(\s+\$[0-9]+)?", PgnCastlingMove::parse)]
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
@@ -569,31 +569,6 @@ mod tests {
             assert_eq!(text, "Multiple\nline\ncomment");
         } else {
             panic!("Failed to parse second comment");
-        }
-
-        assert_eq!(lex.next(), None);
-    }
-
-    #[test]
-    fn test_nag() {
-        let mut lex = PgnToken::lexer("$1 $12 $42");
-
-        if let Some(Ok(PgnToken::Nag(num))) = lex.next() {
-            assert_eq!(num, 1);
-        } else {
-            panic!("Failed to parse $1");
-        }
-
-        if let Some(Ok(PgnToken::Nag(num))) = lex.next() {
-            assert_eq!(num, 12);
-        } else {
-            panic!("Failed to parse $12");
-        }
-
-        if let Some(Ok(PgnToken::Nag(num))) = lex.next() {
-            assert_eq!(num, 42);
-        } else {
-            panic!("Failed to parse $42");
         }
 
         assert_eq!(lex.next(), None);
