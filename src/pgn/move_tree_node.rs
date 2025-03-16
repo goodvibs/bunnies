@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::r#move::Move;
 
 #[derive(Debug, Clone)]
@@ -10,7 +12,7 @@ pub struct MoveData {
 pub struct MoveTreeNode {
     pub move_data: Option<MoveData>, // None for the root node
     pub comment: Option<String>, // Root node may have a comment, so this is not part of MoveData
-    pub continuations: Vec<Box<MoveTreeNode>>,
+    pub continuations: Vec<Rc<RefCell<MoveTreeNode>>>,
 }
 
 impl MoveTreeNode {
@@ -29,8 +31,8 @@ impl MoveTreeNode {
         }
     }
 
-    pub fn add_continuation(&mut self, continuation: MoveTreeNode) {
-        self.continuations.push(Box::new(continuation));
+    pub fn add_continuation(&mut self, continuation: &Rc<RefCell<MoveTreeNode>>) {
+        self.continuations.push(Rc::clone(continuation));
     }
 
     pub fn has_continuations(&self) -> bool {

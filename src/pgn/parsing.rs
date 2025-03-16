@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use logos::Logos;
 use crate::color::Color;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
@@ -20,23 +22,23 @@ pub enum PgnParseState {
     ResultFound
 }
 
-pub struct EnrichedMoveTreeNode<'a> {
-    pub node: &'a MoveTreeNode,
+pub struct EnrichedMoveTreeNode {
+    pub node: Rc<RefCell<MoveTreeNode>>,
     pub state_after_move: State,
 }
 
-pub struct PgnParser<'a> {
+pub struct PgnParser {
     pub parse_state: PgnParseState,
 
     pub move_tree: PgnObject,
-    pub current: EnrichedMoveTreeNode<'a>,
-    pub stack: Vec<EnrichedMoveTreeNode<'a>>,
+    pub current: EnrichedMoveTreeNode,
+    pub stack: Vec<EnrichedMoveTreeNode>,
 }
 
-impl<'a> PgnParser<'a> {
-    pub fn new() -> PgnParser<'a> {
+impl PgnParser {
+    pub fn new() -> PgnParser {
         let move_tree = PgnObject::new();
-        let current_node = move_tree.tree_root.as_ref();
+        let current_node = Rc::clone(&move_tree.tree_root);
         PgnParser {
             parse_state: PgnParseState::Tags,
             move_tree,
@@ -153,9 +155,12 @@ impl<'a> PgnParser<'a> {
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
-                    let new_node = MoveTreeNode::new(move_data, None);
-                    self.current.node.add_continuation(new_node);
-                    self.current.state_after_move = new_state;
+                    let new_node = Rc::new(RefCell::new(MoveTreeNode::new(move_data, None)));
+                    self.current.node.borrow_mut().add_continuation(&new_node);
+                    self.current = EnrichedMoveTreeNode {
+                        node: new_node,
+                        state_after_move: new_state,
+                    };
                     self.parse_state = PgnParseState::Moves { is_move_expected: false };
                     Ok(())
                 } else {
