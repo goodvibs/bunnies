@@ -8,6 +8,7 @@ pub enum PgnParseError {
     IllegalMove(String),
     AmbiguousMove(String),
     UnexpectedToken(String),
+    LexingError(String),
 }
 
 impl Display for PgnParseError {

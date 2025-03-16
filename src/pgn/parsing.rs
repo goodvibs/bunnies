@@ -1,11 +1,13 @@
-use std::cmp::{Ordering, PartialOrd};
 use logos::Logos;
 use crate::color::Color;
-use crate::pgn::error::PgnParseError;
+use crate::pgn::pgn_castling_move::PgnCastlingMove;
+use crate::pgn::pgn_parse_error::PgnParseError;
 use crate::pgn::lexing::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
-use crate::pgn::{NonCastlingMove, Tag};
+use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
+use crate::pgn::pgn_move::PgnMove;
+use crate::pgn::pgn_tag::PgnTag;
 use crate::r#move::Move;
 use crate::state::{State, Termination};
 
@@ -31,10 +33,10 @@ pub struct PgnParser<'a> {
     pub stack: Vec<EnrichedMoveTreeNode<'a>>,
 }
 
-impl PgnParser {
-    pub fn new() -> PgnParser {
+impl<'a> PgnParser<'a> {
+    pub fn new() -> PgnParser<'a> {
         let move_tree = PgnObject::new();
-        let current_node = move_tree.tree_root.borrow();
+        let current_node = &move_tree.tree_root;
         PgnParser {
             parse_state: PgnParseState::Tags,
             move_tree,
@@ -49,6 +51,10 @@ impl PgnParser {
     pub fn parse(&mut self, pgn: &str) -> Result<(), PgnParseError> {
         let mut tokens = PgnToken::lexer(pgn);
         if let Some(token) = tokens.next() {
+            let token = match token {
+                Ok(token) => token,
+                Err(e) => return Err(PgnParseError::LexingError(format!("Error while lexing: {:?}", e))),
+            };
             match token {
                 PgnToken::Tag(tag) => {
                     self.process_tag(tag)?;
@@ -57,35 +63,35 @@ impl PgnParser {
                     self.process_move_number(move_number)?;
                 }
                 PgnToken::NonCastlingMove(mv) => {
-                    self.process_non_castling_move(mv)?;
+                    self.process_move::<PgnNonCastlingMove>(mv)?;
                 }
                 PgnToken::CastlingMove(mv) => {
-                    self.process_castling_move(mv)?;
+                    self.process_move::<PgnCastlingMove>(mv)?;
                 }
                 PgnToken::Nag(nag) => {
-                    self.process_nag(nag)?;
+                    // self.process_nag(nag)?;
                 }
                 PgnToken::StartVariation => {
-                    self.process_start_variation()?;
+                    // self.process_start_variation()?;
                 }
                 PgnToken::EndVariation => {
-                    self.process_end_variation()?;
+                    // self.process_end_variation()?;
                 }
                 PgnToken::Comment(comment) => {
-                    self.process_comment(comment)?;
+                    // self.process_comment(comment)?;
                 }
                 PgnToken::Result(result) => {
-                    self.process_result(result)?;
+                    // self.process_result(result)?;
                 }
                 PgnToken::Incomplete => {
-                    self.process_incomplete()?;
+                    // self.process_incomplete()?;
                 }
             }
         }
         Ok(())
     }
 
-    fn process_tag(&mut self, tag: Tag) -> Result<(), PgnParseError> {
+    fn process_tag(&mut self, tag: PgnTag) -> Result<(), PgnParseError> {
         if self.parse_state != PgnParseState::Tags {
             return Err(PgnParseError::UnexpectedToken(format!("Unexpected tag token: {:?}", tag)));
         }
@@ -124,16 +130,16 @@ impl PgnParser {
         }
     }
 
-    fn process_non_castling_move(&mut self, non_castling_move: NonCastlingMove) -> Result<(), PgnParseError> {
-        if let Some(PgnParseState::Moves { is_move_expected }) = self.parse_state {
+    fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParseError> {
+        if let PgnParseState::Moves { is_move_expected } = self.parse_state {
             if is_move_expected {
                 let mut current_state = &self.current.state_after_move;
                 let possible_moves = current_state.calc_legal_moves();
                 let mut matched_move = None;
                 for possible_move in possible_moves {
-                    if non_castling_move.matches_move(&possible_move, current_state) {
+                    if pgn_move.matches_move(possible_move, current_state) {
                         if matched_move.is_some() {
-                            return Err(PgnParseError::AmbiguousMove(format!("Ambiguous move: {:?}", non_castling_move)));
+                            return Err(PgnParseError::AmbiguousMove(format!("Ambiguous move: {:?}", pgn_move)));
                         } else {
                             matched_move = Some(possible_move);
                         }
@@ -147,8 +153,8 @@ impl PgnParser {
                     };
                     let move_data = MoveData {
                         mv: matched_move,
-                        annotation: non_castling_move.common_move_info.annotation,
-                        nag: non_castling_move.common_move_info.nag,
+                        annotation: pgn_move.get_common_move_info().annotation.clone(),
+                        nag: None,
                     };
                     let new_node = MoveTreeNode::new(move_data, None);
                     self.current.node.add_continuation(new_node);
@@ -156,13 +162,13 @@ impl PgnParser {
                     self.parse_state = PgnParseState::Moves { is_move_expected: false };
                     Ok(())
                 } else {
-                    Err(PgnParseError::IllegalMove(format!("Illegal move: {:?}", non_castling_move)))
+                    Err(PgnParseError::IllegalMove(format!("Illegal move: {:?}", pgn_move)))
                 }
             } else {
-                Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", non_castling_move)))
+                Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)))
             }
         } else {
-            Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", non_castling_move)))
+            Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)))
         }
     }
 }
