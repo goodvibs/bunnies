@@ -108,7 +108,7 @@ impl PgnParser {
 
     pub fn parse(&mut self, pgn: &str) -> Result<(), PgnParseError> {
         let mut tokens = PgnToken::lexer(pgn);
-        if let Some(token) = tokens.next() {
+        while let Some(token) = tokens.next() {
             let token = match token {
                 Ok(token) => token,
                 Err(e) => return Err(PgnParseError::LexingError(format!("Error while lexing: {:?}", e))),
