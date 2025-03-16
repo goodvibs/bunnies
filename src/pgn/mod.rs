@@ -1,9 +1,10 @@
 mod parsing;
 mod lexing;
-mod pgn_parse_error;
+mod parsing_error;
 mod move_tree_node;
 mod pgn_object;
 mod pgn_castling_move;
 mod pgn_non_castling_move;
 mod pgn_tag;
 mod pgn_move;
+mod lexing_error;

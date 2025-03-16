@@ -1,14 +1,22 @@
+use std::error::Error;
+use std::fmt::{Display};
 use logos::{Logos, Lexer};
 use regex::{Regex};
 use crate::color::Color;
+use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
 use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
 use crate::pgn::pgn_tag::PgnTag;
 use crate::piece_type::PieceType;
 use crate::square::Square;
 
+pub trait ParsablePgnToken: Sized {
+    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError>;
+}
+
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[\s\t\n]+")]
+#[logos(error = PgnLexingError)]
 pub enum PgnToken {
     // Tags [TagName "TagValue"]
     #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"[^"]*"\s*\]"#, PgnTag::parse)]

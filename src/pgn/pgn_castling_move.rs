@@ -1,6 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
-use crate::pgn::lexing::PgnToken;
+use crate::pgn::lexing::{ParsablePgnToken, PgnToken};
+use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::r#move::{Move, MoveFlag};
 use crate::state::State;
@@ -9,25 +10,6 @@ use crate::state::State;
 pub(crate) struct PgnCastlingMove {
     pub is_kingside: bool,
     pub common_move_info: PgnCommonMoveInfo
-}
-
-impl PgnCastlingMove {
-    pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<PgnCastlingMove> {
-        let text = lex.slice();
-        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
-        if let Some(captures) = move_regex.captures(text) {
-            let is_kingside = captures.get(1).is_some();
-
-            Some(
-                PgnCastlingMove {
-                    is_kingside,
-                    common_move_info: PgnCommonMoveInfo::from(captures.get(4), captures.get(5), captures.get(6))
-                }
-            )
-        } else {
-            None
-        }
-    }
 }
 
 impl PgnMove for PgnCastlingMove {
@@ -48,5 +30,24 @@ impl PgnMove for PgnCastlingMove {
 
     fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo {
         &mut self.common_move_info
+    }
+}
+
+impl ParsablePgnToken for PgnCastlingMove {
+    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
+        let text = lex.slice();
+        let move_regex = Regex::new(r"(O-O(-O)?)|(0-0(-0)?)([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
+        if let Some(captures) = move_regex.captures(text) {
+            let is_kingside = captures.get(1).is_some();
+
+            Ok(
+                PgnCastlingMove {
+                    is_kingside,
+                    common_move_info: PgnCommonMoveInfo::from(captures.get(4), captures.get(5), captures.get(6))
+                }
+            )
+        } else {
+            Err(PgnLexingError::InvalidCastlingMove(text.to_string()))
+        }
     }
 }

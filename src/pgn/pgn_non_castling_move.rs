@@ -1,6 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
-use crate::pgn::lexing::PgnToken;
+use crate::pgn::lexing::{ParsablePgnToken, PgnToken};
+use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::piece_type::PieceType;
 use crate::r#move::{Move, MoveFlag};
@@ -16,52 +17,6 @@ pub(crate) struct PgnNonCastlingMove {
     pub promoted_to: PieceType,
     pub is_capture: bool,
     pub common_move_info: PgnCommonMoveInfo
-}
-
-impl PgnNonCastlingMove {
-    pub fn parse(lex: &mut Lexer<PgnToken>) -> Option<PgnNonCastlingMove> {
-        let text = lex.slice();
-        let move_regex = Regex::new(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(=[NBRQ])?([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
-        if let Some(captures) = move_regex.captures(text) {
-            let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
-                None => PieceType::Pawn,
-                Some(c) => unsafe { PieceType::from_char(c) }
-            };
-
-            let disambiguation_file = captures.get(2).map(|m| m.as_str().chars().next().unwrap());
-            let disambiguation_rank = captures.get(3).map(|m| m.as_str().chars().next().unwrap());
-
-            let to_file_char = captures.get(5).unwrap().as_str().chars().next().unwrap();
-            let to_rank_char = captures.get(6).unwrap().as_str().chars().next().unwrap();
-            let to_file = to_file_char as u8 - 'a' as u8;
-            let to_rank = to_rank_char as u8 - '1' as u8;
-            let to = unsafe { Square::from_rank_file(to_rank, to_file) };
-
-            let promoted_to = match captures.get(7) {
-                Some(m) => {
-                    let promoted_to_char = m.as_str().chars().nth(1).unwrap();
-                    unsafe { PieceType::from_char(promoted_to_char) }
-                },
-                None => PieceType::NoPieceType
-            };
-
-            let is_capture = captures.get(4).is_some();
-
-            Some(
-                PgnNonCastlingMove {
-                    disambiguation_file,
-                    disambiguation_rank,
-                    to,
-                    piece_moved,
-                    promoted_to,
-                    is_capture,
-                    common_move_info: PgnCommonMoveInfo::from(captures.get(8), captures.get(9), captures.get(10))
-                }
-            )
-        } else {
-            None
-        }
-    }
 }
 
 impl PgnMove for PgnNonCastlingMove {
@@ -101,5 +56,51 @@ impl PgnMove for PgnNonCastlingMove {
 
     fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo {
         &mut self.common_move_info
+    }
+}
+
+impl ParsablePgnToken for PgnNonCastlingMove {
+    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
+        let text = lex.slice();
+        let move_regex = Regex::new(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(=[NBRQ])?([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
+        if let Some(captures) = move_regex.captures(text) {
+            let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
+                None => PieceType::Pawn,
+                Some(c) => unsafe { PieceType::from_char(c) }
+            };
+
+            let disambiguation_file = captures.get(2).map(|m| m.as_str().chars().next().unwrap());
+            let disambiguation_rank = captures.get(3).map(|m| m.as_str().chars().next().unwrap());
+
+            let to_file_char = captures.get(5).unwrap().as_str().chars().next().unwrap();
+            let to_rank_char = captures.get(6).unwrap().as_str().chars().next().unwrap();
+            let to_file = to_file_char as u8 - 'a' as u8;
+            let to_rank = to_rank_char as u8 - '1' as u8;
+            let to = unsafe { Square::from_rank_file(to_rank, to_file) };
+
+            let promoted_to = match captures.get(7) {
+                Some(m) => {
+                    let promoted_to_char = m.as_str().chars().nth(1).unwrap();
+                    unsafe { PieceType::from_char(promoted_to_char) }
+                },
+                None => PieceType::NoPieceType
+            };
+
+            let is_capture = captures.get(4).is_some();
+
+            Ok(
+                PgnNonCastlingMove {
+                    disambiguation_file,
+                    disambiguation_rank,
+                    to,
+                    piece_moved,
+                    promoted_to,
+                    is_capture,
+                    common_move_info: PgnCommonMoveInfo::from(captures.get(8), captures.get(9), captures.get(10))
+                }
+            )
+        } else {
+            Err(PgnLexingError::InvalidMove(text.to_string()))
+        }
     }
 }
