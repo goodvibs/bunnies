@@ -113,7 +113,7 @@ impl PgnParser {
                         self.parse_state = PgnParseState::Moves { is_move_expected: true };
                         Ok(())
                     } else {
-                        Err(PgnParseError::IncorrectMoveNumber(pgn_move_number.to_string()))
+                        Err(PgnParseError::IncorrectMoveNumber(format!("{:?}", pgn_move_number)))
                     }
                 }
             }

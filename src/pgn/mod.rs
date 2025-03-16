@@ -9,3 +9,4 @@ mod pgn_tag;
 mod pgn_move;
 mod lexing_error;
 mod pgn_move_number;
+mod pgn_comment;

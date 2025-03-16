@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 pub enum PgnLexingError {
     InvalidMove(String),
     InvalidTag(String),
-    InvalidComment,
+    InvalidComment(String),
     InvalidVariation,
     InvalidMoveNumber(String),
     InvalidCastlingMove(String),

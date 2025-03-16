@@ -4,6 +4,7 @@ use regex::{Regex};
 use crate::color::Color;
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
+use crate::pgn::pgn_comment::PgnComment;
 use crate::pgn::pgn_move_number::PgnMoveNumber;
 use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
 use crate::pgn::pgn_tag::PgnTag;
@@ -16,7 +17,7 @@ pub trait ParsablePgnToken: Sized {
 #[logos(skip r"[\s\t\n]+")]
 #[logos(error = PgnLexingError)]
 pub enum PgnToken {
-    // Tags [TagName "TagValue"]
+    // Tags [Name "Value"]
     #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"[^"]*"\s*\]"#, PgnTag::parse)]
     Tag(PgnTag),
 
@@ -32,8 +33,8 @@ pub enum PgnToken {
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
-    #[regex(r"\{[^}]*\}", parse_comment)]
-    Comment(String), // Regular comment
+    #[regex(r"\{[^}]*\}", PgnComment::parse)]
+    Comment(PgnComment),
 
     // Start of variation
     #[token("(")]
@@ -50,14 +51,4 @@ pub enum PgnToken {
 
     #[token("*")]
     Incomplete
-}
-
-fn parse_comment(lex: &mut Lexer<PgnToken>) -> Option<String> {
-    let text = lex.slice();
-    let comment_regex = Regex::new(r"\{([^}]*)\}").unwrap();
-
-    match comment_regex.captures(text) {
-        Some(captures) => Some(captures.get(1).unwrap().as_str().to_string()),
-        None => None
-    }
 }

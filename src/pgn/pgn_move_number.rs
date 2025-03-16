@@ -1,3 +1,4 @@
+use logos::Lexer;
 use regex::Regex;
 use crate::pgn::lexing::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
@@ -8,7 +9,7 @@ pub struct PgnMoveNumber {
 }
 
 impl ParsablePgnToken for PgnMoveNumber {
-    fn parse(lex: &mut logos::Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
+    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();
         let number_regex = Regex::new(r"[0-9]+").unwrap();
 
