@@ -7,6 +7,7 @@ use crate::pgn::parsing_error::PgnParseError;
 use crate::pgn::lexing::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
+use crate::pgn::pgn_comment::PgnComment;
 use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
 use crate::pgn::pgn_move::PgnMove;
 use crate::pgn::pgn_move_number::PgnMoveNumber;
@@ -132,13 +133,13 @@ impl PgnParser {
                     self.process_end_variation()?;
                 }
                 PgnToken::Comment(comment) => {
-                    // self.process_comment(comment)?;
+                    self.process_comment(comment)?;
                 }
                 PgnToken::Result(result) => {
-                    // self.process_result(result)?;
+                    self.process_result(result)?;
                 }
                 PgnToken::Incomplete => {
-                    // self.process_incomplete()?;
+                    self.process_incomplete()?;
                 }
             }
         }
@@ -227,8 +228,12 @@ impl PgnParser {
     fn process_start_variation(&mut self) -> Result<(), PgnParseError> {
         match self.parse_state {
             PgnParseState::Moves { move_number_just_seen: false } => {
-                self.context_manager.create_branch_from_previous();
-                Ok(())
+                if self.context_manager.context.previous.is_none() {
+                    Err(PgnParseError::UnexpectedToken("Unexpected start variation token".to_string()))
+                } else {
+                    self.context_manager.create_branch_from_previous();
+                    Ok(())
+                }
             }
             _ => {
                 Err(PgnParseError::UnexpectedToken("Unexpected start variation token".to_string()))
@@ -248,6 +253,34 @@ impl PgnParser {
             }
             _ => {
                 Err(PgnParseError::UnexpectedToken("Unexpected end variation token".to_string()))
+            }
+        }
+    }
+
+    fn process_comment(&mut self, _comment: PgnComment) -> Result<(), PgnParseError> {
+        Ok(()) // TODO
+    }
+
+    fn process_result(&mut self, result: Option<Color>) -> Result<(), PgnParseError> {
+        match self.parse_state {
+            PgnParseState::Moves { move_number_just_seen: false } => {
+                self.parse_state = PgnParseState::ResultFound;
+                Ok(())
+            }
+            _ => {
+                Err(PgnParseError::UnexpectedToken("Unexpected result token".to_string()))
+            }
+        }
+    }
+
+    fn process_incomplete(&mut self) -> Result<(), PgnParseError> {
+        match self.parse_state {
+            PgnParseState::Moves { move_number_just_seen: false } => {
+                self.parse_state = PgnParseState::ResultFound;
+                Ok(())
+            }
+            _ => {
+                Err(PgnParseError::UnexpectedToken("Unexpected incomplete token".to_string()))
             }
         }
     }
