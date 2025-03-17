@@ -16,19 +16,19 @@ use crate::state::{State};
 
 pub struct PgnParser {
     pub parse_state: PgnParsingState,
-    pub object: PgnObject,
-    pub context_manager: PgnBufferedPositionBrancher
+    pub constructed_object: PgnObject,
+    pub buffered_position_manager: PgnBufferedPositionBrancher
 }
 
 impl PgnParser {
     pub fn new() -> PgnParser {
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
-        let context_manager = PgnBufferedPositionBrancher::new(&current_node, State::initial());
+        let buffered_position_manager = PgnBufferedPositionBrancher::new(&current_node, State::initial());
         PgnParser {
             parse_state: PgnParsingState::Tags,
-            object: pgn_object,
-            context_manager,
+            constructed_object: pgn_object,
+            buffered_position_manager,
         }
     }
 
@@ -76,7 +76,7 @@ impl PgnParser {
         if self.parse_state != PgnParsingState::Tags {
             return Err(PgnParsingError::UnexpectedToken(format!("Unexpected tag token: {:?}", tag)));
         }
-        self.object.add_tag(tag.name, tag.value);
+        self.constructed_object.add_tag(tag.name, tag.value);
         Ok(())
     }
 
@@ -91,7 +91,7 @@ impl PgnParser {
                     Err(PgnParsingError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
                 }
                 else {
-                    let expected_fullmove = self.context_manager.current_and_previous.current.state_after_move.get_fullmove();
+                    let expected_fullmove = self.buffered_position_manager.current_and_previous.current.state_after_move.get_fullmove();
                     if pgn_move_number.fullmove_number == expected_fullmove {
                         self.parse_state = PgnParsingState::Moves { move_number_just_seen: true };
                         Ok(())
@@ -109,7 +109,7 @@ impl PgnParser {
     fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParsingError> {
         match self.parse_state {
             PgnParsingState::Moves { move_number_just_seen } => {
-                let current_state = &self.context_manager.current_and_previous.current.state_after_move;
+                let current_state = &self.buffered_position_manager.current_and_previous.current.state_after_move;
                 if !(move_number_just_seen || current_state.side_to_move == Color::Black) {
                     return Err(PgnParsingError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
                 }
@@ -137,7 +137,7 @@ impl PgnParser {
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
-                    self.context_manager.current_and_previous.append_new_move(move_data, new_state);
+                    self.buffered_position_manager.current_and_previous.append_new_move(move_data, new_state);
                     self.parse_state = PgnParsingState::Moves { move_number_just_seen: false };
                     Ok(())
                 } else {
@@ -153,10 +153,10 @@ impl PgnParser {
     fn process_start_variation(&mut self) -> Result<(), PgnParsingError> {
         match self.parse_state {
             PgnParsingState::Moves { move_number_just_seen: false } => {
-                if self.context_manager.current_and_previous.previous.is_none() {
+                if self.buffered_position_manager.current_and_previous.previous.is_none() {
                     Err(PgnParsingError::UnexpectedToken("Unexpected start variation token".to_string()))
                 } else {
-                    self.context_manager.create_branch_from_previous();
+                    self.buffered_position_manager.create_branch_from_previous();
                     Ok(())
                 }
             }
@@ -169,10 +169,10 @@ impl PgnParser {
     fn process_end_variation(&mut self) -> Result<(), PgnParsingError> {
         match self.parse_state {
             PgnParsingState::Moves { move_number_just_seen: false } => {
-                if self.context_manager.stack.is_empty() {
+                if self.buffered_position_manager.stack.is_empty() {
                     Err(PgnParsingError::UnexpectedToken("Unexpected end variation token".to_string()))
                 } else {
-                    self.context_manager.end_branch();
+                    self.buffered_position_manager.end_branch();
                     Ok(())
                 }
             }
