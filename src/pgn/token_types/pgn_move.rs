@@ -11,7 +11,7 @@ pub trait PgnMove: std::fmt::Debug {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct PgnCommonMoveInfo {
+pub struct PgnCommonMoveInfo {
     pub is_check: bool,
     pub is_checkmate: bool,
     pub annotation: Option<String>,

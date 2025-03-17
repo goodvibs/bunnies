@@ -22,7 +22,7 @@ use crate::state::State;
 /// 8. Check or checkmate (optional)
 /// 9. Annotation (optional)
 /// 10. NAG (optional)
-const NON_CASTLING_MOVE_REGEX: &str = r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
+const NON_CASTLING_MOVE_REGEX: &str = r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
 
 #[dynamic]
 static COMPILED_NON_CASTLING_MOVE_REGEX: Regex = Regex::new(NON_CASTLING_MOVE_REGEX).unwrap();
@@ -97,10 +97,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let to = unsafe { Square::from_rank_file(to_rank, to_file) };
 
             let promoted_to = match captures.get(7) {
-                Some(m) => {
-                    let promoted_to_char = m.as_str().chars().nth(1).unwrap();
-                    unsafe { PieceType::from_char(promoted_to_char) }
-                },
+                Some(m) => unsafe { PieceType::from_char(m.as_str().chars().next().unwrap()) },
                 None => PieceType::NoPieceType
             };
 
@@ -123,5 +120,265 @@ impl ParsablePgnToken for PgnNonCastlingMove {
         } else {
             Err(PgnLexingError::InvalidMove(text.to_string()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use logos::Logos;
+    use super::*;
+    use crate::pgn::pgn_token::PgnToken;
+    use crate::piece_type::PieceType;
+    use crate::r#move::Move;
+    use crate::square::Square;
+    use crate::state::State;
+
+    fn create_test_state() -> State {
+        // Create a mid-game position for testing various moves
+        let fen = "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4";
+        State::from_fen(fen).unwrap()
+    }
+
+    #[test]
+    fn test_parse_pawn_move() {
+        let mut lex = PgnToken::lexer("e4");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Pawn);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.is_capture, false);
+        assert_eq!(move_data.promoted_to, PieceType::NoPieceType);
+        assert_eq!(move_data.disambiguation_file, None);
+        assert_eq!(move_data.disambiguation_rank, None);
+    }
+
+    #[test]
+    fn test_parse_piece_move() {
+        let mut lex = PgnToken::lexer("Nf3");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Knight);
+        assert_eq!(move_data.to, Square::F3);
+        assert_eq!(move_data.is_capture, false);
+    }
+
+    #[test]
+    fn test_parse_capture_move() {
+        let mut lex = PgnToken::lexer("Bxe5");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Bishop);
+        assert_eq!(move_data.to, Square::E5);
+        assert_eq!(move_data.is_capture, true);
+    }
+
+    #[test]
+    fn test_parse_pawn_capture() {
+        let mut lex = PgnToken::lexer("exd5");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Pawn);
+        assert_eq!(move_data.to, Square::D5);
+        assert_eq!(move_data.is_capture, true);
+        assert_eq!(move_data.disambiguation_file, Some('e'));
+    }
+
+    #[test]
+    fn test_parse_promotion() {
+        let mut lex = PgnToken::lexer("e8=Q");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Pawn);
+        assert_eq!(move_data.to, Square::E8);
+        assert_eq!(move_data.promoted_to, PieceType::Queen);
+    }
+
+    #[test]
+    fn test_parse_promotion_with_capture() {
+        let mut lex = PgnToken::lexer("dxe8=Q+");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Pawn);
+        assert_eq!(move_data.to, Square::E8);
+        assert_eq!(move_data.is_capture, true);
+        assert_eq!(move_data.promoted_to, PieceType::Queen);
+        assert_eq!(move_data.common_move_info.is_check, true);
+    }
+
+    #[test]
+    fn test_parse_with_disambiguation_file() {
+        let mut lex = PgnToken::lexer("Rfe1");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Rook);
+        assert_eq!(move_data.to, Square::E1);
+        assert_eq!(move_data.disambiguation_file, Some('f'));
+        assert_eq!(move_data.disambiguation_rank, None);
+    }
+
+    #[test]
+    fn test_parse_with_disambiguation_rank() {
+        let mut lex = PgnToken::lexer("R2e1");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Rook);
+        assert_eq!(move_data.to, Square::E1);
+        assert_eq!(move_data.disambiguation_file, None);
+        assert_eq!(move_data.disambiguation_rank, Some('2'));
+    }
+
+    #[test]
+    fn test_parse_with_both_disambiguation() {
+        let mut lex = PgnToken::lexer("Qd5e4");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Queen);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.disambiguation_file, Some('d'));
+        assert_eq!(move_data.disambiguation_rank, Some('5'));
+    }
+
+    #[test]
+    fn test_parse_with_check() {
+        let mut lex = PgnToken::lexer("Qe4+");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Queen);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.common_move_info.is_check, true);
+        assert_eq!(move_data.common_move_info.is_checkmate, false);
+    }
+
+    #[test]
+    fn test_parse_with_checkmate() {
+        let mut lex = PgnToken::lexer("Qe4#");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Queen);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.common_move_info.is_check, true);
+        assert_eq!(move_data.common_move_info.is_checkmate, true);
+    }
+
+    #[test]
+    fn test_parse_with_annotation() {
+        let mut lex = PgnToken::lexer("Qe4!?");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Queen);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.common_move_info.annotation, Some("!?".to_string()));
+    }
+
+    #[test]
+    fn test_parse_with_nag() {
+        let mut lex = PgnToken::lexer("Qe4 $1");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Queen);
+        assert_eq!(move_data.to, Square::E4);
+        assert_eq!(move_data.common_move_info.nag, Some(1));
+    }
+
+    #[test]
+    fn test_parse_complex_move() {
+        let mut lex = PgnToken::lexer("Rd3xe3+!? $2");
+        lex.next();
+        let move_data = PgnNonCastlingMove::parse(&mut lex).unwrap();
+
+        assert_eq!(move_data.piece_moved, PieceType::Rook);
+        assert_eq!(move_data.to, Square::E3);
+        assert_eq!(move_data.is_capture, true);
+        assert_eq!(move_data.disambiguation_file, Some('d'));
+        assert_eq!(move_data.disambiguation_rank, Some('3'));
+        assert_eq!(move_data.common_move_info.is_check, true);
+        assert_eq!(move_data.common_move_info.annotation, Some("!?".to_string()));
+        assert_eq!(move_data.common_move_info.nag, Some(2));
+    }
+
+    #[test]
+    fn test_matches_move() {
+        let state = create_test_state();
+
+        // Test knight move
+        let knight_move = PgnNonCastlingMove {
+            piece_moved: PieceType::Knight,
+            disambiguation_file: None,
+            disambiguation_rank: None,
+            to: Square::D2,
+            promoted_to: PieceType::NoPieceType,
+            is_capture: false,
+            common_move_info: PgnCommonMoveInfo {
+                is_check: false,
+                is_checkmate: false,
+                annotation: None,
+                nag: None
+            }
+        };
+
+        let actual_move = Move::new_non_promotion(
+            Square::F3,
+            Square::D2,
+            MoveFlag::NormalMove
+        );
+
+        assert_eq!(knight_move.matches_move(actual_move, &state), true);
+
+        // Test with disambiguation
+        let knight_move_with_file = PgnNonCastlingMove {
+            piece_moved: PieceType::Knight,
+            disambiguation_file: Some('f'),
+            disambiguation_rank: None,
+            to: Square::D2,
+            promoted_to: PieceType::NoPieceType,
+            is_capture: false,
+            common_move_info: PgnCommonMoveInfo {
+                is_check: false,
+                is_checkmate: false,
+                annotation: None,
+                nag: None
+            }
+        };
+
+        assert_eq!(knight_move_with_file.matches_move(actual_move, &state), true);
+
+        // Test with incorrect file disambiguation
+        let knight_move_with_wrong_file = PgnNonCastlingMove {
+            piece_moved: PieceType::Knight,
+            disambiguation_file: Some('g'),
+            disambiguation_rank: None,
+            to: Square::D2,
+            promoted_to: PieceType::NoPieceType,
+            is_capture: false,
+            common_move_info: PgnCommonMoveInfo {
+                is_check: false,
+                is_checkmate: false,
+                annotation: None,
+                nag: None
+            }
+        };
+
+        assert_eq!(knight_move_with_wrong_file.matches_move(actual_move, &state), false);
+    }
+
+    #[test]
+    fn test_invalid_move() {
+        let mut lex = PgnToken::lexer("Xx9");
+        lex.next();
+        let result = PgnNonCastlingMove::parse(&mut lex);
+        assert!(result.is_err());
     }
 }
