@@ -30,9 +30,10 @@ impl Move {
 
             let capture_str = if is_capture { "x" } else { "" };
 
-            let promotion_str = match flag {
-                MoveFlag::Promotion => format!("={}", promotion.to_char()),
-                _ => "".to_string()
+            let promotion_str = if flag == MoveFlag::Promotion {
+                format!("={}", promotion.to_char())
+            } else {
+                "".to_string()
             };
 
             let disambiguation_str = match (disambiguation_file, disambiguation_rank) {
