@@ -5,6 +5,7 @@ use crate::pgn::parsing_error::PgnParsingError;
 use crate::pgn::pgn_token::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData};
+use crate::pgn::parsing_state::PgnParsingState;
 use crate::pgn::pgn_buffered_position_brancher::PgnBufferedPositionBrancher;
 use crate::pgn::token_types::PgnComment;
 use crate::pgn::token_types::PgnNonCastlingMove;
@@ -12,15 +13,6 @@ use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnTag;
 use crate::state::{State};
-
-#[derive(Debug, PartialEq)]
-pub enum PgnParsingState {
-    Tags,
-    Moves {
-        move_number_just_seen: bool,
-    },
-    ResultFound
-}
 
 pub struct PgnParser {
     pub parse_state: PgnParsingState,

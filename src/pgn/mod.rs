@@ -1,4 +1,4 @@
-mod parsing;
+mod parser;
 mod pgn_token;
 mod parsing_error;
 mod move_tree_node;
@@ -8,3 +8,4 @@ mod token_types;
 mod pgn_position_context;
 mod pgn_double_position_context;
 mod pgn_buffered_position_brancher;
+mod parsing_state;
