@@ -5,3 +5,6 @@ mod move_tree_node;
 mod pgn_object;
 mod lexing_error;
 mod token_types;
+mod pgn_position_context;
+mod pgn_double_position_context;
+mod pgn_buffered_position_brancher;

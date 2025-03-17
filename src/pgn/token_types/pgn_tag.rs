@@ -4,7 +4,7 @@ use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct PgnTag {
+pub struct PgnTag {
     pub name: String,
     pub value: String
 }

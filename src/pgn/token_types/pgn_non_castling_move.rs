@@ -9,7 +9,7 @@ use crate::square::Square;
 use crate::state::State;
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct PgnNonCastlingMove {
+pub struct PgnNonCastlingMove {
     pub disambiguation_file: Option<char>,
     pub disambiguation_rank: Option<char>,
     pub to: Square,

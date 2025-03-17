@@ -1,4 +1,3 @@
-use std::fmt::{Display};
 use logos::{Logos, Lexer};
 use crate::color::Color;
 use crate::pgn::lexing_error::PgnLexingError;

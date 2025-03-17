@@ -7,7 +7,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::state::State;
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct PgnCastlingMove {
+pub struct PgnCastlingMove {
     pub is_kingside: bool,
     pub common_move_info: PgnCommonMoveInfo
 }

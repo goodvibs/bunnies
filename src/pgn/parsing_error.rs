@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
-pub enum PgnParseError {
+pub enum PgnParsingError {
     InvalidTag(String),
     IncorrectMoveNumber(String),
     IllegalMove(String),
@@ -11,10 +11,10 @@ pub enum PgnParseError {
     LexingError(String),
 }
 
-impl Display for PgnParseError {
+impl Display for PgnParsingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl Error for PgnParseError {}
+impl Error for PgnParsingError {}
