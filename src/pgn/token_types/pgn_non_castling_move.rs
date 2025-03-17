@@ -105,6 +105,9 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             };
 
             let is_capture = captures.get(4).is_some();
+            let check_or_checkmate = captures.get(8);
+            let annotation = captures.get(9);
+            let nag = captures.get(10);
 
             Ok(
                 PgnNonCastlingMove {
@@ -114,7 +117,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
                     piece_moved,
                     promoted_to,
                     is_capture,
-                    common_move_info: PgnCommonMoveInfo::from(captures.get(8), captures.get(9), captures.get(10))
+                    common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag)
                 }
             )
         } else {
