@@ -71,7 +71,14 @@ impl<'a> PgnParser<'a> {
                 }
             }
         }
-        Ok(())
+
+        if !self.buffered_position_manager.stack.is_empty() {
+            Err(PgnParsingError::UnexpectedEndOfInput("Unclosed variation".to_string()))
+        } else if let PgnParsingState::Moves { move_number_just_seen: true } = self.parse_state {
+            Err(PgnParsingError::UnexpectedEndOfInput("End of input after move number".to_string()))
+        } else {
+            Ok(())
+        }
     }
 
     fn process_tag(&mut self, tag: PgnTag) -> Result<(), PgnParsingError> {
