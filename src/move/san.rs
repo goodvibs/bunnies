@@ -43,7 +43,7 @@ impl Move {
                 (None, None) => "".to_string()
             };
 
-            format!("{}{}{}{}{}", piece_str, disambiguation_str, capture_str, dst_square.to_string(), promotion_str)
+            format!("{}{}{}{}{}", piece_str, disambiguation_str, capture_str, dst_square.to_string(), promotion_str).as_str()
         };
 
         let check_or_checkmate_str = if is_checkmate { "#" } else if is_check { "+" } else { "" };
