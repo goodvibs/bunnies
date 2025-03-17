@@ -9,10 +9,10 @@ impl Move {
         let flag = self.get_flag();
 
         let move_str = if flag == MoveFlag::Castling {
-            if dst_square.get_file() == 6 {
-                "O-O".to_string()
-            } else {
-                "O-O-O".to_string()
+            match dst_square.get_file() {
+                6 => "O-O",
+                2 => "O-O-O",
+                _ => panic!("Invalid castling move")
             }
         } else {
             let src_square = self.get_source();
