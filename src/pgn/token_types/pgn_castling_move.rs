@@ -15,7 +15,7 @@ use crate::state::State;
 /// 3. Check or checkmate
 /// 4. Annotation
 /// 5. NAG
-const CASTLING_MOVE_REGEX: &str = r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$(\d+))?";
+const CASTLING_MOVE_REGEX: &str = r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?";
 
 #[dynamic]
 static COMPILED_CASTLING_MOVE_REGEX: Regex = Regex::new(CASTLING_MOVE_REGEX).unwrap();

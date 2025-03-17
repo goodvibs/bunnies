@@ -1,5 +1,6 @@
 use logos::Lexer;
 use regex::Regex;
+use static_init::dynamic;
 use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
@@ -7,6 +8,24 @@ use crate::piece_type::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::square::Square;
 use crate::state::State;
+
+/// Regex for parsing non-castling moves.
+/// Capturing groups:
+/// 0. Everything
+/// 1. Piece moved (optional, pawn doesn't require this)
+/// 2. Disambiguation file (optional)
+/// 3. Disambiguation rank (optional)
+/// 4. Capture (optional)
+/// 5. Destination file
+/// 6. Destination rank
+/// 7. Promotion (optional)
+/// 8. Check or checkmate (optional)
+/// 9. Annotation (optional)
+/// 10. NAG (optional)
+const NON_CASTLING_MOVE_REGEX: &str = r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
+
+#[dynamic]
+static COMPILED_NON_CASTLING_MOVE_REGEX: Regex = Regex::new(NON_CASTLING_MOVE_REGEX).unwrap();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnNonCastlingMove {
@@ -62,8 +81,7 @@ impl PgnMove for PgnNonCastlingMove {
 impl ParsablePgnToken for PgnNonCastlingMove {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();
-        let move_regex = Regex::new(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(=[NBRQ])?([+#])?([?!]*)\s*(\$[0-9]+)?").unwrap();
-        if let Some(captures) = move_regex.captures(text) {
+        if let Some(captures) = COMPILED_NON_CASTLING_MOVE_REGEX.captures(text) {
             let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
                 None => PieceType::Pawn,
                 Some(c) => unsafe { PieceType::from_char(c) }

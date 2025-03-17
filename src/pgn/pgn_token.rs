@@ -24,10 +24,10 @@ pub enum PgnToken {
     MoveNumber(PgnMoveNumber),
 
     // Moves like g4, Nf6, exd5+?!, etc.
-    #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*(\s+\$[0-9]+)?", PgnNonCastlingMove::parse)]
+    #[regex(r"([PNBRQK]?)([a-h]?)([1-8]?)(x?)([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?", PgnNonCastlingMove::parse)]
     NonCastlingMove(PgnNonCastlingMove),
 
-    #[regex(r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$(\d+))?", PgnCastlingMove::parse)]
+    #[regex(r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?", PgnCastlingMove::parse)]
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
