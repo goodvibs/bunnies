@@ -16,7 +16,7 @@ pub trait ParsablePgnToken: Sized {
 #[logos(error = PgnLexingError)]
 pub enum PgnToken {
     // Tags [Name "Value"]
-    #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"[^"]*"\s*\]"#, PgnTag::parse)]
+    #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#, PgnTag::parse)]
     Tag(PgnTag),
 
     // Move numbers like 1. or 1...
