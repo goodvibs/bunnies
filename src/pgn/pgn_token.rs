@@ -31,7 +31,7 @@ pub enum PgnToken {
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
-    #[regex(r"\{[^}]*\}", PgnComment::parse)]
+    #[regex(r"\{(.*)\}", PgnComment::parse)]
     Comment(PgnComment),
 
     // Start of variation
