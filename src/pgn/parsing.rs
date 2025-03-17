@@ -36,12 +36,13 @@ pub struct PgnDoublePositionContext {
 }
 
 impl PgnDoublePositionContext {
-    pub fn next(&mut self, new_node: &Rc<RefCell<MoveTreeNode>>, new_state: State) {
-        self.current.node.borrow_mut().add_continuation(new_node);
+    pub fn append_new_move(&mut self, new_move_data: MoveData, new_state: State) {
+        let new_node = Rc::new(RefCell::new(MoveTreeNode::new(new_move_data, None)));
+        self.current.node.borrow_mut().add_continuation(&new_node);
 
         // Create the new value we want to assign to self.current
         let new_current = PgnPositionContext {
-            node: Rc::clone(new_node),
+            node: new_node,
             state_after_move: new_state,
         };
 
@@ -54,14 +55,14 @@ impl PgnDoublePositionContext {
 }
 
 pub struct PgnDoublePositionContextManager {
-    pub context: PgnDoublePositionContext,
+    pub current_and_previous: PgnDoublePositionContext,
     pub stack: Vec<PgnDoublePositionContext>,
 }
 
 impl PgnDoublePositionContextManager {
     pub fn new(root_node: &Rc<RefCell<MoveTreeNode>>, initial_state: State) -> PgnDoublePositionContextManager {
         PgnDoublePositionContextManager {
-            context: PgnDoublePositionContext {
+            current_and_previous: PgnDoublePositionContext {
                 current: PgnPositionContext {
                     node: Rc::clone(root_node),
                     state_after_move: initial_state,
@@ -73,18 +74,18 @@ impl PgnDoublePositionContextManager {
     }
 
     pub fn create_branch_from_previous(&mut self) {
-        let clone_of_previous = self.context.previous.clone().expect("No previous node to create branch from");
+        let clone_of_previous = self.current_and_previous.previous.clone().expect("No previous node to create branch from");
         let new_context = PgnDoublePositionContext {
             current: clone_of_previous,
             previous: None,
         };
-        let old_context = std::mem::replace(&mut self.context, new_context);
+        let old_context = std::mem::replace(&mut self.current_and_previous, new_context);
         self.stack.push(old_context);
     }
 
     pub fn end_branch(&mut self) {
         let previous_context = self.stack.pop().expect("No previous context to return to");
-        self.context = previous_context;
+        self.current_and_previous = previous_context;
     }
 }
 
@@ -165,7 +166,7 @@ impl PgnParser {
                     Err(PgnParseError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
                 }
                 else {
-                    let expected_fullmove = self.context_manager.context.current.state_after_move.get_fullmove();
+                    let expected_fullmove = self.context_manager.current_and_previous.current.state_after_move.get_fullmove();
                     if pgn_move_number.fullmove_number == expected_fullmove {
                         self.parse_state = PgnParseState::Moves { move_number_just_seen: true };
                         Ok(())
@@ -183,7 +184,7 @@ impl PgnParser {
     fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParseError> {
         match self.parse_state {
             PgnParseState::Moves { move_number_just_seen } => {
-                let mut current_state = &self.context_manager.context.current.state_after_move;
+                let mut current_state = &self.context_manager.current_and_previous.current.state_after_move;
                 if !(move_number_just_seen || current_state.side_to_move == Color::Black) {
                     return Err(PgnParseError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
                 }
@@ -211,8 +212,7 @@ impl PgnParser {
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
-                    let new_node = Rc::new(RefCell::new(MoveTreeNode::new(move_data, None)));
-                    self.context_manager.context.next(&new_node, new_state);
+                    self.context_manager.current_and_previous.append_new_move(move_data, new_state);
                     self.parse_state = PgnParseState::Moves { move_number_just_seen: false };
                     Ok(())
                 } else {
@@ -228,7 +228,7 @@ impl PgnParser {
     fn process_start_variation(&mut self) -> Result<(), PgnParseError> {
         match self.parse_state {
             PgnParseState::Moves { move_number_just_seen: false } => {
-                if self.context_manager.context.previous.is_none() {
+                if self.context_manager.current_and_previous.previous.is_none() {
                     Err(PgnParseError::UnexpectedToken("Unexpected start variation token".to_string()))
                 } else {
                     self.context_manager.create_branch_from_previous();
