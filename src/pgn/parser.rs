@@ -119,7 +119,7 @@ impl<'a> PgnParser<'a> {
         match self.parse_state {
             PgnParsingState::Moves { move_number_just_seen } => {
                 let current_state = &self.buffered_position_manager.current_and_previous.current.state_after_move;
-                if !(move_number_just_seen || current_state.side_to_move == Color::Black) {
+                if !move_number_just_seen && current_state.side_to_move == Color::White {
                     return Err(PgnParsingError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
                 }
                 let possible_moves = current_state.calc_legal_moves();
