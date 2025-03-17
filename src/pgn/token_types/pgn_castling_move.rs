@@ -1,6 +1,6 @@
 use logos::Lexer;
 use regex::Regex;
-use static_init::{dynamic, Lazy};
+use static_init::{dynamic};
 use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};

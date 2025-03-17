@@ -131,13 +131,6 @@ mod tests {
     use crate::piece_type::PieceType;
     use crate::r#move::Move;
     use crate::square::Square;
-    use crate::state::State;
-
-    fn create_test_state() -> State {
-        // Create a mid-game position for testing various moves
-        let fen = "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4";
-        State::from_fen(fen).unwrap()
-    }
 
     #[test]
     fn test_parse_pawn_move() {
@@ -311,14 +304,14 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = create_test_state();
+        let state = State::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4").unwrap();
 
         // Test knight move
         let knight_move = PgnNonCastlingMove {
             piece_moved: PieceType::Knight,
             disambiguation_file: None,
             disambiguation_rank: None,
-            to: Square::D2,
+            to: Square::D4,
             promoted_to: PieceType::NoPieceType,
             is_capture: false,
             common_move_info: PgnCommonMoveInfo {
@@ -330,48 +323,30 @@ mod tests {
         };
 
         let actual_move = Move::new_non_promotion(
+            Square::D4,
             Square::F3,
-            Square::D2,
             MoveFlag::NormalMove
         );
 
-        assert_eq!(knight_move.matches_move(actual_move, &state), true);
+        assert!(knight_move.matches_move(actual_move, &state));
 
         // Test with disambiguation
-        let knight_move_with_file = PgnNonCastlingMove {
-            piece_moved: PieceType::Knight,
-            disambiguation_file: Some('f'),
-            disambiguation_rank: None,
-            to: Square::D2,
-            promoted_to: PieceType::NoPieceType,
-            is_capture: false,
-            common_move_info: PgnCommonMoveInfo {
-                is_check: false,
-                is_checkmate: false,
-                annotation: None,
-                nag: None
-            }
+        let knight_move_with_file = {
+            let mut knight_move = knight_move.clone();
+            knight_move.disambiguation_file = Some('f');
+            knight_move
         };
 
-        assert_eq!(knight_move_with_file.matches_move(actual_move, &state), true);
+        assert!(knight_move_with_file.matches_move(actual_move, &state));
 
         // Test with incorrect file disambiguation
-        let knight_move_with_wrong_file = PgnNonCastlingMove {
-            piece_moved: PieceType::Knight,
-            disambiguation_file: Some('g'),
-            disambiguation_rank: None,
-            to: Square::D2,
-            promoted_to: PieceType::NoPieceType,
-            is_capture: false,
-            common_move_info: PgnCommonMoveInfo {
-                is_check: false,
-                is_checkmate: false,
-                annotation: None,
-                nag: None
-            }
+        let knight_move_with_wrong_file = {
+            let mut knight_move = knight_move.clone();
+            knight_move.disambiguation_file = Some('e');
+            knight_move
         };
 
-        assert_eq!(knight_move_with_wrong_file.matches_move(actual_move, &state), false);
+        assert!(!knight_move_with_wrong_file.matches_move(actual_move, &state));
     }
 
     #[test]
