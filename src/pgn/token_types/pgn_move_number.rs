@@ -14,6 +14,12 @@ pub struct PgnMoveNumber {
     pub fullmove_number: u16
 }
 
+impl PgnMoveNumber {
+    pub fn render(&self, num_periods: usize) -> String {
+        format!("{}{}", self.fullmove_number, ".".repeat(num_periods))
+    }
+}
+
 impl ParsablePgnToken for PgnMoveNumber {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();

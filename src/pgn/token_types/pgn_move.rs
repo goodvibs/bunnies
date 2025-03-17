@@ -8,6 +8,8 @@ pub trait PgnMove: std::fmt::Debug {
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 
     fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo;
+
+    fn render(&self, include_annotation: bool, include_nag: bool) -> String;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -16,6 +18,35 @@ pub struct PgnCommonMoveInfo {
     pub is_checkmate: bool,
     pub annotation: Option<String>,
     pub nag: Option<u8>
+}
+
+impl PgnCommonMoveInfo {
+    pub fn render(&self, include_annotation: bool, include_nag: bool) -> String {
+        let check_or_checkmate = if self.is_checkmate {
+            "#"
+        } else if self.is_check {
+            "+"
+        } else {
+            ""
+        };
+
+        let annotation = if include_annotation {
+            self.annotation.as_deref().unwrap_or("")
+        } else {
+            ""
+        };
+
+        let nag = if include_nag {
+            match self.nag {
+                Some(nag) => format!(" ${}", nag),
+                None => "".to_string()
+            }
+        } else {
+            "".to_string()
+        };
+
+        format!("{}{}{}", check_or_checkmate, annotation, nag)
+    }
 }
 
 impl PgnCommonMoveInfo {

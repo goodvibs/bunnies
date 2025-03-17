@@ -76,6 +76,35 @@ impl PgnMove for PgnNonCastlingMove {
     fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo {
         &mut self.common_move_info
     }
+
+    fn render(&self, include_annotation: bool, include_nag: bool) -> String {
+        let piece = if self.piece_moved == PieceType::Pawn {
+            ""
+        } else {
+            &*self.piece_moved.to_char().to_string()
+        };
+
+        let disambiguation = match (self.disambiguation_file, self.disambiguation_rank) {
+            (Some(file), Some(rank)) => format!("{}{}", file, rank),
+            (Some(file), None) => file.to_string(),
+            (None, Some(rank)) => rank.to_string(),
+            (None, None) => "".to_string()
+        };
+
+        let capture = if self.is_capture { "x" } else { "" };
+
+        let destination = self.to.to_string();
+
+        let promotion = if self.promoted_to != PieceType::NoPieceType {
+            format!("={}", self.promoted_to.to_char())
+        } else {
+            "".to_string()
+        };
+
+        let ending = self.common_move_info.render(include_annotation, include_nag);
+
+        format!("{}{}{}{}{}{}", piece, disambiguation, capture, destination, promotion, ending)
+    }
 }
 
 impl ParsablePgnToken for PgnNonCastlingMove {

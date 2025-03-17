@@ -20,6 +20,12 @@ pub struct PgnTag {
     pub value: String
 }
 
+impl PgnTag {
+    pub fn render(&self) -> String {
+        format!("[{} \"{}\"]", self.name, self.value)
+    }
+}
+
 impl ParsablePgnToken for PgnTag {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();

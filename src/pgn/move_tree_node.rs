@@ -38,4 +38,25 @@ impl MoveTreeNode {
     pub fn has_continuations(&self) -> bool {
         !self.continuations.is_empty()
     }
+
+    pub fn render(&self, include_variations: bool, depth: usize) -> String {
+        let mut result = String::new();
+        if let Some(move_data) = &self.move_data {
+            result.push_str(&format!("{}{}", "  ".repeat(depth), move_data.mv.to_string()));
+            if let Some(annotation) = &move_data.annotation {
+                result.push_str(&format!(" {{ {} }}", annotation));
+            }
+            if let Some(nag) = move_data.nag {
+                result.push_str(&format!(" ${}", nag));
+            }
+            result.push_str("\n");
+        }
+        if let Some(comment) = &self.comment {
+            result.push_str(&format!("{}; {}\n", "  ".repeat(depth), comment));
+        }
+        for continuation in &self.continuations {
+            result.push_str(&continuation.borrow().render(include_variations, depth + 1));
+        }
+        result
+    }
 }

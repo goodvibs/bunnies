@@ -18,6 +18,12 @@ pub struct PgnComment {
     pub comment: String
 }
 
+impl PgnComment {
+    pub fn render(&self) -> String {
+        format!("{{{}}}", self.comment)
+    }
+}
+
 impl ParsablePgnToken for PgnComment {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();
