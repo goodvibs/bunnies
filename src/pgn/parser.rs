@@ -1,4 +1,4 @@
-use logos::Logos;
+use logos::{Lexer, Logos};
 use crate::color::Color;
 use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParsingError;
@@ -14,27 +14,29 @@ use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnTag;
 use crate::state::{State};
 
-pub struct PgnParser {
+pub struct PgnParser<'a> {
+    pub lexer: Lexer<'a, PgnToken>,
     pub parse_state: PgnParsingState,
     pub constructed_object: PgnObject,
     pub buffered_position_manager: PgnBufferedPositionBrancher
 }
 
-impl PgnParser {
-    pub fn new() -> PgnParser {
+impl<'a> PgnParser<'a> {
+    pub fn new(pgn: &str) -> PgnParser {
+        let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager = PgnBufferedPositionBrancher::new(&current_node, State::initial());
         PgnParser {
+            lexer,
             parse_state: PgnParsingState::Tags,
             constructed_object: pgn_object,
             buffered_position_manager,
         }
     }
 
-    pub fn parse(&mut self, pgn: &str) -> Result<(), PgnParsingError> {
-        let mut tokens = PgnToken::lexer(pgn);
-        while let Some(token) = tokens.next() {
+    pub fn parse(&mut self) -> Result<(), PgnParsingError> {
+        while let Some(token) = self.lexer.next() {
             let token = match token {
                 Ok(token) => token,
                 Err(e) => return Err(PgnParsingError::LexingError(format!("Error while lexing: {:?}", e))),
