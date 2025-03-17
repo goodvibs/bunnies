@@ -4,14 +4,14 @@ use crate::r#move::move_flag::MoveFlag;
 
 impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.
-    pub fn san(&self, moved_piece: PieceType, disambiguation_file: Option<char>, disambiguation_rank: Option<char>, is_check: bool, is_checkmate: bool, is_capture: bool) -> String {
+    pub fn san(&self, moved_piece: PieceType, disambiguation_str: &str, is_check: bool, is_checkmate: bool, is_capture: bool) -> String {
         let dst_square = self.get_destination();
         let flag = self.get_flag();
 
         let move_str = if flag == MoveFlag::Castling {
             match dst_square.get_file() {
-                6 => "O-O",
-                2 => "O-O-O",
+                6 => "O-O".to_string(),
+                2 => "O-O-O".to_string(),
                 _ => panic!("Invalid castling move")
             }
         } else {
@@ -19,12 +19,12 @@ impl Move {
             let promotion = self.get_promotion();
 
             let piece_str = match moved_piece {
-                PieceType::Pawn => if is_capture { src_square.get_file_char().to_string().as_str() } else { "" },
-                PieceType::Knight => "N",
-                PieceType::Bishop => "B",
-                PieceType::Rook => "R",
-                PieceType::Queen => "Q",
-                PieceType::King => "K",
+                PieceType::Pawn => if is_capture { src_square.get_file_char().to_string() } else { "".to_string() },
+                PieceType::Knight => "N".to_string(),
+                PieceType::Bishop => "B".to_string(),
+                PieceType::Rook => "R".to_string(),
+                PieceType::Queen => "Q".to_string(),
+                PieceType::King => "K".to_string(),
                 _ => panic!("Invalid piece type")
             };
 
@@ -36,14 +36,7 @@ impl Move {
                 "".to_string()
             };
 
-            let disambiguation_str = match (disambiguation_file, disambiguation_rank) {
-                (Some(file), Some(rank)) => format!("{}{}", file, rank),
-                (Some(file), None) => format!("{}", file),
-                (None, Some(rank)) => format!("{}", rank),
-                (None, None) => "".to_string()
-            };
-
-            format!("{}{}{}{}{}", piece_str, disambiguation_str, capture_str, dst_square.to_string(), promotion_str).as_str()
+            format!("{}{}{}{}{}", piece_str, disambiguation_str, capture_str, dst_square.to_string(), promotion_str)
         };
 
         let check_or_checkmate_str = if is_checkmate { "#" } else if is_check { "+" } else { "" };
