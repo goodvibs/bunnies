@@ -1,5 +1,6 @@
 use logos::Lexer;
 use regex::Regex;
+use static_init::{dynamic, Lazy};
 use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
@@ -15,6 +16,9 @@ use crate::state::State;
 /// 4. Annotation
 /// 5. NAG
 const CASTLING_MOVE_REGEX: &str = r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$(\d+))?";
+
+#[dynamic]
+static COMPILED_CASTLING_MOVE_REGEX: Regex = Regex::new(CASTLING_MOVE_REGEX).unwrap();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnCastlingMove {
@@ -46,8 +50,7 @@ impl PgnMove for PgnCastlingMove {
 impl ParsablePgnToken for PgnCastlingMove {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();
-        let move_regex = Regex::new(CASTLING_MOVE_REGEX).unwrap();
-        if let Some(captures) = move_regex.captures(text) {
+        if let Some(captures) = COMPILED_CASTLING_MOVE_REGEX.captures(text) {
             let is_kingside = captures.get(2).is_some();
 
             let check_or_checkmate = captures.get(3);
