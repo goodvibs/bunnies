@@ -12,7 +12,7 @@ pub trait ParsablePgnToken: Sized {
 }
 
 #[derive(Logos, Debug, PartialEq, Clone)]
-#[logos(skip r"[\s\t\n]+")]
+#[logos(skip r"\s+")]
 #[logos(error = PgnLexingError)]
 pub enum PgnToken {
     // Tags [Name "Value"]
@@ -27,7 +27,7 @@ pub enum PgnToken {
     #[regex(r"[PNBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?[?!]*(\s+\$[0-9]+)?", PgnNonCastlingMove::parse)]
     NonCastlingMove(PgnNonCastlingMove),
 
-    #[regex(r"((O-O(-O)?)|(0-0(-0)?))[+#]?[?!]*(\s+\$[0-9]+)?", PgnCastlingMove::parse)]
+    #[regex(r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$(\d+))?", PgnCastlingMove::parse)]
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
