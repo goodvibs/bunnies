@@ -2,7 +2,7 @@ use logos::Lexer;
 use regex::Regex;
 use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
-use crate::pgn::pgn_move::{PgnCommonMoveInfo, PgnMove};
+use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::piece_type::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::square::Square;

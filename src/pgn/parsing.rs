@@ -2,16 +2,16 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use logos::Logos;
 use crate::color::Color;
-use crate::pgn::pgn_castling_move::PgnCastlingMove;
+use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParseError;
 use crate::pgn::pgn_token::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
-use crate::pgn::pgn_comment::PgnComment;
-use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
-use crate::pgn::pgn_move::PgnMove;
-use crate::pgn::pgn_move_number::PgnMoveNumber;
-use crate::pgn::pgn_tag::PgnTag;
+use crate::pgn::token_types::PgnComment;
+use crate::pgn::token_types::PgnNonCastlingMove;
+use crate::pgn::token_types::PgnMove;
+use crate::pgn::token_types::PgnMoveNumber;
+use crate::pgn::token_types::PgnTag;
 use crate::state::{State};
 
 #[derive(Debug, PartialEq)]

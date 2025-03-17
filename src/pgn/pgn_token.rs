@@ -2,11 +2,11 @@ use std::fmt::{Display};
 use logos::{Logos, Lexer};
 use crate::color::Color;
 use crate::pgn::lexing_error::PgnLexingError;
-use crate::pgn::pgn_castling_move::PgnCastlingMove;
-use crate::pgn::pgn_comment::PgnComment;
-use crate::pgn::pgn_move_number::PgnMoveNumber;
-use crate::pgn::pgn_non_castling_move::PgnNonCastlingMove;
-use crate::pgn::pgn_tag::PgnTag;
+use crate::pgn::token_types::PgnCastlingMove;
+use crate::pgn::token_types::PgnComment;
+use crate::pgn::token_types::PgnMoveNumber;
+use crate::pgn::token_types::PgnNonCastlingMove;
+use crate::pgn::token_types::PgnTag;
 
 pub trait ParsablePgnToken: Sized {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError>;
