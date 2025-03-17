@@ -6,13 +6,9 @@ pub enum PgnLexingError {
     InvalidMove(String),
     InvalidTag(String),
     InvalidComment(String),
-    InvalidVariation,
     InvalidMoveNumber(String),
     InvalidCastlingMove(String),
-    InvalidPromotion,
-    InvalidAnnotation,
-    InvalidResult,
-    InvalidToken
+    InvalidToken(String),
 }
 
 impl Display for PgnLexingError {
@@ -25,6 +21,6 @@ impl Error for PgnLexingError {}
 
 impl Default for PgnLexingError {
     fn default() -> Self {
-        PgnLexingError::InvalidToken
+        PgnLexingError::InvalidToken("".to_string())
     }
 }

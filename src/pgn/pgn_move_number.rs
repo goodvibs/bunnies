@@ -1,6 +1,6 @@
 use logos::Lexer;
 use regex::Regex;
-use crate::pgn::lexing::{ParsablePgnToken, PgnToken};
+use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

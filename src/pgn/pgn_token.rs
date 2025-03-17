@@ -1,6 +1,5 @@
 use std::fmt::{Display};
 use logos::{Logos, Lexer};
-use regex::{Regex};
 use crate::color::Color;
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;

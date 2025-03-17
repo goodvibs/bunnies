@@ -4,7 +4,7 @@ use logos::Logos;
 use crate::color::Color;
 use crate::pgn::pgn_castling_move::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParseError;
-use crate::pgn::lexing::{PgnToken};
+use crate::pgn::pgn_token::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
 use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
 use crate::pgn::pgn_comment::PgnComment;
