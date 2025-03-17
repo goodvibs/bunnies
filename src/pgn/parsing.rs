@@ -24,23 +24,23 @@ pub enum PgnParseState {
 }
 
 #[derive(Clone)]
-pub struct EnrichedMoveTreeNode {
+pub struct PgnPositionContext {
     pub node: Rc<RefCell<MoveTreeNode>>,
     pub state_after_move: State,
 }
 
 #[derive(Clone)]
-pub struct Context {
-    pub current: EnrichedMoveTreeNode,
-    pub previous: Option<EnrichedMoveTreeNode>,
+pub struct PgnDoublePositionContext {
+    pub current: PgnPositionContext,
+    pub previous: Option<PgnPositionContext>,
 }
 
-impl Context {
+impl PgnDoublePositionContext {
     pub fn next(&mut self, new_node: &Rc<RefCell<MoveTreeNode>>, new_state: State) {
         self.current.node.borrow_mut().add_continuation(new_node);
 
         // Create the new value we want to assign to self.current
-        let new_current = EnrichedMoveTreeNode {
+        let new_current = PgnPositionContext {
             node: Rc::clone(new_node),
             state_after_move: new_state,
         };
@@ -53,16 +53,16 @@ impl Context {
     }
 }
 
-pub struct ContextManager {
-    pub context: Context,
-    pub stack: Vec<Context>,
+pub struct PgnDoublePositionContextManager {
+    pub context: PgnDoublePositionContext,
+    pub stack: Vec<PgnDoublePositionContext>,
 }
 
-impl ContextManager {
-    pub fn new(root_node: &Rc<RefCell<MoveTreeNode>>, initial_state: State) -> ContextManager {
-        ContextManager {
-            context: Context {
-                current: EnrichedMoveTreeNode {
+impl PgnDoublePositionContextManager {
+    pub fn new(root_node: &Rc<RefCell<MoveTreeNode>>, initial_state: State) -> PgnDoublePositionContextManager {
+        PgnDoublePositionContextManager {
+            context: PgnDoublePositionContext {
+                current: PgnPositionContext {
                     node: Rc::clone(root_node),
                     state_after_move: initial_state,
                 },
@@ -74,7 +74,7 @@ impl ContextManager {
 
     pub fn create_branch_from_previous(&mut self) {
         let clone_of_previous = self.context.previous.clone().expect("No previous node to create branch from");
-        let new_context = Context {
+        let new_context = PgnDoublePositionContext {
             current: clone_of_previous,
             previous: None,
         };
@@ -91,14 +91,14 @@ impl ContextManager {
 pub struct PgnParser {
     pub parse_state: PgnParseState,
     pub object: PgnObject,
-    pub context_manager: ContextManager
+    pub context_manager: PgnDoublePositionContextManager
 }
 
 impl PgnParser {
     pub fn new() -> PgnParser {
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
-        let context_manager = ContextManager::new(&current_node, State::initial());
+        let context_manager = PgnDoublePositionContextManager::new(&current_node, State::initial());
         PgnParser {
             parse_state: PgnParseState::Tags,
             object: pgn_object,
