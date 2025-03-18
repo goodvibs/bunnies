@@ -9,6 +9,7 @@ mod pgn_position_context;
 mod pgn_double_position_context;
 mod pgn_buffered_position_brancher;
 mod parsing_state;
+mod pgn_move_data;
 
 pub use parser::*;
 pub use pgn_token::*;

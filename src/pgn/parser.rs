@@ -4,9 +4,9 @@ use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParsingError;
 use crate::pgn::pgn_token::{PgnToken};
 use crate::pgn::pgn_object::PgnObject;
-use crate::pgn::move_tree_node::{MoveData};
 use crate::pgn::parsing_state::PgnParsingState;
 use crate::pgn::pgn_buffered_position_brancher::PgnBufferedPositionBrancher;
+use crate::pgn::pgn_move_data::PgnMoveData;
 use crate::pgn::token_types::PgnComment;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnMove;
@@ -141,7 +141,7 @@ impl<'a> PgnParser<'a> {
                         state.make_move(matched_move);
                         state
                     };
-                    let move_data = MoveData {
+                    let move_data = PgnMoveData {
                         mv: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),

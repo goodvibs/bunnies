@@ -1,39 +1,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::color::Color;
+use crate::pgn::pgn_move_data::PgnMoveData;
 use crate::piece_type::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::state::{State, Termination};
 
-#[derive(Debug, Clone)]
-pub struct MoveData {
-    pub mv: Move,
-    pub annotation: Option<String>,
-    pub nag: Option<u8>,
-}
-
-impl MoveData {
-    fn render(&self, moved_piece: PieceType, disambiguation_str: &str, is_check: bool, is_checkmate: bool, is_capture: bool, include_annotations: bool, include_nags: bool) -> String {
-        let mut result = self.mv.san(moved_piece, disambiguation_str, is_check, is_checkmate, is_capture);
-
-        if include_annotations {
-            if let Some(annotation) = &self.annotation {
-                result.push_str(&format!(" {}", annotation));
-            }
-        }
-
-        if include_nags {
-            if let Some(nag) = self.nag {
-                result.push_str(&format!(" ${}", nag));
-            }
-        }
-
-        result
-    }
-}
-
 pub struct MoveTreeNode {
-    pub move_data: Option<MoveData>, // None for the root node
+    pub move_data: Option<PgnMoveData>, // None for the root node
     pub comment: Option<String>, // Root node may have a comment, so this is not part of MoveData
     pub continuations: Vec<Rc<RefCell<MoveTreeNode>>>,
 }
@@ -46,7 +20,7 @@ impl MoveTreeNode {
             continuations: Vec::new(),
         }
     }
-    pub fn new(move_data: MoveData, comment: Option<String>) -> MoveTreeNode {
+    pub fn new(move_data: PgnMoveData, comment: Option<String>) -> MoveTreeNode {
         MoveTreeNode {
             move_data: Some(move_data),
             comment,

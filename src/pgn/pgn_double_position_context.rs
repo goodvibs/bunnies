@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::pgn::move_tree_node::{MoveData, MoveTreeNode};
+use crate::pgn::MoveTreeNode;
+use crate::pgn::pgn_move_data::PgnMoveData;
 use crate::pgn::pgn_position_context::PgnPositionContext;
 use crate::state::State;
 
@@ -11,7 +12,7 @@ pub struct PgnBufferedPositionContext {
 }
 
 impl PgnBufferedPositionContext {
-    pub fn append_new_move(&mut self, new_move_data: MoveData, new_state: State) {
+    pub fn append_new_move(&mut self, new_move_data: PgnMoveData, new_state: State) {
         let new_node = Rc::new(RefCell::new(MoveTreeNode::new(new_move_data, None)));
         self.current.node.borrow_mut().add_continuation(&new_node);
 
