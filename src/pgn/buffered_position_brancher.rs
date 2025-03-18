@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::pgn::double_position_context::PgnBufferedPositionContext;
+use crate::pgn::buffered_position_context::PgnBufferedPositionContext;
 use crate::pgn::position_context::PgnPositionContext;
 use crate::state::State;
 
