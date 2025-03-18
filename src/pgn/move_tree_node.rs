@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::color::Color;
 use crate::pgn::pgn_move_data::PgnMoveData;
+use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::piece_type::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::state::{State, Termination};
@@ -48,7 +49,7 @@ impl MoveTreeNode {
         self.continuations.iter().skip(1).map(|c| Rc::clone(c)).collect()
     }
 
-    pub fn render(&self, mut state: State, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, include_annotations: bool, include_nags: bool, include_comments: bool, depth: u16, remind_fullmove: bool) -> String {
+    pub fn render(&self, mut state: State, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, config: PgnRenderingConfig, depth: u16, remind_fullmove: bool) -> String {
         let rendered_last_continuations = {
             let mut result = String::new();
             for continuation in last_continuations {
@@ -56,9 +57,7 @@ impl MoveTreeNode {
                     state.clone(),
                     &[],
                     include_variations,
-                    include_annotations,
-                    include_nags,
-                    include_comments,
+                    config,
                     depth + 1,
                     true
                 );
@@ -120,12 +119,12 @@ impl MoveTreeNode {
             let is_check = state.board.is_color_in_check(state.side_to_move);
 
             // Combine move number and move
-            move_number_str + &move_data.render(moved_piece, disambiguation_str.as_str(), is_check, is_checkmate, is_capture, include_annotations, include_nags)
+            move_number_str + &move_data.render(moved_piece, disambiguation_str.as_str(), is_check, is_checkmate, is_capture, config.include_annotations, config.include_nags)
         } else {
             "".to_string()
         };
 
-        let rendered_comment = if include_comments {
+        let rendered_comment = if config.include_comments {
             if let Some(comment) = &self.comment {
                 format!(" {{ {} }}", comment)
             } else {
@@ -147,9 +146,7 @@ impl MoveTreeNode {
                 state,
                 &alternative_continuations,
                 include_variations,
-                include_annotations,
-                include_nags,
-                include_comments,
+                config,
                 depth + 1,
                 !last_continuations.is_empty()
             );
@@ -186,10 +183,8 @@ mod tests {
         let rendered_pgn = parser.constructed_object.tree_root.borrow().render(
             State::initial(),
             &[],
-            true,  // include_variations
-            true,  // include_annotations
-            true,  // include_nags
-            false, // include_comments
+            true,   // include_variations
+            PgnRenderingConfig::default(),
             0,      // depth
             false   // remind_fullmove
         );

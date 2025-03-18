@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use indexmap::IndexMap;
 use crate::pgn::move_tree_node::MoveTreeNode;
+use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::state::State;
 
 pub struct PgnObject {
@@ -21,7 +22,7 @@ impl PgnObject {
         self.tags.insert(key, value);
     }
 
-    pub fn render(&self, include_variations: bool, include_annotations: bool, include_nags: bool, include_comments: bool) -> String {
+    pub fn render(&self, include_variations: bool, config: PgnRenderingConfig) -> String {
         let mut result = String::new();
         for (key, value) in self.tags.iter() {
             result.push_str(&format!("[{} \"{}\"]\n", key, value));
@@ -30,9 +31,7 @@ impl PgnObject {
             State::initial(),
             &[],
             include_variations,
-            include_annotations,
-            include_nags,
-            include_comments,
+            config,
             0,
             false
         ));
