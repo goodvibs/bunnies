@@ -74,18 +74,19 @@ impl MoveTreeNode {
         self.continuations.iter().skip(1).map(|c| Rc::clone(c)).collect()
     }
 
-    pub fn render(&self, mut state: State, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, include_annotations: bool, include_nags: bool, include_comments: bool, depth: u16) -> String {
+    pub fn render(&self, mut state: State, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, include_annotations: bool, include_nags: bool, include_comments: bool, depth: u16, remind_fullmove: bool) -> String {
         let rendered_last_continuations = {
             let mut result = String::new();
             for continuation in last_continuations {
                 let rendered_continuation = &continuation.borrow().render(
                     state.clone(),
-                    &last_continuations,
+                    &[],
                     include_variations,
                     include_annotations,
                     include_nags,
                     include_comments,
-                    depth + 1
+                    depth + 1,
+                    true
                 );
                 result += &format!(" ({})", rendered_continuation);
             }
@@ -102,17 +103,15 @@ impl MoveTreeNode {
             // Add move number for white's move or at the start of a variation
             let move_number_str = if side_to_move == Color::White {
                 format!("{}. ", state.get_fullmove())
+            } else if remind_fullmove {
+                format!("{}... ", state.get_fullmove())
             } else {
-                // For black's moves in main line, only add "..." if it's the first move shown
-                if depth == 0 && self.move_data.is_some() && last_continuations.is_empty() {
-                    format!("{}... ", state.get_fullmove())
-                } else {
-                    "".to_string()
-                }
+                "".to_string()
             };
 
             let disambiguation_str = match moved_piece {
                 PieceType::Pawn | PieceType::King => "".to_string(),
+                PieceType::NoPieceType => panic!("Invalid piece type"),
                 _ => {
                     let all_moves = state.calc_legal_moves();
                     let all_other_moves: Vec<Move> = all_moves.iter().filter(|m| **m != mv).cloned().collect();
@@ -168,7 +167,7 @@ impl MoveTreeNode {
             let main_continuation = self.get_main_continuation().unwrap();
             let alternative_continuations = match include_variations {
                 true => self.get_alternative_continuations(),
-                false => vec![]
+                false => Vec::with_capacity(0)
             };
             let rendered_main_continuation = main_continuation.borrow().render(
                 state,
@@ -177,7 +176,8 @@ impl MoveTreeNode {
                 include_annotations,
                 include_nags,
                 include_comments,
-                depth + 1
+                depth + 1,
+                !last_continuations.is_empty()
             );
 
             // Add appropriate spacing before the next move
@@ -216,13 +216,14 @@ mod tests {
             true,  // include_annotations
             true,  // include_nags
             true, // include_comments
-            0      // depth
+            0,      // depth
+            false   // remind_fullmove
         );
 
         // Expected PGN after parsing and rendering
         // This will need to be adjusted based on your actual expected output format
         // Especially with respect to move numbering and spacing
-        let expected_pgn = r"1. e4 e5 2. Nf3 Nf6 3. Bc4 Nxe4 4. Nc3 Nc6 (4... Nxc3 5. dxc3 5... f6 6. Nh4 g6 7. f4 Qe7 8. f5) 5. O-O (5. Nxe4 d5) 5... Nxc3 6. dxc3 f6 7. Re1 d6 8. Nh4 g6 9. f4 Qe7 10. f5 Qg7 11. Qf3 Bd7 (11... g5 12. Qh5+ Kd8 13. Nf3 Bxf5) 12. b4 Be7 (12... O-O-O 13. Bd5 b6 (13... g5)) 13. Qe4 13... g5 (13... Nd8) 14. Nf3 O-O-O (14... Nd8) 15. a4 g4 16. Nh4 g3 17. h3 Rdf8 18. a5 Nd8 19. a6 Bc6 20. axb7+ Bxb7 21. Bd5 c6 22. Qc4 a6 23. Be3 Kd7 24. Be6+ Ke8 25. Rxa6 Bxa6 26. Qxa6 Rf7 27. Qc8 Bf8 28. Ra1 Rd7 29. Ra8 Qe7 30. Bb6 Bh6 31. Bxd7+ Kf8 32. Bxd8 Be3+ 33. Kf1 Kg7 34. Bxe7 Rxc8 35. Rxc8 d5 36. Nf3 d4 37. Bf8+ Kf7 38. Be6#";
+        let expected_pgn = r"1. e4 e5 2. Nf3 Nf6 3. Bc4 Nxe4 4. Nc3 Nc6 (4... Nxc3 5. dxc3 f6 6. Nh4 g6 7. f4 Qe7 8. f5) 5. O-O (5. Nxe4 d5) 5... Nxc3 6. dxc3 f6 7. Re1 d6 8. Nh4 g6 9. f4 Qe7 10. f5 Qg7 11. Qf3 Bd7 (11... g5 12. Qh5+ Kd8 13. Nf3 Bxf5) 12. b4 Be7 (12... O-O-O 13. Bd5 b6 (13... g5)) 13. Qe4 g5 (13... Nd8) 14. Nf3 O-O-O (14... Nd8) 15. a4 g4 16. Nh4 g3 17. h3 Rdf8 18. a5 Nd8 19. a6 Bc6 20. axb7+ Bxb7 21. Bd5 c6 22. Qc4 a6 23. Be3 Kd7 24. Be6+ Ke8 25. Rxa6 Bxa6 26. Qxa6 Rf7 27. Qc8 Bf8 28. Ra1 Rd7 29. Ra8 Qe7 30. Bb6 Bh6 31. Bxd7+ Kf8 32. Bxd8 Be3+ 33. Kf1 Kg7 34. Bxe7 Rxc8 35. Rxc8 d5 36. Nf3 d4 37. Bf8+ Kf7 38. Be6#";
 
         // Compare the rendered PGN with the expected PGN
         // This assertion might need to be adjusted depending on how your rendering handles

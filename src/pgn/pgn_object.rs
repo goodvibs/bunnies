@@ -33,7 +33,8 @@ impl PgnObject {
             include_annotations,
             include_nags,
             include_comments,
-            0
+            0,
+            false
         ));
         result
     }
