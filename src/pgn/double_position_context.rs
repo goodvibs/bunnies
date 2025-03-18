@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::pgn::MoveTreeNode;
-use crate::pgn::pgn_move_data::PgnMoveData;
-use crate::pgn::pgn_position_context::PgnPositionContext;
+use crate::pgn::move_data::PgnMoveData;
+use crate::pgn::position_context::PgnPositionContext;
 use crate::state::State;
 
 #[derive(Clone)]

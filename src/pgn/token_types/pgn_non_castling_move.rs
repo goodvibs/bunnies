@@ -1,7 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::piece_type::PieceType;
@@ -156,7 +156,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
 mod tests {
     use logos::Logos;
     use super::*;
-    use crate::pgn::pgn_token::PgnToken;
+    use crate::pgn::token::PgnToken;
     use crate::piece_type::PieceType;
     use crate::r#move::Move;
     use crate::square::Square;

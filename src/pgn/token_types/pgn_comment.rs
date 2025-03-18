@@ -1,7 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 
 /// The regex pattern for a comment.
@@ -41,8 +41,8 @@ impl ParsablePgnToken for PgnComment {
 #[cfg(test)]
 mod tests {
     use super::PgnComment;
-    use crate::pgn::pgn_token::ParsablePgnToken;
-    use crate::pgn::pgn_token::PgnToken;
+    use crate::pgn::token::ParsablePgnToken;
+    use crate::pgn::token::PgnToken;
     use logos::Logos;
 
     #[test]

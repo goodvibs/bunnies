@@ -1,7 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 
 /// Regex for parsing PGN tags.
@@ -44,7 +44,7 @@ impl ParsablePgnToken for PgnTag {
 mod tests {
     use logos::Logos;
     use super::PgnTag;
-    use crate::pgn::pgn_token::ParsablePgnToken;
+    use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::PgnToken;
 
     #[test]

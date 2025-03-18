@@ -1,7 +1,7 @@
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::pgn_token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 
 const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
@@ -40,7 +40,7 @@ impl ParsablePgnToken for PgnMoveNumber {
 mod tests {
     use logos::Logos;
     use super::*;
-    use crate::pgn::pgn_token::PgnToken;
+    use crate::pgn::token::PgnToken;
 
     #[test]
     fn test_parse_simple_move_number() {

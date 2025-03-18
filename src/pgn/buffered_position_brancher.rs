@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::pgn::pgn_double_position_context::PgnBufferedPositionContext;
-use crate::pgn::pgn_position_context::PgnPositionContext;
+use crate::pgn::double_position_context::PgnBufferedPositionContext;
+use crate::pgn::position_context::PgnPositionContext;
 use crate::state::State;
 
 pub struct PgnBufferedPositionBrancher {
