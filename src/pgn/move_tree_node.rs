@@ -111,21 +111,26 @@ impl MoveTreeNode {
                 }
             };
 
-            let all_moves = state.calc_legal_moves();
-            let all_other_moves: Vec<Move> = all_moves.iter().filter(|m| **m != mv).cloned().collect();
-            let disambiguation_moves: Vec<Move> = all_other_moves.iter().filter(|m| m.get_destination() == mv_dest && state.board.get_piece_type_at(m.get_source()) == moved_piece).cloned().collect::<Vec<Move>>();
-            let disambiguation_str = match disambiguation_moves.len() {
-                0 => "".to_string(),
+            let disambiguation_str = match moved_piece {
+                PieceType::Pawn | PieceType::King => "".to_string(),
                 _ => {
-                    let file = mv_source.get_file();
-                    let rank = mv_source.get_rank();
-                    let is_file_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_file() == file);
-                    let is_rank_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_rank() == rank);
-                    match (is_file_ambiguous, is_rank_ambiguous) {
-                        (true, true) => mv_source.to_string(),
-                        (true, false) => mv_source.get_file_char().to_string(),
-                        (false, true) => mv_source.get_rank_char().to_string(),
-                        (false, false) => "".to_string()
+                    let all_moves = state.calc_legal_moves();
+                    let all_other_moves: Vec<Move> = all_moves.iter().filter(|m| **m != mv).cloned().collect();
+                    let disambiguation_moves: Vec<Move> = all_other_moves.iter().filter(|m| m.get_destination() == mv_dest && state.board.get_piece_type_at(m.get_source()) == moved_piece).cloned().collect::<Vec<Move>>();
+                    match disambiguation_moves.len() {
+                        0 => "".to_string(),
+                        _ => {
+                            let file = mv_source.get_file();
+                            let rank = mv_source.get_rank();
+                            let is_file_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_file() == file);
+                            let is_rank_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_rank() == rank);
+                            match (is_file_ambiguous, is_rank_ambiguous) {
+                                (true, true) => mv_source.to_string(),
+                                (true, false) => mv_source.get_rank_char().to_string(),
+                                (false, true) => mv_source.get_file_char().to_string(),
+                                (false, false) => "".to_string()
+                            }
+                        }
                     }
                 }
             };
@@ -159,9 +164,12 @@ impl MoveTreeNode {
 
         let up_till_now = format!("{}{}{}", rendered_move, rendered_comment, rendered_last_continuations);
 
-        if include_variations && self.has_continuations() {
+        if self.has_continuations() {
             let main_continuation = self.get_main_continuation().unwrap();
-            let alternative_continuations = self.get_alternative_continuations();
+            let alternative_continuations = match include_variations {
+                true => self.get_alternative_continuations(),
+                false => vec![]
+            };
             let rendered_main_continuation = main_continuation.borrow().render(
                 state,
                 &alternative_continuations,
@@ -186,6 +194,7 @@ impl MoveTreeNode {
 
 #[cfg(test)]
 mod tests {
+    use crate::pgn::PgnParser;
     use super::*;
     use crate::state::State;
 
@@ -195,7 +204,7 @@ mod tests {
         let pgn_data = r"1. e4 e5 2. Nf3 Nf6 3. Bc4 Nxe4 4. Nc3 Nc6 (4... Nxc3 5. dxc3 5... f6 6. Nh4 g6 7. f4 Qe7 8. f5) 5. O-O (5. Nxe4 d5) 5... Nxc3 6. dxc3 f6 7. Re1 d6 8. Nh4 g6 9. f4 Qe7 10. f5 Qg7 11. Qf3 Bd7 (11... g5 12. Qh5+ Kd8 13. Nf3 Bxf5) 12. b4 Be7 (12... O-O-O 13. Bd5 b6 (13... g5)) 13. Qe4 13... g5 (13... Nd8) 14. Nf3 O-O-O (14... Nd8) 15. a4 g4 16. Nh4 g3 17. h3 Rdf8 18. a5 Nd8 19. a6 Bc6 20. axb7+ Bxb7 21. Bd5 c6 22. Qc4 a6 23. Be3 Kd7 24. Be6+ Ke8 25. Rxa6 Bxa6 26. Qxa6 Rf7 27. Qc8 Bf8 28. Ra1 Rd7 29. Ra8 Qe7 30. Bb6 Bh6 31. Bxd7+ Kf8 32. Bxd8 Be3+ 33. Kf1 Kg7 34. Bxe7 Rxc8 35. Rxc8 d5 36. Nf3 d4 37. Bf8+ Kf7 38. Be6# 1-0";
 
         // Create a parser and parse the PGN
-        let mut parser = crate::pgn::PgnParser::new(pgn_data);
+        let mut parser = PgnParser::new(pgn_data);
         let result = parser.parse();
         assert!(result.is_ok(), "Failed to parse PGN: {:?}", result.err());
 
