@@ -14,7 +14,7 @@ impl PgnMoveData {
 
         if include_annotations {
             if let Some(annotation) = &self.annotation {
-                result.push_str(&format!(" {}", annotation));
+                result.push_str(annotation);
             }
         }
 
