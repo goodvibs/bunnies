@@ -29,7 +29,7 @@ pub struct MagicDict {
 
 impl MagicDict {
     /// Create a new magic dictionary for a sliding piece
-    pub fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
+    fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
         let mut res = Self {
             attacks: vec![0; size].into_boxed_slice(),
             magic_info_for_squares: [MagicInfo {
@@ -44,19 +44,19 @@ impl MagicDict {
     }
 
     /// Get the magic info for a square
-    pub fn get_magic_info_for_square(&self, square: Square) -> MagicInfo {
+    fn get_magic_info_for_square(&self, square: Square) -> MagicInfo {
         self.magic_info_for_squares[square as usize]
     }
 
     /// Calculate the attack mask for a square with a given occupied mask
     pub fn calc_attack_mask(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
         let magic_info = self.get_magic_info_for_square(square);
-        let magic_index = magic_info.calc_key(occupied_mask);
-        self.attacks[magic_index]
+        let key = magic_info.calc_key(occupied_mask);
+        self.attacks[key]
     }
 
     /// Fill the magic numbers and attack tables for all squares
-    pub fn fill_magic_numbers_and_attacks(&mut self, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard) {
+    fn fill_magic_numbers_and_attacks(&mut self, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard) {
         let mut current_offset = 0;
         for square in Square::iter_all() {
             self.fill_magic_numbers_and_attacks_for_square(*square, relevant_mask_lookup, calc_attack_mask, &mut current_offset);
