@@ -59,12 +59,12 @@ impl MagicDict {
     pub fn fill_magic_numbers_and_attacks(&mut self, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard) {
         let mut current_offset = 0;
         for square in Square::iter_all() {
-            unsafe { self.fill_magic_numbers_and_attacks_for_square(*square, relevant_mask_lookup, calc_attack_mask, &mut current_offset) };
+            self.fill_magic_numbers_and_attacks_for_square(*square, relevant_mask_lookup, calc_attack_mask, &mut current_offset);
         }
     }
 
     /// Fill the magic numbers and attack tables for a single square
-    unsafe fn fill_magic_numbers_and_attacks_for_square(&mut self, square: Square, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, current_offset: &mut u32) -> Bitboard {
+    fn fill_magic_numbers_and_attacks_for_square(&mut self, square: Square, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, current_offset: &mut u32) -> Bitboard {
         let mut rng = fastrand::Rng::with_seed(RNG_SEED);
 
         let relevant_mask = relevant_mask_lookup.get(square);
