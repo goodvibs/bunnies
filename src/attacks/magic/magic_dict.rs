@@ -28,9 +28,9 @@ pub struct MagicDict {
 }
 
 impl MagicDict {
-    /// Initialize an empty magic dictionary
-    fn init_empty(size: usize) -> Self {
-        MagicDict {
+    /// Create a new magic dictionary for a sliding piece
+    pub fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
+        let mut res = Self {
             attacks: vec![0; size].into_boxed_slice(),
             magic_info_for_squares: [MagicInfo {
                 relevant_mask: 0,
@@ -38,12 +38,7 @@ impl MagicDict {
                 right_shift_amount: 0,
                 offset: 0
             }; 64]
-        }
-    }
-
-    /// Create a new magic dictionary for a sliding piece
-    pub fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
-        let mut res = Self::init_empty(size);
+        };
         res.fill_magic_numbers_and_attacks(relevant_mask_lookup, calc_attack_mask);
         res
     }
