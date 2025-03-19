@@ -44,8 +44,7 @@ impl ParsablePgnToken for PgnTag {
 mod tests {
     use logos::Logos;
     use super::PgnTag;
-    use crate::pgn::token::ParsablePgnToken;
-    use crate::pgn::PgnToken;
+    use crate::pgn::token::{ParsablePgnToken, PgnToken};
 
     #[test]
     fn test_pgn_tag() {
