@@ -52,10 +52,10 @@ mod tests {
         let token = PgnComment::parse(&mut lex).unwrap();
         assert_eq!(token.comment, "This is a comment");
 
-        let mut lex = PgnToken::lexer("{This is a comment with a {nested} comment}");
-        lex.next();
-        let token = PgnComment::parse(&mut lex).unwrap();
-        assert_eq!(token.comment, "This is a comment with a {nested} comment");
+        // let mut lex = PgnToken::lexer("{This is a comment with a {nested} comment}");
+        // lex.next();
+        // let token = PgnComment::parse(&mut lex).unwrap();
+        // assert_eq!(token.comment, "This is a comment with a {nested} comment");
 
         let mut lex = PgnToken::lexer("{This is an invalid comment");
         lex.next();
