@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use indexmap::IndexMap;
 use crate::pgn::move_tree_node::MoveTreeNode;
@@ -36,5 +37,11 @@ impl PgnObject {
             false
         ));
         result
+    }
+}
+
+impl Display for PgnObject {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.render(true, PgnRenderingConfig::default()))
     }
 }
