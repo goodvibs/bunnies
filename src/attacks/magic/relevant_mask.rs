@@ -3,35 +3,33 @@ use crate::bitboard::Bitboard;
 use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
 use crate::square::Square;
 
-/// Get the precomputed relevant mask for a rook on a given square
-pub fn get_rook_relevant_mask(square: Square) -> Bitboard {
-    ROOK_RELEVANT_MASKS[square as usize]
-}
-
-/// Get the precomputed relevant mask for a bishop on a given square
-pub fn get_bishop_relevant_mask(square: Square) -> Bitboard {
-    BISHOP_RELEVANT_MASKS[square as usize]
-}
-
 /// Precomputed masks for rook relevant squares
 #[dynamic]
-static ROOK_RELEVANT_MASKS: [Bitboard; 64] = {
-    let mut masks = [0; 64];
-    for (i, square) in Square::iter_all().enumerate() {
-        masks[i] = calc_rook_relevant_mask(*square);
-    }
-    masks
-};
+pub static ROOK_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(calc_rook_relevant_mask);
 
 /// Precomputed masks for bishop relevant squares
 #[dynamic]
-static BISHOP_RELEVANT_MASKS: [Bitboard; 64] = {
-    let mut masks = [0; 64];
-    for (i, square) in Square::iter_all().enumerate() {
-        masks[i] = calc_bishop_relevant_mask(*square);
+pub static BISHOP_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(calc_bishop_relevant_mask);
+
+pub struct PrecomputedMasksForSquares {
+    masks: [Bitboard; 64]
+}
+
+impl PrecomputedMasksForSquares {
+    fn init(calc_relevant_mask: impl Fn(Square) -> Bitboard) -> Self {
+        let mut relevant_masks = [0; 64];
+        for (i, square) in Square::iter_all().enumerate() {
+            relevant_masks[i] = calc_relevant_mask(*square);
+        }
+        PrecomputedMasksForSquares {
+            masks: relevant_masks
+        }
     }
-    masks
-};
+
+    pub fn get(&self, square: Square) -> Bitboard {
+        self.masks[square as usize]
+    }
+}
 
 /// Calculate the relevant mask for a rook on a given square
 fn calc_rook_relevant_mask(square: Square) -> Bitboard {
@@ -71,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_calc_rook_relevant_mask() {
-        for mask in ROOK_RELEVANT_MASKS.iter() {
+        for mask in ROOK_RELEVANT_MASKS.masks.iter() {
             print_bb_pretty(*mask);
             println!();
         }
@@ -79,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_calc_bishop_relevant_mask() {
-        for mask in BISHOP_RELEVANT_MASKS.iter() {
+        for mask in BISHOP_RELEVANT_MASKS.masks.iter() {
             print_bb_pretty(*mask);
             println!();
         }
