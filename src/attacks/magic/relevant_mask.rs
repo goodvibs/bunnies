@@ -5,18 +5,18 @@ use crate::square::Square;
 
 /// Precomputed masks for rook relevant squares
 #[dynamic]
-pub static ROOK_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(calc_rook_relevant_mask);
+pub static ROOK_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(&calc_rook_relevant_mask);
 
 /// Precomputed masks for bishop relevant squares
 #[dynamic]
-pub static BISHOP_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(calc_bishop_relevant_mask);
+pub static BISHOP_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(&calc_bishop_relevant_mask);
 
 pub struct PrecomputedMasksForSquares {
     masks: [Bitboard; 64]
 }
 
 impl PrecomputedMasksForSquares {
-    fn init(calc_relevant_mask: impl Fn(Square) -> Bitboard) -> Self {
+    fn init(calc_relevant_mask: &impl Fn(Square) -> Bitboard) -> Self {
         let mut relevant_masks = [0; 64];
         for (i, square) in Square::iter_all().enumerate() {
             relevant_masks[i] = calc_relevant_mask(*square);

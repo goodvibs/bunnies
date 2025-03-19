@@ -15,11 +15,11 @@ const RNG_SEED: u64 = 0;
 
 /// Magic dictionaries for rooks
 #[dynamic]
-pub static ROOK_MAGIC_DICT: MagicDict = MagicDict::new(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
+pub static ROOK_MAGIC_DICT: MagicDict = MagicDict::init(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
 
 /// Magic dictionaries for bishops
 #[dynamic]
-pub static BISHOP_MAGIC_DICT: MagicDict = MagicDict::new(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE);
+pub static BISHOP_MAGIC_DICT: MagicDict = MagicDict::init(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE);
 
 /// A magic dictionary for a sliding piece
 pub struct MagicDict {
@@ -42,7 +42,7 @@ impl MagicDict {
     }
 
     /// Create a new magic dictionary for a sliding piece
-    pub fn new(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
+    pub fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
         let mut res = Self::init_empty(size);
         res.fill_magic_numbers_and_attacks(relevant_mask_lookup, calc_attack_mask);
         res
