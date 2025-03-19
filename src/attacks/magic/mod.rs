@@ -9,10 +9,10 @@ mod relevant_mask;
 
 /// Calculate the attack mask for a rook on a given square with a given occupied mask
 pub fn magic_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    ROOK_MAGIC_DICT.calc_attack_mask(src_square, occupied_mask)
+    ROOK_MAGIC_DICT.get_attacks(src_square, occupied_mask)
 }
 
 /// Calculate the attack mask for a bishop on a given square with a given occupied mask
 pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    BISHOP_MAGIC_DICT.calc_attack_mask(src_square, occupied_mask)
+    BISHOP_MAGIC_DICT.get_attacks(src_square, occupied_mask)
 }

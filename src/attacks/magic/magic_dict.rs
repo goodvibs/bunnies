@@ -13,22 +13,20 @@ const BISHOP_ATTACK_TABLE_SIZE: usize = 4 * 2usize.pow(6) + 44 * 2usize.pow(5) +
 
 const RNG_SEED: u64 = 0;
 
-/// Magic dictionaries for rooks
 #[dynamic]
-pub static ROOK_MAGIC_DICT: MagicDict = MagicDict::init(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
+pub static ROOK_MAGIC_DICT: MagicAttacksLookup = MagicAttacksLookup::init(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
 
-/// Magic dictionaries for bishops
 #[dynamic]
-pub static BISHOP_MAGIC_DICT: MagicDict = MagicDict::init(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE);
+pub static BISHOP_MAGIC_DICT: MagicAttacksLookup = MagicAttacksLookup::init(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE);
 
-/// A magic dictionary for a sliding piece
-pub struct MagicDict {
+/// Object that stores all magic-related information for a sliding piece and provides a method to get the attack mask for a given square and occupied mask
+pub struct MagicAttacksLookup {
     attacks: Box<[Bitboard]>,
     magic_info_for_squares: [MagicInfo; 64],
 }
 
-impl MagicDict {
-    /// Create a new magic dictionary for a sliding piece
+impl MagicAttacksLookup {
+    /// Initialize the magic attacks lookup object for a sliding piece
     fn init(relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, size: usize) -> Self {
         let mut res = Self {
             attacks: vec![0; size].into_boxed_slice(),
@@ -48,8 +46,8 @@ impl MagicDict {
         self.magic_info_for_squares[square as usize]
     }
 
-    /// Calculate the attack mask for a square with a given occupied mask
-    pub fn calc_attack_mask(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
+    /// Get the attack mask for a square with a given occupied mask
+    pub fn get_attacks(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
         let magic_info = self.get_magic_info_for_square(square);
         let key = magic_info.calc_key(occupied_mask);
         self.attacks[key]
