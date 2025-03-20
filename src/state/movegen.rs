@@ -26,9 +26,10 @@ impl State {
         };
 
         for src in pawn_srcs.clone() {
+            let move_src = unsafe { Square::from(src.leading_zeros() as u8) };
+
             let captures = multi_pawn_attacks(src, self.side_to_move) & opposite_color_bb;
             for dst in get_set_bit_mask_iter(captures) {
-                let move_src = unsafe { Square::from(src.leading_zeros() as u8) };
                 let move_dst = unsafe { Square::from(dst.leading_zeros() as u8) };
                 if dst & promotion_rank != 0 {
                     add_pawn_promotion_moves(moves, move_src, move_dst);
