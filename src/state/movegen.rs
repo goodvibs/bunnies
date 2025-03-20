@@ -9,10 +9,10 @@ use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
 use crate::state::{State};
 
-fn add_pawn_promotion_moves(moves: &mut Vec<Move>, src: Square, dst: Square) {
-    for promotion_piece in PieceType::PROMOTION_PIECES {
-        moves.push(Move::new(dst, src, promotion_piece, MoveFlag::Promotion));
-    }
+fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
+    PieceType::PROMOTION_PIECES.map(|promotion_piece| {
+        Move::new_promotion(dst_square, src_square, promotion_piece)
+    })
 }
 
 impl State {
@@ -32,7 +32,7 @@ impl State {
             for dst in get_set_bit_mask_iter(captures) {
                 let move_dst = unsafe { Square::from_bitboard(dst) };
                 if dst & promotion_rank != 0 {
-                    add_pawn_promotion_moves(moves, move_src, move_dst);
+                    moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
                 }
                 else {
                     moves.push(Move::new_non_promotion(move_dst, move_src, MoveFlag::NormalMove));
@@ -101,7 +101,7 @@ impl State {
                 }
             }
             else if single_move_dst & promotion_rank != 0 { // promotion
-                add_pawn_promotion_moves(moves, src_square, single_move_dst_square);
+                moves.extend_from_slice(&generate_pawn_promotions(src_square, single_move_dst_square));
                 continue;
             }
 

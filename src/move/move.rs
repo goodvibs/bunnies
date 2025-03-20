@@ -28,6 +28,10 @@ impl Move {
         Move::new(dst, src, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
+    pub fn new_promotion(dst: Square, src: Square, promotion: PieceType) -> Move {
+        Move::new(dst, src, promotion, MoveFlag::Promotion)
+    }
+
     /// Gets the destination square of the move.
     pub const fn get_destination(&self) -> Square {
         let dst_int = (self.value >> 10) as u8;
