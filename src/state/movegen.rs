@@ -46,19 +46,19 @@ impl State {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
 
-        let (src_rank_bb, dst_rank_bb) = match self.side_to_move {
-            Color::White => (RANK_5, RANK_6),
-            Color::Black => (RANK_4, RANK_3),
+        let (src_rank_bb, src_rank_first_square, dst_rank_first_square) = match self.side_to_move {
+            Color::White => (RANK_5, Square::A5, Square::A6),
+            Color::Black => (RANK_4, Square::A4, Square::A3),
         };
 
         if context.double_pawn_push != -1 { // if en passant is possible
-            for &direction in [-1, 1].iter() { // left and right
+            for direction in [-1, 1] { // left and right
                 let double_pawn_push_file = context.double_pawn_push as i32 + direction;
                 if double_pawn_push_file >= 0 && double_pawn_push_file <= 7 { // if within bounds
                     let double_pawn_push_file_mask = FILE_A >> double_pawn_push_file;
                     if pawns_bb & double_pawn_push_file_mask & src_rank_bb != 0 {
-                        let move_src = unsafe { Square::from(src_rank_bb.leading_zeros() as u8 + double_pawn_push_file as u8) };
-                        let move_dst = unsafe { Square::from(dst_rank_bb.leading_zeros() as u8 + context.double_pawn_push as u8) };
+                        let move_src = unsafe { Square::from(src_rank_first_square as u8 + double_pawn_push_file as u8) };
+                        let move_dst = unsafe { Square::from(dst_rank_first_square as u8 + context.double_pawn_push as u8) };
                         moves.push(Move::new_non_promotion(move_dst, move_src, MoveFlag::EnPassant));
                     }
                 }
