@@ -161,10 +161,6 @@ impl Square {
     pub fn iter_all() -> SquareIter {
         SquareIter { range: 0..64 }
     }
-
-    pub fn iter_between(first: Square, last: Square) -> impl Iterator<Item = &'static Square> {
-        ALL[first as usize..=last as usize].iter()
-    }
 }
 
 impl Display for Square {
@@ -428,21 +424,5 @@ mod tests {
         assert_eq!(all_squares.len(), 64);
         assert_eq!(all_squares[0], Square::A8);
         assert_eq!(all_squares[63], Square::H1);
-    }
-
-    #[test]
-    fn test_iter_between() {
-        let e4_to_a3: Vec<&Square> = Square::iter_between(Square::E4, Square::A3).collect();
-        assert_eq!(e4_to_a3.len(), 5);
-        assert_eq!(*e4_to_a3[0], Square::E4);
-        assert_eq!(*e4_to_a3[1], Square::F4);
-        assert_eq!(*e4_to_a3[2], Square::G4);
-        assert_eq!(*e4_to_a3[3], Square::H4);
-        assert_eq!(*e4_to_a3[4], Square::A3);
-
-        let a8_to_h1: Vec<&Square> = Square::iter_between(Square::A8, Square::H1).collect();
-        assert_eq!(a8_to_h1.len(), 64);
-        assert_eq!(*a8_to_h1[0], Square::A8);
-        assert_eq!(*a8_to_h1[63], Square::H1);
     }
 }
