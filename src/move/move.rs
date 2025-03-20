@@ -68,7 +68,7 @@ impl Move {
     /// Returns a readable representation of the move.
     pub fn readable(&self) -> String {
         let (dst, src, promotion, flag) = self.unpack();
-        let (dst_str, src_str, promotion_char, flag_str) = (src.readable(), dst.readable(), promotion.to_char(), flag.to_readable());
+        let (dst_str, src_str, promotion_char, flag_str) = (src.readable(), dst.readable(), promotion.to_uppercase_char(), flag.to_readable());
         format!("{}{}{}", dst_str, src_str, flag_str.replace('?', &promotion_char.to_string()))
     }
 
@@ -77,7 +77,7 @@ impl Move {
         let (dst, src, promotion, flag) = self.unpack();
         let (dst_str, src_str) = (dst.readable(), src.readable());
         let promotion_str = match flag {
-            MoveFlag::Promotion => promotion.to_char().to_string(),
+            MoveFlag::Promotion => promotion.to_uppercase_char().to_string(),
             _ => "".to_string()
         };
         format!("{}{}{}", src_str, dst_str, promotion_str)
@@ -110,10 +110,10 @@ mod tests {
                     for flag_int in 0..4 {
                         let flag = unsafe { MoveFlag::from(flag_int) };
 
-                        let mv = Move::new(*dst_square, *src_square, *promotion_piece, flag);
+                        let mv = Move::new(*dst_square, *src_square, promotion_piece, flag);
                         assert_eq!(mv.get_destination(), *dst_square);
                         assert_eq!(mv.get_source(), *src_square);
-                        assert_eq!(mv.get_promotion(), *promotion_piece);
+                        assert_eq!(mv.get_promotion(), promotion_piece);
                         assert_eq!(mv.get_flag(), flag);
                     }
                 }

@@ -45,7 +45,7 @@ impl State {
         }
     }
 
-    /// Gets the fullmove number of the position.
+    /// Gets the fullmove number of the position. 1-based.
     pub const fn get_fullmove(&self) -> u16 {
         self.halfmove / 2 + 1
     }

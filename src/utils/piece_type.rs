@@ -40,26 +40,6 @@ const ALL_NON_KING_PIECES: [PieceType; 5] = [
     PieceType::Queen
 ];
 
-const ALL_SLIDING_PIECES: [PieceType; 3] = [
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen
-];
-
-const ALL_NON_SLIDING_PIECES: [PieceType; 3] = [
-    PieceType::Pawn,
-    PieceType::Knight,
-    PieceType::King
-];
-
-const ALL_NON_PAWN_PIECES: [PieceType; 5] = [
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen,
-    PieceType::King
-];
-
 const ALL_PROMOTION_PIECES: [PieceType; 4] = [
     PieceType::Knight,
     PieceType::Bishop,
@@ -88,46 +68,39 @@ impl PieceType {
         }
     }
 
-    pub const fn to_char(&self) -> char {
-        ColoredPiece::from(Color::White, *self).to_char()
+    pub const fn to_uppercase_char(&self) -> char {
+        match self {
+            PieceType::NoPieceType => '_',
+            PieceType::Pawn => 'P',
+            PieceType::Knight => 'N',
+            PieceType::Bishop => 'B',
+            PieceType::Rook => 'R',
+            PieceType::Queen => 'Q',
+            PieceType::King => 'K'
+        }
     }
 
-    pub fn iter_all() -> impl Iterator<Item = PieceType> {
-        ALL.iter().copied()
+    pub const fn to_lowercase_char(&self) -> char {
+        match self {
+            PieceType::NoPieceType => '_',
+            PieceType::Pawn => 'p',
+            PieceType::Knight => 'n',
+            PieceType::Bishop => 'b',
+            PieceType::Rook => 'r',
+            PieceType::Queen => 'q',
+            PieceType::King => 'k'
+        }
     }
 
-    pub fn iter_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_PIECES.iter()
+    pub fn iter_all_types() -> [PieceType; 7] {
+        ALL
     }
-    
-    pub fn iter_non_king_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_NON_KING_PIECES.iter()
-    }
-    
-    pub fn iter_sliding_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_SLIDING_PIECES.iter()
-    }
-    
-    pub fn iter_non_sliding_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_NON_SLIDING_PIECES.iter()
-    }
-    
-    pub fn iter_non_pawn_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_NON_PAWN_PIECES.iter()
-    }
-    
-    pub fn iter_promotion_pieces() -> impl Iterator<Item = &'static PieceType> {
-        ALL_PROMOTION_PIECES.iter()
-    }
-    
-    pub fn iter_between(first: PieceType, last: PieceType) -> impl Iterator<Item = &'static PieceType> {
-        ALL[first as usize..=last as usize].iter()
-    }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-
+    pub fn iter_pieces() -> [PieceType; 6] {
+        ALL_PIECES
+    }
+    
+    pub fn iter_promotion_pieces() -> [PieceType; 4] {
+        ALL_PROMOTION_PIECES
+    }
 }

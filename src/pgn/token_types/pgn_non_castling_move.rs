@@ -81,7 +81,7 @@ impl PgnMove for PgnNonCastlingMove {
         let piece = if self.piece_moved == PieceType::Pawn {
             ""
         } else {
-            &*self.piece_moved.to_char().to_string()
+            &*self.piece_moved.to_uppercase_char().to_string()
         };
 
         let disambiguation = match (self.disambiguation_file, self.disambiguation_rank) {
@@ -96,7 +96,7 @@ impl PgnMove for PgnNonCastlingMove {
         let destination = self.to.to_string();
 
         let promotion = if self.promoted_to != PieceType::NoPieceType {
-            format!("={}", self.promoted_to.to_char())
+            format!("={}", self.promoted_to.to_uppercase_char())
         } else {
             "".to_string()
         };

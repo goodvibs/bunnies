@@ -31,7 +31,7 @@ impl Move {
             let capture_str = if is_capture { "x" } else { "" };
 
             let promotion_str = if flag == MoveFlag::Promotion {
-                format!("={}", promotion.to_char())
+                format!("={}", promotion.to_uppercase_char())
             } else {
                 "".to_string()
             };
