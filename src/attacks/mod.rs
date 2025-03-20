@@ -41,11 +41,11 @@ pub fn multi_pawn_moves(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
 /// Returns an attack mask encoding all squares attacked by a rook on `src_square`, 
 /// with `occupied_mask` as the mask of occupied squares
 pub fn single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    magic::magic_single_rook_attacks(src_square, occupied_mask)
+    manual::manual_single_rook_attacks(src_square, occupied_mask)
 }
 
 /// Returns an attack mask encoding all squares attacked by a bishop on `src_square`,
 /// with `occupied_mask` as the mask of occupied squares
 pub fn single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    magic::magic_single_bishop_attacks(src_square, occupied_mask)
+    manual::manual_single_bishop_attacks(src_square, occupied_mask)
 }

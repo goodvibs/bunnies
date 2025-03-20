@@ -5,7 +5,7 @@ use crate::square::Square;
 mod lookup;
 mod random;
 mod magic_info;
-mod relevant_mask;
+pub mod relevant_mask;
 mod initializer;
 
 /// Calculate the attack mask for a rook on a given square with a given occupied mask
