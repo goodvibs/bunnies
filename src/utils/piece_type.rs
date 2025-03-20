@@ -92,6 +92,30 @@ impl PieceType {
         }
     }
 
+    pub const fn to_unfilled_unicode(&self) -> char {
+        match self {
+            PieceType::NoPieceType => ' ',
+            PieceType::Pawn => '♙',
+            PieceType::Knight => '♘',
+            PieceType::Bishop => '♗',
+            PieceType::Rook => '♖',
+            PieceType::Queen => '♕',
+            PieceType::King => '♔'
+        }
+    }
+
+    pub const fn to_filled_unicode(&self) -> char {
+        match self {
+            PieceType::NoPieceType => ' ',
+            PieceType::Pawn => '♟',
+            PieceType::Knight => '♞',
+            PieceType::Bishop => '♝',
+            PieceType::Rook => '♜',
+            PieceType::Queen => '♛',
+            PieceType::King => '♚'
+        }
+    }
+
     pub fn iter_all_types() -> [PieceType; 7] {
         ALL
     }
