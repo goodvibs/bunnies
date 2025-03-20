@@ -14,7 +14,7 @@ const BISHOP_ATTACK_TABLE_SIZE: usize = 4 * 2usize.pow(6) + 44 * 2usize.pow(5) +
 
 #[dynamic]
 pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup = MagicAttacksInitializer::new()
-    .with_seed(0)
+    .with_seed(3141592653)
     .init_for_piece(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
 
 #[dynamic]
