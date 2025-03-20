@@ -9,12 +9,12 @@ use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK,
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
-use crate::state::context::Context;
+use crate::state::context::GameContext;
 use crate::state::termination::GameResult;
 use crate::state::State;
 
 impl State {
-    fn process_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType, new_context: &mut Context) {
+    fn process_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType, new_context: &mut GameContext) {
         self.process_possible_capture(dst_square, new_context);
         
         self.board.remove_piece_type_at(PieceType::Pawn, src_square);
@@ -23,7 +23,7 @@ impl State {
         new_context.process_promotion_disregarding_capture();
     }
     
-    fn process_normal(&mut self, dst_square: Square, src_square: Square, new_context: &mut Context) {
+    fn process_normal(&mut self, dst_square: Square, src_square: Square, new_context: &mut GameContext) {
         self.process_possible_capture(dst_square, new_context);
         
         let moved_piece = self.board.get_piece_type_at(src_square);
@@ -32,7 +32,7 @@ impl State {
         new_context.process_normal_disregarding_capture(ColoredPiece::from(self.side_to_move, moved_piece), dst_square, src_square);
     }
 
-    fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut Context) {
+    fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut GameContext) {
         let dst_mask = dst_square.get_mask();
         let opposite_color = self.side_to_move.flip();
         
@@ -46,7 +46,7 @@ impl State {
         }
     }
     
-    fn process_en_passant(&mut self, dst_square: Square, src_square: Square, new_context: &mut Context) {
+    fn process_en_passant(&mut self, dst_square: Square, src_square: Square, new_context: &mut GameContext) {
         let opposite_color = self.side_to_move.flip();
         
         let en_passant_capture_square = match opposite_color {
@@ -61,7 +61,7 @@ impl State {
         new_context.process_en_passant();
     }
     
-    fn process_castling(&mut self, dst_square: Square, src_square: Square, new_context: &mut Context) {
+    fn process_castling(&mut self, dst_square: Square, src_square: Square, new_context: &mut GameContext) {
         let dst_mask = dst_square.get_mask();
 
         self.board.move_piece_type(PieceType::King, dst_square, src_square);
@@ -88,7 +88,7 @@ impl State {
     pub fn make_move(&mut self, mv: Move) {
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = Context::new_from(Rc::clone(&self.context), 0);
+        let mut new_context = GameContext::new_from(Rc::clone(&self.context), 0);
 
         self.board.move_color(self.side_to_move, dst_square, src_square);
 
@@ -126,7 +126,7 @@ impl State {
     }
 }
 
-impl Context {
+impl GameContext {
     fn process_promotion_disregarding_capture(&mut self) {
         self.halfmove_clock = 0;
     }

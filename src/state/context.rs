@@ -7,7 +7,7 @@ use crate::utils::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Context {
+pub struct GameContext {
     // copied from previous and then possibly modified
     pub halfmove_clock: u8,
     pub double_pawn_push: i8, // file of double pawn push, if any, else -1
@@ -15,15 +15,15 @@ pub struct Context {
 
     // updated after every move
     pub captured_piece: PieceType,
-    pub previous: Option<Rc<RefCell<Context>>>,
+    pub previous: Option<Rc<RefCell<GameContext>>>,
     pub zobrist_hash: Bitboard
 }
 
-impl Context {
+impl GameContext {
     /// Creates a new context linking to the previous context
-    pub fn new_from(previous_context: Rc<RefCell<Context>>, zobrist_hash: Bitboard) -> Context {
+    pub fn new_from(previous_context: Rc<RefCell<GameContext>>, zobrist_hash: Bitboard) -> GameContext {
         let previous = previous_context.borrow();
-        Context {
+        GameContext {
             halfmove_clock: previous.halfmove_clock + 1,
             double_pawn_push: -1,
             castling_rights: previous.castling_rights,
@@ -36,8 +36,8 @@ impl Context {
     /// Creates a new context with no previous context.
     /// Castling rights are set to full.
     /// This is used for the initial position.
-    pub fn initial(zobrist_hash: Bitboard) -> Context {
-        Context {
+    pub fn initial(zobrist_hash: Bitboard) -> GameContext {
+        GameContext {
             halfmove_clock: 0,
             double_pawn_push: -1,
             castling_rights: 0b00001111,
@@ -49,8 +49,8 @@ impl Context {
 
     /// Creates a new context with no previous context.
     /// Castling rights are set to none.
-    pub fn initial_no_castling(zobrist_hash: Bitboard) -> Context {
-        Context {
+    pub fn initial_no_castling(zobrist_hash: Bitboard) -> GameContext {
+        GameContext {
             halfmove_clock: 0,
             double_pawn_push: -1,
             castling_rights: 0b00000000,
@@ -70,7 +70,7 @@ impl Context {
     /// Else, returns None.
     /// This essentially gets the context of the position two halfmoves ago, if it exists and there
     /// was no halfmove_clock reset in between.
-    pub fn get_previous_possible_repetition(&self) -> Option<Rc<RefCell<Context>>> {
+    pub fn get_previous_possible_repetition(&self) -> Option<Rc<RefCell<GameContext>>> {
         match &self.previous {
             Some(previous) => {
                 if previous.borrow().halfmove_clock == 0 {

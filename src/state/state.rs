@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::utils::Bitboard;
 use crate::utils::Color;
-use crate::state::{Board, Context, GameResult};
+use crate::state::{Board, GameContext, GameResult};
 use crate::utils::masks::{CASTLING_CHECK_MASK_LONG, CASTLING_CHECK_MASK_SHORT, FILES, RANK_4, STARTING_BK, STARTING_KING_ROOK_GAP_LONG, STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR, STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK};
 use crate::utils::PieceType;
 
@@ -15,7 +15,7 @@ pub struct State {
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context: Rc<RefCell<Context>>,
+    pub context: Rc<RefCell<GameContext>>,
 }
 
 impl State {
@@ -28,7 +28,7 @@ impl State {
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Rc::new(RefCell::new(Context::initial_no_castling(zobrist_hash))),
+            context: Rc::new(RefCell::new(GameContext::initial_no_castling(zobrist_hash))),
         }
     }
 
@@ -41,7 +41,7 @@ impl State {
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Rc::new(RefCell::new(Context::initial(zobrist_hash))),
+            context: Rc::new(RefCell::new(GameContext::initial(zobrist_hash))),
         }
     }
 
