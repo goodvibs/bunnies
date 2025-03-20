@@ -73,7 +73,7 @@ impl PieceType {
 
     pub const unsafe fn from(piece_type_number: u8) -> PieceType {
         assert!(piece_type_number < PieceType::LIMIT, "Piece type number out of bounds");
-        std::mem::transmute::<u8, PieceType>(piece_type_number)
+        unsafe { std::mem::transmute::<u8, PieceType>(piece_type_number) }
     }
 
     pub const unsafe fn from_char(piece_char: char) -> PieceType {

@@ -4,10 +4,9 @@ use std::io::{Read, Write};
 use static_init::dynamic;
 use crate::attacks::magic::initializer::MagicAttacksInitializer;
 use crate::attacks::magic::magic_info::MagicInfo;
-use crate::attacks::magic::random::gen_random_magic_number;
-use crate::attacks::magic::relevant_mask::{PrecomputedMasksForSquares, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
+use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-use crate::bitboard::{get_bit_combinations_iter, Bitboard};
+use crate::bitboard::Bitboard;
 use crate::square::Square;
 
 /// The size of the attack table for rooks
@@ -52,7 +51,7 @@ impl MagicAttacksLookup {
         match MagicAttacksLookup::load_from_file(filename) {
             Ok(lookup) => Ok(lookup),
             Err(_) => {
-                let mut lookup = generate();
+                let lookup = generate();
                 lookup.save_to_file(filename)?;
                 Ok(lookup)
             }
