@@ -1,5 +1,5 @@
 use logos::{Lexer, Logos};
-use crate::color::Color;
+use crate::utils::Color;
 use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::parsing_error::PgnParsingError;
 use crate::pgn::token::{PgnToken};

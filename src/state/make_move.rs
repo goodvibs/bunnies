@@ -2,13 +2,13 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::bitboard::Bitboard;
-use crate::color::Color;
-use crate::colored_piece::ColoredPiece;
-use crate::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
-use crate::piece_type::PieceType;
+use crate::utils::Bitboard;
+use crate::utils::Color;
+use crate::utils::ColoredPiece;
+use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
+use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::square::Square;
+use crate::utils::Square;
 use crate::state::context::Context;
 use crate::state::termination::Termination;
 use crate::state::State;

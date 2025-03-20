@@ -1,6 +1,6 @@
-use crate::piece_type::PieceType;
+use crate::utils::PieceType;
 use crate::r#move::MoveFlag;
-use crate::square::Square;
+use crate::utils::Square;
 use crate::state::State;
 
 /// Represents a move in the game.
@@ -98,8 +98,8 @@ impl std::fmt::Debug for Move {
 
 #[cfg(test)]
 mod tests {
-    use crate::piece_type::PieceType;
-    use crate::square::Square;
+    use crate::utils::PieceType;
+    use crate::utils::Square;
     use super::{Move, MoveFlag};
 
     #[test]

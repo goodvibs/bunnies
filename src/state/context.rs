@@ -2,8 +2,8 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::bitboard::Bitboard;
-use crate::piece_type::PieceType;
+use crate::utils::Bitboard;
+use crate::utils::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Debug)]

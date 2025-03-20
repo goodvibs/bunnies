@@ -6,8 +6,8 @@ use crate::attacks::magic::initializer::MagicAttacksInitializer;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-use crate::bitboard::Bitboard;
-use crate::square::Square;
+use crate::utils::Bitboard;
+use crate::utils::Square;
 
 /// The size of the attack table for rooks
 const ROOK_ATTACK_TABLE_SIZE: usize = 36 * 2usize.pow(10) + 28 * 2usize.pow(11) + 4 * 2usize.pow(12);

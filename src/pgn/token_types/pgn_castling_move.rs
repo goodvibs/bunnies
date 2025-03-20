@@ -84,7 +84,7 @@ mod tests {
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
     use crate::r#move::{Move, MoveFlag};
-    use crate::square::Square;
+    use crate::utils::Square;
     use crate::state::State;
 
     #[test]

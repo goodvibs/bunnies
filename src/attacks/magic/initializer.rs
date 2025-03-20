@@ -2,8 +2,8 @@ use crate::attacks::magic::lookup::MagicAttacksLookup;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::random::gen_random_magic_number;
 use crate::attacks::magic::relevant_mask::PrecomputedMasksForSquares;
-use crate::bitboard::{get_bit_combinations_iter, Bitboard};
-use crate::square::Square;
+use crate::utils::{get_bit_combinations_iter, Bitboard};
+use crate::utils::Square;
 
 /// Struct responsible for initializing the MagicAttacksLookup
 pub struct MagicAttacksInitializer {

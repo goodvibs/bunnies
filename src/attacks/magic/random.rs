@@ -1,4 +1,4 @@
-use crate::bitboard::Bitboard;
+use crate::utils::Bitboard;
 
 /// Generate a 64-bit random number with all zeros in the upper 60 bits
 fn gen_lower_bits_random(rng: &mut fastrand::Rng) -> Bitboard {

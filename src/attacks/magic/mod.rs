@@ -1,6 +1,6 @@
 use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTACKS_LOOKUP};
-use crate::bitboard::Bitboard;
-use crate::square::Square;
+use crate::utils::Bitboard;
+use crate::utils::Square;
 
 mod lookup;
 mod random;
@@ -23,10 +23,10 @@ mod tests {
     use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-    use crate::bitboard::get_bit_combinations_iter;
-    use crate::charboard::print_bb_pretty;
-    use crate::piece_type::PieceType;
-    use crate::square::Square;
+    use crate::utils::get_bit_combinations_iter;
+    use crate::utils::charboard::print_bb_pretty;
+    use crate::utils::PieceType;
+    use crate::utils::Square;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {

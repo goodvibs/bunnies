@@ -1,12 +1,12 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_rook_attacks};
-use crate::bitboard::{get_set_bit_mask_iter, get_squares_from_mask_iter, SetBitMaskIterator};
-use crate::color::Color;
-use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
-use crate::piece_type::PieceType;
+use crate::utils::{get_set_bit_mask_iter, get_squares_from_mask_iter, SetBitMaskIterator};
+use crate::utils::Color;
+use crate::utils::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
+use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::square::Square;
+use crate::utils::Square;
 use crate::state::{State};
 
 fn add_pawn_promotion_moves(moves: &mut Vec<Move>, src: Square, dst: Square) {

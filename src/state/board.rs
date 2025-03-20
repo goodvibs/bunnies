@@ -1,12 +1,12 @@
 //! Board struct and methods
 
 use crate::attacks::*;
-use crate::bitboard::{get_squares_from_mask_iter, Bitboard};
-use crate::color::Color;
-use crate::colored_piece::ColoredPiece;
-use crate::masks::*;
-use crate::piece_type::PieceType;
-use crate::square::Square;
+use crate::utils::{get_squares_from_mask_iter, Bitboard};
+use crate::utils::Color;
+use crate::utils::ColoredPiece;
+use crate::utils::masks::*;
+use crate::utils::PieceType;
+use crate::utils::Square;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
 /// as well as the zobrist hash of the position.

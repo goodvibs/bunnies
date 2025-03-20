@@ -1,5 +1,5 @@
-use crate::bitboard::Bitboard;
-use crate::square::Square;
+use crate::utils::Bitboard;
+use crate::utils::Square;
 use crate::state::Board;
 
 pub type Charboard = [[char; 8]; 8];

@@ -1,8 +1,8 @@
 use std::fmt::Display;
-use crate::bitboard::Bitboard;
-use crate::charboard::SQUARE_NAMES;
-use crate::color::Color;
-use crate::masks::{FILES, RANKS};
+use crate::utils::Bitboard;
+use crate::utils::charboard::SQUARE_NAMES;
+use crate::utils::Color;
+use crate::utils::masks::{FILES, RANKS};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -175,7 +175,7 @@ impl Display for Square {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::color::Color;
+    use crate::utils::Color;
 
     #[test]
     fn test_square_values() {

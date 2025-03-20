@@ -1,4 +1,4 @@
-use crate::bitboard::Bitboard;
+use crate::utils::Bitboard;
 
 /// Struct to store all magic-related information for a square
 #[derive(Copy, Clone)]

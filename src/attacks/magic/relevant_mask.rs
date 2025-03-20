@@ -1,7 +1,7 @@
 use static_init::dynamic;
-use crate::bitboard::Bitboard;
-use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
-use crate::square::Square;
+use crate::utils::Bitboard;
+use crate::utils::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
+use crate::utils::Square;
 
 /// Precomputed masks for rook relevant squares
 #[dynamic]
@@ -65,7 +65,7 @@ fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
 #[cfg(test)]
 mod tests {
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
-    use crate::charboard::print_bb_pretty;
+    use crate::utils::charboard::print_bb_pretty;
 
     #[test]
     fn test_calc_rook_relevant_mask() {

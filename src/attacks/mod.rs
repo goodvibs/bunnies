@@ -1,8 +1,8 @@
 //! This module contains functions to calculate attack bitboards for different pieces.
 
-use crate::bitboard::Bitboard;
-use crate::color::Color;
-use crate::square::Square;
+use crate::utils::Bitboard;
+use crate::utils::Color;
+use crate::utils::Square;
 
 pub mod manual;
 pub mod precomputed;
