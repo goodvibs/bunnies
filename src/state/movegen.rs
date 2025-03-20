@@ -25,12 +25,12 @@ impl State {
             Color::Black => RANK_1
         };
 
-        for src in pawn_srcs.clone() {
-            let move_src = unsafe { Square::from(src.leading_zeros() as u8) };
+        for src in pawn_srcs {
+            let move_src = unsafe { Square::from_bitboard(src) };
 
             let captures = multi_pawn_attacks(src, self.side_to_move) & opposite_color_bb;
             for dst in get_set_bit_mask_iter(captures) {
-                let move_dst = unsafe { Square::from(dst.leading_zeros() as u8) };
+                let move_dst = unsafe { Square::from_bitboard(dst) };
                 if dst & promotion_rank != 0 {
                     add_pawn_promotion_moves(moves, move_src, move_dst);
                 }
@@ -54,11 +54,14 @@ impl State {
         if context.double_pawn_push != -1 { // if en passant is possible
             for direction in [-1, 1] { // left and right
                 let double_pawn_push_file = context.double_pawn_push as i32 + direction;
+
                 if double_pawn_push_file >= 0 && double_pawn_push_file <= 7 { // if within bounds
                     let double_pawn_push_file_mask = FILE_A >> double_pawn_push_file;
+
                     if pawns_bb & double_pawn_push_file_mask & src_rank_bb != 0 {
                         let move_src = unsafe { Square::from(src_rank_first_square as u8 + double_pawn_push_file as u8) };
                         let move_dst = unsafe { Square::from(dst_rank_first_square as u8 + context.double_pawn_push as u8) };
+
                         moves.push(Move::new_non_promotion(move_dst, move_src, MoveFlag::EnPassant));
                     }
                 }
@@ -77,7 +80,7 @@ impl State {
             Color::Black => RANK_6
         };
         for src_bb in pawn_srcs {
-            let src_square = unsafe { Square::from(src_bb.leading_zeros() as u8) };
+            let src_square = unsafe { Square::from_bitboard(src_bb) };
 
             // single moves
             let single_move_dst = multi_pawn_moves(src_bb, self.side_to_move) & !all_occupancy_bb;
@@ -85,14 +88,14 @@ impl State {
                 continue;
             }
 
-            let single_move_dst_square = unsafe { Square::from(single_move_dst.leading_zeros() as u8) };
+            let single_move_dst_square = unsafe { Square::from_bitboard(single_move_dst) };
 
             // double push
             if single_move_dst & single_push_rank != 0 {
                 let double_move_dst = multi_pawn_moves(single_move_dst, self.side_to_move) & !all_occupancy_bb;
                 if double_move_dst != 0 {
                     unsafe {
-                        let double_move_dst_square = Square::from(double_move_dst.leading_zeros() as u8);
+                        let double_move_dst_square = Square::from_bitboard(double_move_dst);
                         moves.push(Move::new_non_promotion(double_move_dst_square, src_square, MoveFlag::NormalMove));
                     }
                 }
@@ -174,7 +177,7 @@ impl State {
 
         // king moves
         let king_src_bb = self.board.piece_type_masks[PieceType::King as usize] & same_color_bb;
-        let king_src_square = unsafe { Square::from(king_src_bb.leading_zeros() as u8) };
+        let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
         let king_moves = single_king_attacks(king_src_square) & !same_color_bb;
         for dst_square in get_squares_from_mask_iter(king_moves) {
             moves.push(Move::new_non_promotion(dst_square, king_src_square, MoveFlag::NormalMove));

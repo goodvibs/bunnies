@@ -22,6 +22,10 @@ impl Square {
         assert!(square_number < 64, "Square number out of bounds");
         std::mem::transmute::<u8, Square>(square_number)
     }
+
+    pub const unsafe fn from_bitboard(bitboard: Bitboard) -> Square {
+        Square::from(bitboard.leading_zeros() as u8)
+    }
     
     pub const unsafe fn from_rank_file(rank: u8, file: u8) -> Square {
         assert!(rank < 8 && file < 8, "Rank or file out of bounds");
