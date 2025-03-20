@@ -5,7 +5,7 @@ use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::state::{State, Termination};
+use crate::state::{State, GameResult};
 
 pub struct MoveTreeNode {
     pub move_data: Option<PgnMoveData>, // None for the root node
@@ -114,9 +114,18 @@ impl MoveTreeNode {
             };
 
             state.make_move(mv);
-            state.check_and_update_termination();
-            let is_checkmate = state.termination == Some(Termination::Checkmate);
             let is_check = state.board.is_color_in_check(state.side_to_move);
+            let is_checkmate = match is_check {
+                true => {
+                    let all_moves = state.calc_legal_moves();
+                    let is_checkmate = all_moves.is_empty();
+                    if is_checkmate {
+                        state.result = GameResult::Checkmate;
+                    }
+                    is_checkmate
+                },
+                false => false
+            };
 
             // Combine move number and move
             move_number_str + &move_data.render(moved_piece, disambiguation_str.as_str(), is_check, is_checkmate, is_capture, config.include_annotations, config.include_nags)

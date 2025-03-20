@@ -10,7 +10,7 @@ use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
 use crate::state::context::Context;
-use crate::state::termination::Termination;
+use crate::state::termination::GameResult;
 use crate::state::State;
 
 impl State {
@@ -105,16 +105,23 @@ impl State {
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.flip();
         self.context = Rc::new(RefCell::new(new_context));
+    }
 
-        if self.board.are_both_sides_insufficient_material(true) {
-            self.termination = Some(Termination::InsufficientMaterial);
+    pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
+        if self.board.are_both_sides_insufficient_material(use_uscf_rules) {
+            self.result = GameResult::InsufficientMaterial;
         }
-        else if self.context.borrow().halfmove_clock == 100 { // fifty move rule
-            self.termination = Some(Termination::FiftyMoveRule);
+    }
+
+    pub fn update_halfmove_clock(&mut self) {
+        if self.context.borrow().halfmove_clock < 100 {
+            self.result = GameResult::FiftyMoveRule;
         }
-        else if self.context.borrow().has_threefold_repetition_occurred() {
-            // check for repetition
-            self.termination = Some(Termination::ThreefoldRepetition);
+    }
+
+    pub fn update_threefold_repetition(&mut self) {
+        if self.context.borrow().has_threefold_repetition_occurred() {
+            self.result = GameResult::ThreefoldRepetition;
         }
     }
 }

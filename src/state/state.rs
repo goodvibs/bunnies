@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::utils::Bitboard;
 use crate::utils::Color;
-use crate::state::{Board, Context, Termination};
+use crate::state::{Board, Context, GameResult};
 use crate::utils::masks::{CASTLING_CHECK_MASK_LONG, CASTLING_CHECK_MASK_SHORT, FILES, RANK_4, STARTING_BK, STARTING_KING_ROOK_GAP_LONG, STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR, STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK};
 use crate::utils::PieceType;
 
@@ -14,7 +14,7 @@ pub struct State {
     pub board: Board,
     pub side_to_move: Color,
     pub halfmove: u16,
-    pub termination: Option<Termination>,
+    pub result: GameResult,
     pub context: Rc<RefCell<Context>>,
 }
 
@@ -27,7 +27,7 @@ impl State {
             board,
             side_to_move: Color::White,
             halfmove: 0,
-            termination: None,
+            result: GameResult::None,
             context: Rc::new(RefCell::new(Context::initial_no_castling(zobrist_hash))),
         }
     }
@@ -40,7 +40,7 @@ impl State {
             board,
             side_to_move: Color::White,
             halfmove: 0,
-            termination: None,
+            result: GameResult::None,
             context: Rc::new(RefCell::new(Context::initial(zobrist_hash))),
         }
     }
@@ -48,26 +48,6 @@ impl State {
     /// Gets the fullmove number of the position. 1-based.
     pub const fn get_fullmove(&self) -> u16 {
         self.halfmove / 2 + 1
-    }
-
-    /// Assumes the game has ended and updates the termination as checkmate or stalemate.
-    pub fn assume_and_update_termination(&mut self) {
-        self.termination = Some(
-            match self.termination {
-                Some(termination) => termination,
-                None => match self.board.is_color_in_check(self.side_to_move) {
-                    true => Termination::Checkmate,
-                    false => Termination::Stalemate,
-                }
-            }
-        );
-    }
-    
-    /// Checks if the game has ended and updates the termination as checkmate or stalemate.
-    pub fn check_and_update_termination(&mut self) {
-        if self.calc_legal_moves().is_empty() {
-            self.assume_and_update_termination();
-        }
     }
 
     /// Returns whether the current side to move has short castling rights.

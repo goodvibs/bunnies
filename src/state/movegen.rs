@@ -212,13 +212,12 @@ impl State {
 
     /// Returns a vector of legal moves.
     /// For each pseudolegal move, it clones the state,
-    /// makes the move, checks if the state is unequivocally valid, 
+    /// makes the move, checks if the state is unequivocally valid,
     /// and if so, adds the move to the vector.
     /// This is the legacy version of `calc_legal_moves`, which is far more efficient.
     pub fn calc_legal_moves_legacy(&self) -> Vec<Move> {
-        if self.termination.is_some() {
-            return Vec::new();
-        }
+        assert!(self.result.is_none());
+
         let pseudolegal_moves = self.calc_pseudolegal_moves();
         let mut filtered_moves = Vec::new();
         for move_ in pseudolegal_moves {
@@ -237,9 +236,7 @@ impl State {
     /// The state then unmakes the move before moving on to the next move.
     /// This is the more efficient version of `calc_legal_moves_legacy`.
     pub fn calc_legal_moves(&self) -> Vec<Move> {
-        if self.termination.is_some() {
-            return Vec::new();
-        }
+        assert!(self.result.is_none());
         
         let pseudolegal_moves = self.calc_pseudolegal_moves();
         let mut filtered_moves = Vec::new();

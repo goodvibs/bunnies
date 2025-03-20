@@ -6,7 +6,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT};
 use crate::utils::PieceType;
 use crate::utils::Square;
-use crate::state::State;
+use crate::state::{GameResult, State};
 
 impl State {
     fn unprocess_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType) {
@@ -83,6 +83,6 @@ impl State {
         self.side_to_move = self.side_to_move.flip();
         let old_context = self.context.borrow().previous.as_ref().expect("No previous context").clone();
         self.context = old_context;
-        self.termination = None;
+        self.result = GameResult::None;
     }
 }
