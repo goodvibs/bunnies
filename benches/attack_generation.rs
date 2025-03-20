@@ -19,7 +19,7 @@ fn benchmark_rook_attacks(c: &mut Criterion) {
     let mut group = c.benchmark_group("Rook Attacks");
 
     // Warm up static initialization
-    let _ = magic::magic_single_rook_attacks(Square::A6, 71);
+    let _ = magic::magic_single_rook_attacks(Square::A6, Square::B3.get_mask());
 
     group.bench_function("Manual Rook Attacks", |b| {
         b.iter(|| sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, manual::manual_single_rook_attacks))
@@ -36,7 +36,7 @@ fn benchmark_bishop_attacks(c: &mut Criterion) {
     let mut group = c.benchmark_group("Bishop Attacks");
 
     // Warm up static initialization
-    let _ = magic::magic_single_bishop_attacks(Square::C4, 255);
+    let _ = magic::magic_single_bishop_attacks(Square::A6, Square::B3.get_mask());
 
     group.bench_function("Manual Bishop Attacks", |b| {
         b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, manual::manual_single_bishop_attacks))
@@ -151,6 +151,8 @@ fn benchmark_pawn_pushes(c: &mut Criterion) {
 
 criterion_group!(
     benches,
+    benchmark_rook_attacks,
+    benchmark_bishop_attacks,
     benchmark_king_attacks,
     benchmark_knight_attacks,
     benchmark_pawn_attacks,
