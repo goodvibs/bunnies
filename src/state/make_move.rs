@@ -106,24 +106,6 @@ impl State {
         self.side_to_move = self.side_to_move.flip();
         self.context = Rc::new(RefCell::new(new_context));
     }
-
-    pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
-        if self.board.are_both_sides_insufficient_material(use_uscf_rules) {
-            self.result = GameResult::InsufficientMaterial;
-        }
-    }
-
-    pub fn update_halfmove_clock(&mut self) {
-        if self.context.borrow().halfmove_clock < 100 {
-            self.result = GameResult::FiftyMoveRule;
-        }
-    }
-
-    pub fn update_threefold_repetition(&mut self) {
-        if self.context.borrow().has_threefold_repetition_occurred() {
-            self.result = GameResult::ThreefoldRepetition;
-        }
-    }
 }
 
 impl GameContext {

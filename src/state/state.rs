@@ -50,6 +50,24 @@ impl State {
         self.halfmove / 2 + 1
     }
 
+    pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
+        if self.board.are_both_sides_insufficient_material(use_uscf_rules) {
+            self.result = GameResult::InsufficientMaterial;
+        }
+    }
+
+    pub fn update_halfmove_clock(&mut self) {
+        if self.context.borrow().halfmove_clock < 100 {
+            self.result = GameResult::FiftyMoveRule;
+        }
+    }
+
+    pub fn update_threefold_repetition(&mut self) {
+        if self.context.borrow().has_threefold_repetition_occurred() {
+            self.result = GameResult::ThreefoldRepetition;
+        }
+    }
+
     /// Returns whether the current side to move has short castling rights.
     pub fn has_castling_rights_short(&self, color: Color) -> bool {
         self.context.borrow().castling_rights & (0b00001000 >> (color as u8 * 2)) != 0
