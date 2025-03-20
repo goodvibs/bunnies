@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use bunnies::attacks::{magic, manual};
-use bunnies::attacks::magic::relevant_mask::{PrecomputedMasksForSquares, ROOK_RELEVANT_MASKS};
+use bunnies::attacks::magic::relevant_mask::{PrecomputedMasksForSquares, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use bunnies::bitboard::{get_bit_combinations_iter, Bitboard};
 use bunnies::square::Square;
 
@@ -31,8 +31,26 @@ fn benchmark_rook_attacks(c: &mut Criterion) {
     group.finish();
 }
 
+fn benchmark_bishop_attacks(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Bishop Attacks");
+
+    // Warm up static initialization
+    let _ = magic::magic_single_bishop_attacks(Square::C4, 255);
+
+    group.bench_function("Manual Bishop Attacks", |b| {
+        b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, manual::manual_single_bishop_attacks))
+    });
+
+    group.bench_function("Magic Bishop Attacks", |b| {
+        b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, magic::magic_single_bishop_attacks))
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_rook_attacks,
+    benchmark_bishop_attacks
 );
 criterion_main!(benches);
