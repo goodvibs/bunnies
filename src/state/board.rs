@@ -230,7 +230,7 @@ impl Board {
     /// Returns the piece type at `square`.
     pub fn get_piece_type_at(&self, square: Square) -> PieceType {
         let mask = square.get_mask();
-        for piece_type in PieceType::iter_pieces() {
+        for piece_type in PieceType::PIECES {
             if self.piece_type_masks[piece_type as usize] & mask != 0 {
                 return piece_type;
             }
@@ -272,7 +272,7 @@ impl Board {
 
         let mut all_occupancy_bb_reconstructed: Bitboard = 0;
 
-        for piece_type in PieceType::iter_pieces() {
+        for piece_type in PieceType::PIECES {
             let piece_bb = self.piece_type_masks[piece_type as usize];
 
             if piece_bb & all_occupancy_bb != piece_bb {

@@ -10,7 +10,7 @@ use crate::utils::Square;
 use crate::state::{State};
 
 fn add_pawn_promotion_moves(moves: &mut Vec<Move>, src: Square, dst: Square) {
-    for promotion_piece in PieceType::iter_promotion_pieces() {
+    for promotion_piece in PieceType::PROMOTION_PIECES {
         moves.push(Move::new(dst, src, promotion_piece, MoveFlag::Promotion));
     }
 }

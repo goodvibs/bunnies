@@ -13,40 +13,6 @@ pub enum PieceType {
     King=6
 }
 
-const ALL: [PieceType; 7] = [
-    PieceType::NoPieceType,
-    PieceType::Pawn,
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen,
-    PieceType::King
-];
-
-const ALL_PIECES: [PieceType; 6] = [
-    PieceType::Pawn,
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen,
-    PieceType::King
-];
-
-const ALL_NON_KING_PIECES: [PieceType; 5] = [
-    PieceType::Pawn,
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen
-];
-
-const ALL_PROMOTION_PIECES: [PieceType; 4] = [
-    PieceType::Knight,
-    PieceType::Bishop,
-    PieceType::Rook,
-    PieceType::Queen
-];
-
 impl PieceType {
     pub const LIMIT: u8 = 7;
     pub const AllPieceTypes: PieceType = PieceType::NoPieceType;
@@ -116,15 +82,37 @@ impl PieceType {
         }
     }
 
-    pub fn iter_all_types() -> [PieceType; 7] {
-        ALL
-    }
+    pub const ALL: [PieceType; 7] = [
+        PieceType::NoPieceType,
+        PieceType::Pawn,
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen,
+        PieceType::King
+    ];
 
-    pub fn iter_pieces() -> [PieceType; 6] {
-        ALL_PIECES
-    }
-    
-    pub fn iter_promotion_pieces() -> [PieceType; 4] {
-        ALL_PROMOTION_PIECES
-    }
+    pub const PIECES: [PieceType; 6] = [
+        PieceType::Pawn,
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen,
+        PieceType::King
+    ];
+
+    pub const NON_KING_PIECES: [PieceType; 5] = [
+        PieceType::Pawn,
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen
+    ];
+
+    pub const PROMOTION_PIECES: [PieceType; 4] = [
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen
+    ];
 }
