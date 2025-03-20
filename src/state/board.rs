@@ -100,13 +100,11 @@ impl Board {
         
         true
     }
-    
-    /// Returns true if `mask` is attacked by any piece of the given color.
-    /// Else, returns false.
-    pub fn is_mask_in_check(&self, mask: Bitboard, by_color: Color) -> bool {
+
+    pub fn get_check_mask(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_masks[by_color as usize];
         let occupied_mask = self.piece_type_masks[PieceType::AllPieceTypes as usize];
-        
+
         let pawns_mask = self.piece_type_masks[PieceType::Pawn as usize];
         let knights_mask = self.piece_type_masks[PieceType::Knight as usize];
         let bishops_mask = self.piece_type_masks[PieceType::Bishop as usize];
@@ -115,20 +113,27 @@ impl Board {
         let kings_mask = self.piece_type_masks[PieceType::King as usize];
 
         let mut attacks = multi_pawn_attacks(pawns_mask & attacking_color_mask, by_color);
-        
+
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
-        
+
         for src_square in get_squares_from_mask_iter((bishops_mask | queens_mask) & attacking_color_mask) {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
-        
+
         for src_square in get_squares_from_mask_iter((rooks_mask | queens_mask) & attacking_color_mask) {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
-        
+
         attacks |= multi_king_attacks(kings_mask & attacking_color_mask);
-        
-        attacks & mask != 0
+
+        attacks
+    }
+    
+    /// Returns true if `mask` is attacked by any piece of the given color.
+    /// Else, returns false.
+    pub fn is_mask_in_check(&self, mask: Bitboard, by_color: Color) -> bool {
+        let check_mask = self.get_check_mask(by_color);
+        check_mask & mask != 0
     }
 
     /// Returns true if the given color's king is in check.
