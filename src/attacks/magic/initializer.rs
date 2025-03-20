@@ -37,14 +37,7 @@ impl MagicAttacksInitializer {
     pub fn init_for_piece(&mut self, relevant_mask_lookup: &PrecomputedMasksForSquares, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, table_size: usize) -> MagicAttacksLookup {
         self.attacks = vec![0; table_size].into_boxed_slice();
 
-        let mut magic_info_for_squares = [
-            MagicInfo {
-                relevant_mask: 0,
-                magic_number: 0,
-                right_shift_amount: 0,
-                offset: 0,
-            }; 64
-        ];
+        let mut magic_info_for_squares = [MagicInfo::default(); 64];
 
         for (i, square) in Square::iter_all().enumerate() {
             magic_info_for_squares[i] = self.generate_magic_info(

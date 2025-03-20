@@ -21,3 +21,14 @@ impl MagicInfo {
         hash as usize
     }
 }
+
+impl Default for MagicInfo {
+    fn default() -> Self {
+        MagicInfo {
+            relevant_mask: 0,
+            magic_number: 0,
+            right_shift_amount: 0,
+            offset: 0
+        }
+    }
+}
