@@ -31,7 +31,7 @@ mod tests {
     #[test]
     fn test_fill_magic_numbers_and_attacks() {
         for sliding_piece in [PieceType::Rook, PieceType::Bishop] {
-            for src_square in Square::iter_all() {
+            for src_square in Square::ALL {
                 let relevant_mask = match sliding_piece {
                     PieceType::Rook => ROOK_RELEVANT_MASKS.get(src_square),
                     _ => BISHOP_RELEVANT_MASKS.get(src_square),

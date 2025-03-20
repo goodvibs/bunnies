@@ -6,7 +6,7 @@ use bunnies::utils::Color;
 use bunnies::utils::Square;
 
 fn sliding_piece_attacks_test(relevant_masks: &PrecomputedMasksForSquares, get_attacks: impl Fn(Square, Bitboard) -> Bitboard) {
-    for square in Square::iter_all() {
+    for square in Square::ALL {
         let relevant_mask = relevant_masks.get(square);
         let occupied_masks_iter = get_bit_combinations_iter(relevant_mask);
         for occupied in occupied_masks_iter {
@@ -58,8 +58,7 @@ fn benchmark_king_attacks(c: &mut Criterion) {
     // Test all squares for king attacks
     group.bench_function("Manual King Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_king_attacks(square.get_mask());
             }
         })
@@ -67,8 +66,7 @@ fn benchmark_king_attacks(c: &mut Criterion) {
 
     group.bench_function("Precomputed King Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = precomputed::precomputed_single_king_attacks(square);
             }
         })
@@ -86,8 +84,7 @@ fn benchmark_knight_attacks(c: &mut Criterion) {
     // Test all squares for knight attacks
     group.bench_function("Manual Knight Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_knight_attacks(square.get_mask());
             }
         })
@@ -95,8 +92,7 @@ fn benchmark_knight_attacks(c: &mut Criterion) {
 
     group.bench_function("Precomputed Knight Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = precomputed::precomputed_single_knight_attacks(square);
             }
         })
@@ -111,8 +107,7 @@ fn benchmark_pawn_attacks(c: &mut Criterion) {
     // Test all squares for white pawn attacks
     group.bench_function("Manual White Pawn Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_pawn_attacks(square.get_mask(), Color::White);
             }
         })
@@ -121,8 +116,7 @@ fn benchmark_pawn_attacks(c: &mut Criterion) {
     // Test all squares for black pawn attacks
     group.bench_function("Manual Black Pawn Attacks", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_pawn_attacks(square.get_mask(), Color::Black);
             }
         })
@@ -137,8 +131,7 @@ fn benchmark_pawn_pushes(c: &mut Criterion) {
     // Test all squares for white pawn moves
     group.bench_function("Manual White Pawn Pushes", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_pawn_moves(square.get_mask(), Color::White);
             }
         })
@@ -147,8 +140,7 @@ fn benchmark_pawn_pushes(c: &mut Criterion) {
     // Test all squares for black pawn moves
     group.bench_function("Manual Black Pawn Pushes", |b| {
         b.iter(|| {
-            for square in Square::iter_all() {
-                print!("");
+            for square in Square::ALL {
                 let _ = manual::multi_pawn_moves(square.get_mask(), Color::Black);
             }
         })

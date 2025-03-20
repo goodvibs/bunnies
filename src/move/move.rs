@@ -104,8 +104,8 @@ mod tests {
 
     #[test]
     fn test_move() {
-        for dst_square in Square::iter_all() {
-            for src_square in Square::iter_all() {
+        for dst_square in Square::ALL {
+            for src_square in Square::ALL {
                 for promotion_piece in PieceType::PROMOTION_PIECES {
                     for flag_int in 0..4 {
                         let flag = unsafe { MoveFlag::from(flag_int) };

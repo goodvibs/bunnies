@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_queen_move_direction() {
-        for square in Square::iter_all() {
+        for square in Square::ALL {
             test_all_queen_directions_for_square(square);
         }
     }
@@ -201,7 +201,7 @@ mod tests {
     
     #[test]
     fn test_knight_move_direction() {
-        for square in Square::iter_all() {
+        for square in Square::ALL {
             test_all_knight_directions_for_square(square);
         }
     }

@@ -18,7 +18,7 @@ pub struct PrecomputedMasksForSquares {
 impl PrecomputedMasksForSquares {
     fn init(calc_relevant_mask: &impl Fn(Square) -> Bitboard) -> Self {
         let mut relevant_masks = [0; 64];
-        for (i, square) in Square::iter_all().enumerate() {
+        for (i, square) in Square::ALL.into_iter().enumerate() {
             relevant_masks[i] = calc_relevant_mask(square);
         }
         PrecomputedMasksForSquares {

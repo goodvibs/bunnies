@@ -90,7 +90,7 @@ impl MagicAttacksLookup {
 
         // Read magic info for each square
         let mut magic_info_for_squares = [MagicInfo::default(); 64];
-        for square in Square::iter_all() {
+        for square in Square::ALL {
             let mut relevant_mask_bytes = [0u8; 8];
             let mut magic_number_bytes = [0u8; 8];
             let mut right_shift_amount = [0u8; 1];
@@ -111,7 +111,7 @@ impl MagicAttacksLookup {
 
         // Read the attack table
         let mut attack_table_size = 0;
-        for square in Square::iter_all() {
+        for square in Square::ALL {
             let info = &magic_info_for_squares[square as usize];
             let num_bits = info.relevant_mask.count_ones();
             let end_offset = info.offset + (1 << num_bits);
