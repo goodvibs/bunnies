@@ -85,7 +85,7 @@ impl MagicAttacksInitializer {
                 continue;
             }
 
-            attack_table.fill(0);
+            attack_table = vec![0 as Bitboard; 1 << num_relevant_bits];
             let mut collision = false;
 
             for (&occupied, &attack_mask) in occupancy_patterns.iter().zip(attack_masks.iter()) {

@@ -14,10 +14,12 @@ const BISHOP_ATTACK_TABLE_SIZE: usize = 4 * 2usize.pow(6) + 44 * 2usize.pow(5) +
 
 #[dynamic]
 pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup = MagicAttacksInitializer::new()
+    .with_seed(0)
     .init_for_piece(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE);
 
 #[dynamic]
 pub static BISHOP_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup = MagicAttacksInitializer::new()
+    .with_seed(0)
     .init_for_piece(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE);
 
 /// Object that stores all magic-related information for a sliding piece and provides a method to get the attack mask for a given square and occupied mask
