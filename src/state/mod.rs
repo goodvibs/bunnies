@@ -9,6 +9,8 @@ mod unmake_move;
 mod zobrist;
 mod fen;
 mod state;
+mod validation;
+mod castling;
 
 pub use state::*;
 pub use board::*;
