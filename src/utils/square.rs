@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::ops::Range;
 use crate::utils::Bitboard;
 use crate::utils::charboard::SQUARE_NAMES;
 use crate::utils::Color;
@@ -157,8 +158,8 @@ impl Square {
         SQUARE_NAMES[*self as usize]
     }
 
-    pub fn iter_all() -> impl Iterator<Item = &'static Square> {
-        ALL.iter()
+    pub fn iter_all() -> SquareIter {
+        SquareIter { range: 0..64 }
     }
 
     pub fn iter_between(first: Square, last: Square) -> impl Iterator<Item = &'static Square> {
@@ -171,6 +172,26 @@ impl Display for Square {
         write!(f, "{}", self.readable())
     }
 }
+
+pub struct SquareIter {
+    range: Range<u8>,
+}
+
+impl Iterator for SquareIter {
+    type Item = Square;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next().map(|idx| unsafe { std::mem::transmute(idx) })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.range.size_hint()
+    }
+}
+
+impl ExactSizeIterator for SquareIter {}
 
 #[cfg(test)]
 mod tests {
@@ -403,10 +424,10 @@ mod tests {
 
     #[test]
     fn test_iter_all() {
-        let all_squares: Vec<&Square> = Square::iter_all().collect();
+        let all_squares = Square::iter_all().collect::<Vec<Square>>();
         assert_eq!(all_squares.len(), 64);
-        assert_eq!(*all_squares[0], Square::A8);
-        assert_eq!(*all_squares[63], Square::H1);
+        assert_eq!(all_squares[0], Square::A8);
+        assert_eq!(all_squares[63], Square::H1);
     }
 
     #[test]

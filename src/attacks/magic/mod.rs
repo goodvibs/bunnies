@@ -33,18 +33,18 @@ mod tests {
         for sliding_piece in [PieceType::Rook, PieceType::Bishop] {
             for src_square in Square::iter_all() {
                 let relevant_mask = match sliding_piece {
-                    PieceType::Rook => ROOK_RELEVANT_MASKS.get(*src_square),
-                    _ => BISHOP_RELEVANT_MASKS.get(*src_square),
+                    PieceType::Rook => ROOK_RELEVANT_MASKS.get(src_square),
+                    _ => BISHOP_RELEVANT_MASKS.get(src_square),
                 };
                 let occupied_masks_iter = get_bit_combinations_iter(relevant_mask);
                 for occupied_mask in occupied_masks_iter {
                     let magic_attacks = match sliding_piece {
-                        PieceType::Rook => magic_single_rook_attacks(*src_square, occupied_mask),
-                        _ => magic_single_bishop_attacks(*src_square, occupied_mask),
+                        PieceType::Rook => magic_single_rook_attacks(src_square, occupied_mask),
+                        _ => magic_single_bishop_attacks(src_square, occupied_mask),
                     };
                     let manual_attacks = match sliding_piece {
-                        PieceType::Rook => manual_single_rook_attacks(*src_square, occupied_mask),
-                        _ => manual_single_bishop_attacks(*src_square, occupied_mask),
+                        PieceType::Rook => manual_single_rook_attacks(src_square, occupied_mask),
+                        _ => manual_single_bishop_attacks(src_square, occupied_mask),
                     };
                     if magic_attacks != manual_attacks {
                         println!("Square mask:");

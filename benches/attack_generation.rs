@@ -7,10 +7,10 @@ use bunnies::utils::Square;
 
 fn sliding_piece_attacks_test(relevant_masks: &PrecomputedMasksForSquares, get_attacks: impl Fn(Square, Bitboard) -> Bitboard) {
     for square in Square::iter_all() {
-        let relevant_mask = relevant_masks.get(*square);
+        let relevant_mask = relevant_masks.get(square);
         let occupied_masks_iter = get_bit_combinations_iter(relevant_mask);
         for occupied in occupied_masks_iter {
-            let _ = get_attacks(*square, occupied);
+            let _ = get_attacks(square, occupied);
         }
     }
 }
@@ -69,7 +69,7 @@ fn benchmark_king_attacks(c: &mut Criterion) {
         b.iter(|| {
             for square in Square::iter_all() {
                 print!("");
-                let _ = precomputed::precomputed_single_king_attacks(*square);
+                let _ = precomputed::precomputed_single_king_attacks(square);
             }
         })
     });
@@ -97,7 +97,7 @@ fn benchmark_knight_attacks(c: &mut Criterion) {
         b.iter(|| {
             for square in Square::iter_all() {
                 print!("");
-                let _ = precomputed::precomputed_single_knight_attacks(*square);
+                let _ = precomputed::precomputed_single_knight_attacks(square);
             }
         })
     });

@@ -101,7 +101,7 @@ impl MagicAttacksLookup {
             file.read_exact(&mut right_shift_amount)?;
             file.read_exact(&mut offset_bytes)?;
 
-            magic_info_for_squares[*square as usize] = MagicInfo {
+            magic_info_for_squares[square as usize] = MagicInfo {
                 relevant_mask: u64::from_le_bytes(relevant_mask_bytes),
                 magic_number: u64::from_le_bytes(magic_number_bytes),
                 right_shift_amount: right_shift_amount[0],
@@ -112,7 +112,7 @@ impl MagicAttacksLookup {
         // Read the attack table
         let mut attack_table_size = 0;
         for square in Square::iter_all() {
-            let info = &magic_info_for_squares[*square as usize];
+            let info = &magic_info_for_squares[square as usize];
             let num_bits = info.relevant_mask.count_ones();
             let end_offset = info.offset + (1 << num_bits);
             attack_table_size = attack_table_size.max(end_offset);

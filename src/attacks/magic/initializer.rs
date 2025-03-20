@@ -41,8 +41,8 @@ impl MagicAttacksInitializer {
 
         for (i, square) in Square::iter_all().enumerate() {
             magic_info_for_squares[i] = self.generate_magic_info(
-                relevant_mask_lookup.get(*square),
-                |occupied_mask: Bitboard| calc_attack_mask(*square, occupied_mask)
+                relevant_mask_lookup.get(square),
+                |occupied_mask: Bitboard| calc_attack_mask(square, occupied_mask)
             );
         }
 
