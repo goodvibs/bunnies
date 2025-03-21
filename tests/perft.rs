@@ -40,7 +40,7 @@ fn test_initial_position() {
 
 #[test]
 fn test_kiwipete() {
-    let mut state = State::from_fen("rnbqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKB1R w KQkq - 0 1").unwrap();
+    let state = State::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -").unwrap();
     perft(state, 1, 48);
     // perft(state, 2, 2039);
     // perft(state, 3, 97862);
