@@ -101,7 +101,7 @@ impl Board {
         true
     }
 
-    pub fn get_check_mask(&self, by_color: Color) -> Bitboard {
+    pub fn get_attacks_mask(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_masks[by_color as usize];
         let occupied_mask = self.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -132,8 +132,8 @@ impl Board {
     /// Returns true if `mask` is attacked by any piece of the given color.
     /// Else, returns false.
     pub fn is_mask_in_check(&self, mask: Bitboard, by_color: Color) -> bool {
-        let check_mask = self.get_check_mask(by_color);
-        check_mask & mask != 0
+        let attacks_mask = self.get_attacks_mask(by_color);
+        attacks_mask & mask != 0
     }
 
     /// Returns true if the given color's king is in check.

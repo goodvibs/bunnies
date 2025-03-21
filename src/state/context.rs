@@ -3,6 +3,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::utils::Bitboard;
+use crate::utils::masks::{RANK_6, RANK_7, RANK_8};
 use crate::utils::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.
@@ -16,20 +17,23 @@ pub struct GameContext {
     // updated after every move
     pub captured_piece: PieceType,
     pub previous: Option<Rc<RefCell<GameContext>>>,
-    pub zobrist_hash: Bitboard
+    pub zobrist_hash: Bitboard,
+    pub attacks_mask: Bitboard
 }
 
 impl GameContext {
     /// Creates a new context linking to the previous context
     pub fn new_from(previous_context: Rc<RefCell<GameContext>>, zobrist_hash: Bitboard) -> GameContext {
         let previous = previous_context.borrow();
+        assert_ne!(previous.attacks_mask, 0, "Previous context must have an updated attacks_mask");
         GameContext {
             halfmove_clock: previous.halfmove_clock + 1,
             double_pawn_push: -1,
             castling_rights: previous.castling_rights,
             captured_piece: PieceType::NoPieceType,
             previous: Some(previous_context.clone()),
-            zobrist_hash
+            zobrist_hash,
+            attacks_mask: 0
         }
     }
 
@@ -43,7 +47,8 @@ impl GameContext {
             castling_rights: 0b00001111,
             captured_piece: PieceType::NoPieceType,
             previous: None,
-            zobrist_hash
+            zobrist_hash,
+            attacks_mask: RANK_8 | RANK_7 | RANK_6
         }
     }
 
@@ -56,8 +61,13 @@ impl GameContext {
             castling_rights: 0b00000000,
             captured_piece: PieceType::NoPieceType,
             previous: None,
-            zobrist_hash
+            zobrist_hash,
+            attacks_mask: RANK_8 | RANK_7 | RANK_6
         }
+    }
+
+    pub fn register_attacks(&mut self, attacks_mask: Bitboard) {
+        self.attacks_mask |= attacks_mask;
     }
 
     /// Checks if the halfmove clock is valid (less than or equal to 100).

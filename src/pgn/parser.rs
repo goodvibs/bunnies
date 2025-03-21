@@ -122,7 +122,8 @@ impl<'a> PgnParser<'a> {
                 if !move_number_just_seen && current_state.side_to_move == Color::White {
                     return Err(PgnParsingError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
                 }
-                let possible_moves = current_state.calc_legal_moves();
+                let mut attacks_mask = 0;
+                let possible_moves = current_state.calc_legal_moves(&mut attacks_mask);
 
                 let mut matched_move = None;
                 for possible_move in possible_moves {
@@ -138,7 +139,7 @@ impl<'a> PgnParser<'a> {
                 if let Some(matched_move) = matched_move {
                     let new_state = {
                         let mut state = current_state.clone();
-                        state.make_move(matched_move);
+                        state.make_move(matched_move, attacks_mask);
                         state
                     };
                     let move_data = PgnMoveData {

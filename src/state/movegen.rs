@@ -16,7 +16,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 }
 
 impl State {
-    fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator, check_mask: &mut Bitboard) {
+    fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator, attacks_mask: &mut Bitboard) {
         let opposite_color = self.side_to_move.flip();
         let opposite_color_bb = self.board.color_masks[opposite_color as usize];
 
@@ -29,7 +29,7 @@ impl State {
             let move_src = unsafe { Square::from_bitboard(src) };
 
             let pawn_attacks = multi_pawn_attacks(src, self.side_to_move);
-            *check_mask |= pawn_attacks;
+            *attacks_mask |= pawn_attacks;
 
             let pawn_captures = pawn_attacks & opposite_color_bb;
 
@@ -114,23 +114,23 @@ impl State {
         }
     }
     
-    fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
         let pawn_srcs = get_set_bit_mask_iter(pawns_bb);
 
-        self.add_normal_pawn_captures_pseudolegal(moves, pawn_srcs.clone(), check_mask);
+        self.add_normal_pawn_captures_pseudolegal(moves, pawn_srcs.clone(), attacks_mask);
         self.add_en_passant_pseudolegal(moves);
         self.add_pawn_push_pseudolegal(moves, pawn_srcs);
     }
 
-    fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let knights_bb = self.board.piece_type_masks[PieceType::Knight as usize] & same_color_bb;
 
         for src_square in get_squares_from_mask_iter(knights_bb) {
             let knight_attacks = single_knight_attacks(src_square);
-            *check_mask |= knight_attacks;
+            *attacks_mask |= knight_attacks;
 
             let knight_moves = knight_attacks & !same_color_bb;
 
@@ -140,7 +140,7 @@ impl State {
         }
     }
 
-    fn add_bishop_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_bishop_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -148,7 +148,7 @@ impl State {
 
         for src_square in get_squares_from_mask_iter(bishops_bb) {
             let bishop_attacks = single_bishop_attacks(src_square, all_occupancy_bb);
-            *check_mask |= bishop_attacks;
+            *attacks_mask |= bishop_attacks;
 
             let bishop_moves = bishop_attacks & !same_color_bb;
 
@@ -158,7 +158,7 @@ impl State {
         }
     }
 
-    fn add_rook_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_rook_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -166,7 +166,7 @@ impl State {
 
         for src_square in get_squares_from_mask_iter(rooks_bb) {
             let rook_attacks = single_rook_attacks(src_square, all_occupancy_bb);
-            *check_mask |= rook_attacks;
+            *attacks_mask |= rook_attacks;
 
             let rook_moves = rook_attacks & !same_color_bb;
 
@@ -176,7 +176,7 @@ impl State {
         }
     }
 
-    fn add_queen_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_queen_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -184,7 +184,7 @@ impl State {
 
         for src_square in get_squares_from_mask_iter(queens_bb) {
             let queen_attacks = single_rook_attacks(src_square, all_occupancy_bb) | single_bishop_attacks(src_square, all_occupancy_bb);
-            *check_mask |= queen_attacks;
+            *attacks_mask |= queen_attacks;
 
             let queen_moves = queen_attacks & !same_color_bb;
 
@@ -194,7 +194,7 @@ impl State {
         }
     }
 
-    fn add_king_pseudolegal(&self, moves: &mut Vec<Move>, check_mask: &mut Bitboard) {
+    fn add_king_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -202,7 +202,7 @@ impl State {
         let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
 
         let king_attacks = single_king_attacks(king_src_square);
-        *check_mask |= king_attacks;
+        *attacks_mask |= king_attacks;
 
         let king_moves = king_attacks & !same_color_bb;
 
@@ -228,57 +228,35 @@ impl State {
     }
 
     /// Returns a vector of pseudolegal moves.
-    pub fn calc_pseudolegal_moves(&self) -> Vec<Move> {
+    pub fn calc_pseudolegal_moves(&self, attacks_mask: &mut Bitboard) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let mut check_mask = 0;
 
-        self.add_all_pawn_pseudolegal(&mut moves, &mut check_mask);
-        self.add_knight_pseudolegal(&mut moves, &mut check_mask);
-        self.add_bishop_pseudolegal(&mut moves, &mut check_mask);
-        self.add_rook_pseudolegal(&mut moves, &mut check_mask);
-        self.add_queen_pseudolegal(&mut moves, &mut check_mask);
-        self.add_king_pseudolegal(&mut moves, &mut check_mask);
+        self.add_all_pawn_pseudolegal(&mut moves, attacks_mask);
+        self.add_knight_pseudolegal(&mut moves, attacks_mask);
+        self.add_bishop_pseudolegal(&mut moves, attacks_mask);
+        self.add_rook_pseudolegal(&mut moves, attacks_mask);
+        self.add_queen_pseudolegal(&mut moves, attacks_mask);
+        self.add_king_pseudolegal(&mut moves, attacks_mask);
         self.add_castling_pseudolegal(&mut moves);
 
         moves
     }
 
     /// Returns a vector of legal moves.
-    /// For each pseudolegal move, it clones the state,
-    /// makes the move, checks if the state is unequivocally valid,
-    /// and if so, adds the move to the vector.
-    /// This is the legacy version of `calc_legal_moves`, which is far more efficient.
-    pub fn calc_legal_moves_legacy(&self) -> Vec<Move> {
-        assert!(self.result.is_none());
-
-        let pseudolegal_moves = self.calc_pseudolegal_moves();
-        let mut filtered_moves = Vec::new();
-        for move_ in pseudolegal_moves {
-            let mut new_state = self.clone();
-            new_state.make_move(move_);
-            if new_state.is_unequivocally_valid() && !new_state.board.is_color_in_check(self.side_to_move) {
-                filtered_moves.push(move_);
-            }
-        }
-        filtered_moves
-    }
-
-    /// Returns a vector of legal moves.
     /// For each pseudolegal move, it makes the move, checks if the state is probably valid,
     /// and if so, adds the move to the vector.
     /// The state then unmakes the move before moving on to the next move.
-    /// This is the more efficient version of `calc_legal_moves_legacy`.
-    pub fn calc_legal_moves(&self) -> Vec<Move> {
+    pub fn calc_legal_moves(&self, attacks_mask: &mut Bitboard) -> Vec<Move> {
         assert!(self.result.is_none());
         
-        let pseudolegal_moves = self.calc_pseudolegal_moves();
+        let pseudolegal_moves = self.calc_pseudolegal_moves(attacks_mask);
         let mut filtered_moves = Vec::new();
         
         // let self_keepsake = self.clone();
         
         let mut state = self.clone();
         for move_ in pseudolegal_moves {
-            state.make_move(move_);
+            state.make_move(move_, *attacks_mask);
             if state.is_probably_valid() {
                 filtered_moves.push(move_);
             }
