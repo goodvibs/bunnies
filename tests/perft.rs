@@ -35,7 +35,7 @@ fn test_initial_position() {
     // perft(initial_state, 3, 8902);
     // perft(initial_state, 4, 197281);
     perft(initial_state, 5, 4865609);
-    // perft(initial_state, 6, 119060324);
+    // perft(initial_state, 6, 119060324); // highest tested
 }
 
 #[test]
@@ -44,7 +44,40 @@ fn test_kiwipete() {
     // perft(state, 1, 48);
     // perft(state, 2, 2039);
     // perft(state, 3, 97862);
-    // perft(state, 4, 4085603);
-    perft(state, 5, 193690690);
+    perft(state, 4, 4085603);
+    // perft(state, 5, 193690690); // highest tested
     // perft(state, 6, 8031647685);
+}
+
+#[test]
+fn test_position_3() {
+    let state = State::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
+    // perft(state, 1, 14);
+    // perft(state, 2, 191);
+    // perft(state, 3, 2812);
+    // perft(state, 4, 43238);
+    // perft(state, 5, 674624);
+    perft(state, 6, 11030083); // highest tested
+    // perft(state, 7, 178633661);
+}
+
+#[test]
+fn test_position_4() {
+    let state = State::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1").unwrap();
+    // perft(state, 1, 6);
+    // perft(state, 2, 264);
+    // perft(state, 3, 9467);
+    perft(state, 4, 422333);
+    // perft(state, 5, 15833292); // highest tested
+    // perft(state, 6, 706045033);
+}
+
+#[test]
+fn test_position_5() {
+    let state = State::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
+    // perft(state, 1, 44);
+    // perft(state, 2, 1486);
+    // perft(state, 3, 62379);
+    perft(state, 4, 2103487);
+    // perft(state, 5, 89941194); // highest tested
 }
