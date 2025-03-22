@@ -18,60 +18,59 @@ pub struct GameContext {
     pub captured_piece: PieceType,
     pub previous: Option<Rc<RefCell<GameContext>>>,
     pub zobrist_hash: Bitboard,
-    pub attacks_mask: Bitboard
+    pub current_side_attacks: Bitboard
 }
 
 impl GameContext {
     /// Creates a new context linking to the previous context
-    pub fn new_from(previous_context: Rc<RefCell<GameContext>>, zobrist_hash: Bitboard) -> GameContext {
-        let previous = previous_context.borrow();
-        assert_ne!(previous.attacks_mask, 0, "Previous context must have an updated attacks_mask");
+    pub fn new_with_previous(previous_context: &Rc<RefCell<GameContext>>, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
+        let (previous_halfmove_clock, previous_castling_rights) = {
+            let previous = previous_context.borrow();
+            assert_ne!(previous.current_side_attacks, 0, "Previous context must have an updated attacks_mask");
+            assert_ne!(previous.zobrist_hash, 0, "Previous context must have an updated zobrist_hash");
+
+            (previous.halfmove_clock, previous.castling_rights)
+        };
         GameContext {
-            halfmove_clock: previous.halfmove_clock + 1,
+            halfmove_clock: previous_halfmove_clock + 1,
             double_pawn_push: -1,
-            castling_rights: previous.castling_rights,
+            castling_rights: previous_castling_rights,
             captured_piece: PieceType::NoPieceType,
-            previous: Some(previous_context.clone()),
+            previous: Some(Rc::clone(previous_context)),
             zobrist_hash,
-            attacks_mask: 0
+            current_side_attacks
         }
     }
 
     /// Creates a new context with no previous context.
-    /// Castling rights are set to full.
     /// This is used for the initial position.
-    pub fn initial(zobrist_hash: Bitboard) -> GameContext {
-        GameContext {
-            halfmove_clock: 0,
-            double_pawn_push: -1,
-            castling_rights: 0b00001111,
-            captured_piece: PieceType::NoPieceType,
-            previous: None,
-            zobrist_hash,
-            attacks_mask: RANK_8 | RANK_7 | RANK_6
-        }
+    pub const fn initial(zobrist_hash: Bitboard) -> GameContext {
+        Self::new_without_previous(0b00001111, zobrist_hash, RANK_6)
     }
 
     /// Creates a new context with no previous context.
-    /// Castling rights are set to none.
-    pub fn initial_no_castling(zobrist_hash: Bitboard) -> GameContext {
+    pub const fn new_without_previous(castling_rights: u8, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
         GameContext {
             halfmove_clock: 0,
             double_pawn_push: -1,
-            castling_rights: 0b00000000,
+            castling_rights,
             captured_piece: PieceType::NoPieceType,
             previous: None,
             zobrist_hash,
-            attacks_mask: RANK_8 | RANK_7 | RANK_6
+            current_side_attacks
         }
     }
 
-    pub fn register_attacks(&mut self, attacks_mask: Bitboard) {
-        self.attacks_mask |= attacks_mask;
+    pub const fn initialize_current_side_attacks(&mut self, attacks_mask: Bitboard) {
+        self.current_side_attacks = attacks_mask;
+    }
+
+    pub const fn initialize_zobrist_hash(&mut self, zobrist_hash: Bitboard) {
+        self.zobrist_hash = zobrist_hash;
     }
 
     /// Checks if the halfmove clock is valid (less than or equal to 100).
-    pub fn has_valid_halfmove_clock(&self) -> bool {
+    pub const fn has_valid_halfmove_clock(&self) -> bool {
         self.halfmove_clock <= 100
     }
     

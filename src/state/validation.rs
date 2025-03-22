@@ -27,7 +27,7 @@ impl State {
     /// Returns true if the opponent king is not in check.
     /// Else, returns false.
     pub fn is_not_in_illegal_check(&self) -> bool {
-        !self.board.is_color_in_check(self.side_to_move.flip())
+        !self.is_opposite_side_in_check()
     }
 
     /// Checks if the halfmove clock is valid and consistent with the halfmove counter.

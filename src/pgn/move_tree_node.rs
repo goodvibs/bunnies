@@ -114,7 +114,7 @@ impl MoveTreeNode {
                 MoveFlag::NormalMove | MoveFlag::Promotion => state.board.get_piece_type_at(mv_dest) != PieceType::NoPieceType,
             };
             state.make_move(mv, attacks_mask); // if attacks_mask is 0, then it will be filled in automatically
-            let is_check = state.board.is_color_in_check(state.side_to_move); // TODO: reduce duplicate work
+            let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {
                     let all_moves = state.calc_legal_moves(&mut 0);

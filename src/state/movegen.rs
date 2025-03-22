@@ -217,11 +217,11 @@ impl State {
             Color::Black => Square::E8
         };
 
-        if self.can_legally_castle_short(self.side_to_move) {
+        if self.can_legally_castle_short() {
             let king_dst_square = unsafe { Square::from(king_src_square as u8 + 2) };
             moves.push(Move::new_non_promotion(king_dst_square, king_src_square, MoveFlag::Castling));
         }
-        if self.can_legally_castle_long(self.side_to_move) {
+        if self.can_legally_castle_long() {
             let king_dst_square = unsafe { Square::from(king_src_square as u8 - 2) };
             moves.push(Move::new_non_promotion(king_dst_square, king_src_square, MoveFlag::Castling));
         }

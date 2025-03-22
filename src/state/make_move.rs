@@ -10,7 +10,6 @@ use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
 use crate::state::context::GameContext;
-use crate::state::termination::GameResult;
 use crate::state::State;
 
 impl State {
@@ -87,13 +86,14 @@ impl State {
     /// should be fully able to be undone by unmake_move.
     pub fn make_move(&mut self, mv: Move, mut attacks_mask: Bitboard) {
         if attacks_mask == 0 {
-            attacks_mask = self.board.get_attacks_mask(self.side_to_move);
+            attacks_mask = self.current_side_attacks();
         }
-        self.context.borrow_mut().register_attacks(attacks_mask);
+
+        self.context.borrow_mut().initialize_current_side_attacks(attacks_mask);
 
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = GameContext::new_from(Rc::clone(&self.context), 0);
+        let mut new_context = GameContext::new_with_previous(&self.context, 0, 0);
 
         self.board.move_color(self.side_to_move, dst_square, src_square);
 
