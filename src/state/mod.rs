@@ -11,6 +11,7 @@ mod fen;
 mod state;
 mod validation;
 mod castling;
+mod insufficient_material;
 
 pub use state::*;
 pub use board::*;
