@@ -26,3 +26,4 @@ name = "perft"
 
 [[bench]]
 name = "attack_generation"
+harness = false
