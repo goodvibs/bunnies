@@ -43,8 +43,8 @@ impl State {
 
     pub fn opposite_side_attacks(&self) -> Bitboard {
         match &self.context.borrow().previous {
-            Some(previous) => previous.borrow().current_side_attacks,
-            None => self.board.calc_attacks_mask(self.side_to_move.flip())
+            // Some(previous) => previous.borrow().current_side_attacks,
+            _ => self.board.calc_attacks_mask(self.side_to_move.flip())
         }
     }
 
