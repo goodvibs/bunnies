@@ -3,7 +3,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::utils::Bitboard;
-use crate::utils::masks::{RANK_6, RANK_7, RANK_8};
+use crate::utils::masks::{RANK_6};
 use crate::utils::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.

@@ -4,7 +4,6 @@ use crate::utils::Color;
 use crate::utils::ColoredPiece;
 use crate::utils::Square;
 use crate::state::{Board, GameContext, GameResult, State};
-use crate::utils::charboard::print_bb;
 
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 

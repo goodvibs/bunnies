@@ -1,5 +1,5 @@
 use crate::state::State;
-use crate::utils::{Color, PieceType};
+use crate::utils::{PieceType};
 use crate::utils::masks::{CASTLING_CHECK_MASK_LONG, CASTLING_CHECK_MASK_SHORT, STARTING_KING_ROOK_GAP_LONG, STARTING_KING_ROOK_GAP_SHORT};
 
 impl State {
