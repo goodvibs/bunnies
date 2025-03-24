@@ -34,8 +34,8 @@ fn test_initial_position() {
     // perft(initial_state, 2, 400);
     // perft(initial_state, 3, 8902);
     // perft(initial_state, 4, 197281);
-    perft(initial_state, 5, 4865609);
-    // perft(initial_state, 6, 119060324); // highest tested
+    // perft(initial_state, 5, 4865609);
+    perft(initial_state, 6, 119060324); // ~ 9 seconds on M1 Pro
 }
 
 #[test]
@@ -44,8 +44,8 @@ fn test_kiwipete() {
     // perft(state, 1, 48);
     // perft(state, 2, 2039);
     // perft(state, 3, 97862);
-    perft(state, 4, 4085603);
-    // perft(state, 5, 193690690); // highest tested
+    // perft(state, 4, 4085603);
+    perft(state, 5, 193690690); // ~ 15 seconds on M1 Pro
     // perft(state, 6, 8031647685);
 }
 
@@ -57,8 +57,8 @@ fn test_position_3() {
     // perft(state, 3, 2812);
     // perft(state, 4, 43238);
     // perft(state, 5, 674624);
-    perft(state, 6, 11030083); // highest tested
-    // perft(state, 7, 178633661);
+    // perft(state, 6, 11030083);
+    perft(state, 7, 178633661); // ~ 14 seconds on M1 Pro
 }
 
 #[test]
@@ -67,9 +67,9 @@ fn test_position_4() {
     // perft(state, 1, 6);
     // perft(state, 2, 264);
     // perft(state, 3, 9467);
-    perft(state, 4, 422333);
-    // perft(state, 5, 15833292); // highest tested
-    // perft(state, 6, 706045033);
+    // perft(state, 4, 422333);
+    // perft(state, 5, 15833292);
+    perft(state, 6, 706045033); // ~ 57 seconds on M1 Pro
 }
 
 #[test]
@@ -78,6 +78,6 @@ fn test_position_5() {
     // perft(state, 1, 44);
     // perft(state, 2, 1486);
     // perft(state, 3, 62379);
-    perft(state, 4, 2103487);
-    // perft(state, 5, 89941194); // highest tested
+    // perft(state, 4, 2103487);
+    perft(state, 5, 89941194); // ~ 7 seconds on M1 Pro
 }
