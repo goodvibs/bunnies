@@ -12,13 +12,11 @@ mod state;
 mod validation;
 mod castling;
 mod insufficient_material;
+mod perft;
 
 pub use state::*;
 pub use board::*;
 pub use context::*;
 pub use termination::*;
-pub use make_move::*;
-pub use movegen::*;
-pub use unmake_move::*;
 pub use zobrist::*;
 pub use fen::*;

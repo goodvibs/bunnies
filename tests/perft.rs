@@ -1,29 +1,7 @@
 use bunnies::state::State;
 
-fn count_nodes(state: &mut State, depth: u8) -> u64 {
-    if !state.is_probably_valid() {
-        return 0;
-    }
-    if depth == 0 {
-        return 1;
-    }
-
-    let mut total_nodes = 0;
-
-    let mut attacks = 0;
-    let pseudolegal_moves = state.calc_pseudolegal_moves(&mut attacks);
-
-    for mv in pseudolegal_moves {
-        state.make_move(mv, attacks);
-        total_nodes += count_nodes(state, depth - 1);
-        state.unmake_move(mv);
-    }
-
-    total_nodes
-}
-
-fn perft(mut state: State, depth: u8, expected_nodes: u64) {
-    let nodes = count_nodes(&mut state, depth);
+fn run_perft_test(state: State, depth: u8, expected_nodes: u64) {
+    let nodes = state.perft(depth);
     assert_eq!(nodes, expected_nodes, "Expected {} nodes at depth {}, but got {}", expected_nodes, depth, nodes);
 }
 
@@ -35,7 +13,7 @@ fn test_initial_position() {
     // perft(initial_state, 3, 8902);
     // perft(initial_state, 4, 197281);
     // perft(initial_state, 5, 4865609);
-    perft(initial_state, 6, 119060324); // ~ 9 seconds on M1 Pro
+    run_perft_test(initial_state, 6, 119060324); // ~ 8 seconds on M1 Pro
 }
 
 #[test]
@@ -45,7 +23,7 @@ fn test_kiwipete() {
     // perft(state, 2, 2039);
     // perft(state, 3, 97862);
     // perft(state, 4, 4085603);
-    perft(state, 5, 193690690); // ~ 15 seconds on M1 Pro
+    run_perft_test(state, 5, 193690690); // ~ 15 seconds on M1 Pro
     // perft(state, 6, 8031647685);
 }
 
@@ -58,7 +36,7 @@ fn test_position_3() {
     // perft(state, 4, 43238);
     // perft(state, 5, 674624);
     // perft(state, 6, 11030083);
-    perft(state, 7, 178633661); // ~ 14 seconds on M1 Pro
+    run_perft_test(state, 7, 178633661); // ~ 14 seconds on M1 Pro
 }
 
 #[test]
@@ -69,7 +47,7 @@ fn test_position_4() {
     // perft(state, 3, 9467);
     // perft(state, 4, 422333);
     // perft(state, 5, 15833292);
-    perft(state, 6, 706045033); // ~ 57 seconds on M1 Pro
+    run_perft_test(state, 6, 706045033); // ~ 57 seconds on M1 Pro
 }
 
 #[test]
@@ -79,5 +57,5 @@ fn test_position_5() {
     // perft(state, 2, 1486);
     // perft(state, 3, 62379);
     // perft(state, 4, 2103487);
-    perft(state, 5, 89941194); // ~ 7 seconds on M1 Pro
+    run_perft_test(state, 5, 89941194); // ~ 7 seconds on M1 Pro
 }
