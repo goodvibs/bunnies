@@ -21,6 +21,15 @@ regex = "1.11.1"
 [dev-dependencies]
 criterion = "0.5.1"
 
+[profile.release]
+opt-level = 3
+
+[profile.test]
+opt-level = 3
+
+[profile.bench]
+opt-level = 3
+
 [[test]]
 name = "perft"
 
