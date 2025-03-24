@@ -45,7 +45,7 @@ impl GameContext {
     /// Creates a new context with no previous context.
     /// This is used for the initial position.
     pub const fn initial(zobrist_hash: Bitboard) -> GameContext {
-        Self::new_without_previous(0b00001111, zobrist_hash, RANK_6)
+        Self::new_without_previous(0b00001111, zobrist_hash, 0xFFFF7E)
     }
 
     /// Creates a new context with no previous context.
