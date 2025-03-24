@@ -10,7 +10,10 @@ impl Color {
     }
 
     pub const fn flip(&self) -> Color {
-        unsafe { std::mem::transmute::<u8, Color>(!(*self as u8)) }
+        match self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
     }
 
     pub fn iter() -> impl Iterator<Item = Color> {
