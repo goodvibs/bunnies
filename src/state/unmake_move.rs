@@ -25,7 +25,7 @@ impl State {
 
     fn unprocess_possible_capture(&mut self, dst_square: Square) {
         // remove captured piece and get captured piece type
-        let captured_piece = self.context.borrow().captured_piece;
+        let captured_piece = unsafe { (*self.context).captured_piece };
         if captured_piece != PieceType::NoPieceType {
             // piece was captured
             self.board.put_color_at(self.side_to_move, dst_square); // put captured color back
@@ -81,7 +81,8 @@ impl State {
         // update data members
         self.halfmove -= 1;
         self.side_to_move = self.side_to_move.flip();
-        let old_context = self.context.borrow().previous.as_ref().expect("No previous context").clone();
+        let old_context = unsafe { (*self.context).previous.expect("No previous context") };
+        let _ = unsafe { Box::from_raw(self.context) };
         self.context = old_context;
         self.result = GameResult::None;
     }

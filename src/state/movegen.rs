@@ -46,7 +46,7 @@ impl State {
     }
 
     fn add_en_passant_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let context = self.context.borrow();
+        let context = unsafe { &*self.context };
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
 

@@ -21,7 +21,7 @@ impl State {
 
     /// Checks if the zobrist hash in the board is consistent with the zobrist hash in the context.
     pub fn is_zobrist_consistent(&self) -> bool {
-        self.board.zobrist_hash == self.context.borrow().zobrist_hash
+        self.board.zobrist_hash == unsafe { (*self.context).zobrist_hash }
     }
 
     /// Returns true if the opponent king is not in check.
@@ -32,7 +32,7 @@ impl State {
 
     /// Checks if the halfmove clock is valid and consistent with the halfmove counter.
     pub fn has_valid_halfmove_clock(&self) -> bool {
-        let context = self.context.borrow();
+        let context = unsafe { &*self.context };
         context.has_valid_halfmove_clock() && context.halfmove_clock as u16 <= self.halfmove
     }
 
@@ -43,7 +43,7 @@ impl State {
 
     /// Checks if the castling rights are consistent with the position of the rooks and kings.
     pub fn has_valid_castling_rights(&self) -> bool {
-        let context = self.context.borrow();
+        let context = unsafe { &*self.context };
 
         let kings_bb = self.board.piece_type_masks[PieceType::King as usize];
         let rooks_bb = self.board.piece_type_masks[PieceType::Rook as usize];
@@ -87,9 +87,9 @@ impl State {
 
     /// Checks if the double pawn push is consistent with the position of the pawns.
     pub fn has_valid_double_pawn_push(&self) -> bool {
-        match self.context.borrow().double_pawn_push {
+        match unsafe { (*self.context).double_pawn_push } {
             -1 => true,
-            file if file > 7 || file < -1 => false,
+            file if !(-1..=7).contains(&file) => false,
             file => {
                 if self.halfmove < 1 {
                     return false;

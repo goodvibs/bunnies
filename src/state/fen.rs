@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::utils::Color;
 use crate::utils::ColoredPiece;
 use crate::utils::Square;
@@ -160,7 +158,7 @@ impl State {
                     side_to_move,
                     halfmove,
                     result: GameResult::None,
-                    context: Rc::new(RefCell::new(context)),
+                    context: Box::into_raw(Box::new(context)),
                 };
 
                 if state.is_unequivocally_valid() {

@@ -1,9 +1,6 @@
 //! Context struct and methods
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::utils::Bitboard;
-use crate::utils::masks::{RANK_6};
 use crate::utils::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.
@@ -16,27 +13,26 @@ pub struct GameContext {
 
     // updated after every move
     pub captured_piece: PieceType,
-    pub previous: Option<Rc<RefCell<GameContext>>>,
+    pub previous: Option<*mut GameContext>,
     pub zobrist_hash: Bitboard,
     pub current_side_attacks: Bitboard
 }
 
 impl GameContext {
     /// Creates a new context linking to the previous context
-    pub fn new_with_previous(previous_context: &Rc<RefCell<GameContext>>, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
-        let (previous_halfmove_clock, previous_castling_rights) = {
-            let previous = previous_context.borrow();
-            assert_ne!(previous.current_side_attacks, 0, "Previous context must have an updated attacks_mask");
-            assert_ne!(previous.zobrist_hash, 0, "Previous context must have an updated zobrist_hash");
+    pub unsafe fn new_with_previous(previous_context: *mut GameContext, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
+        let (previous_halfmove_clock, previous_castling_rights) = unsafe {
+            assert_ne!((*previous_context).current_side_attacks, 0, "Previous context must have an updated attacks_mask");
+            assert_ne!((*previous_context).zobrist_hash, 0, "Previous context must have an updated zobrist_hash");
 
-            (previous.halfmove_clock, previous.castling_rights)
+            ((*previous_context).halfmove_clock, (*previous_context).castling_rights)
         };
         GameContext {
             halfmove_clock: previous_halfmove_clock + 1,
             double_pawn_push: -1,
             castling_rights: previous_castling_rights,
             captured_piece: PieceType::NoPieceType,
-            previous: Some(Rc::clone(previous_context)),
+            previous: Some(previous_context),
             zobrist_hash,
             current_side_attacks
         }
@@ -79,13 +75,13 @@ impl GameContext {
     /// Else, returns None.
     /// This essentially gets the context of the position two halfmoves ago, if it exists and there
     /// was no halfmove_clock reset in between.
-    pub fn get_previous_possible_repetition(&self) -> Option<Rc<RefCell<GameContext>>> {
-        match &self.previous {
-            Some(previous) => {
-                if previous.borrow().halfmove_clock == 0 {
+    pub fn get_previous_possible_repetition(&self) -> Option<*mut GameContext> {
+        match self.previous {
+            Some(previous) => unsafe {
+                if (*previous).halfmove_clock == 0 {
                     return None;
                 }
-                match &previous.borrow().previous {
+                match (*previous).previous {
                     Some(previous_previous) => Some(previous_previous.clone()),
                     None => None
                 }
@@ -107,23 +103,23 @@ impl GameContext {
         
         let mut current_context = self.get_previous_possible_repetition();
         let mut expected_halfmove_clock = self.halfmove_clock - 2;
-        
-        while let Some(context) = current_context {
-            let context = context.borrow();
-            
-            if context.halfmove_clock != expected_halfmove_clock {
-                break;
-            }
-            
-            if context.zobrist_hash == self.zobrist_hash {
-                count += 1;
-                if count == 3 {
-                    return true;
+
+        unsafe {
+            while let Some(context) = current_context {
+                if (*context).halfmove_clock != expected_halfmove_clock {
+                    break;
                 }
+
+                if (*context).zobrist_hash == self.zobrist_hash {
+                    count += 1;
+                    if count == 3 {
+                        return true;
+                    }
+                }
+
+                expected_halfmove_clock = expected_halfmove_clock.wrapping_sub(2);
+                current_context = (*context).get_previous_possible_repetition();
             }
-            
-            expected_halfmove_clock = expected_halfmove_clock.wrapping_sub(2);
-            current_context = context.get_previous_possible_repetition();
         }
         
         false
@@ -132,8 +128,6 @@ impl GameContext {
 
 #[cfg(test)]
 mod game_context_tests {
-    use std::cell::RefCell;
-    use std::rc::Rc;
     use crate::utils::Bitboard;
     use crate::utils::PieceType;
     use crate::state::GameContext;
@@ -186,11 +180,13 @@ mod game_context_tests {
         prev_context.captured_piece = PieceType::Pawn; // Simulate a captured piece
         prev_context.double_pawn_push = 4; // Simulate a double pawn push
 
-        let new_context = GameContext::new_with_previous(
-            &Rc::new(RefCell::new(prev_context)),
-            0,
-            0
-        );
+        let new_context = unsafe {
+            GameContext::new_with_previous(
+                Box::into_raw(Box::new(prev_context)),
+                0,
+                0,
+            )
+        };
 
         assert_eq!(new_context.halfmove_clock, 2); // Incremented from previous
         assert_eq!(new_context.double_pawn_push, -1);

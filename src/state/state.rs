@@ -1,7 +1,6 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::mem;
 use crate::utils::{Bitboard, Color, PieceType};
 use crate::state::{Board, GameContext, GameResult};
 
@@ -12,7 +11,7 @@ pub struct State {
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context: Rc<RefCell<GameContext>>,
+    pub context: *mut GameContext,
 }
 
 impl State {
@@ -25,7 +24,7 @@ impl State {
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Rc::new(RefCell::new(GameContext::initial(zobrist_hash))),
+            context: Box::into_raw(Box::new(GameContext::initial(zobrist_hash))),
         }
     }
 
@@ -35,14 +34,14 @@ impl State {
     }
 
     pub fn current_side_attacks(&self) -> Bitboard {
-        match self.context.borrow().current_side_attacks {
+        match unsafe { (*self.context).current_side_attacks } {
             0 => self.board.calc_attacks_mask(self.side_to_move),
             attacks => attacks,
         }
     }
 
     pub fn opposite_side_attacks(&self) -> Bitboard {
-        match &self.context.borrow().previous {
+        match unsafe { &(*self.context).previous } {
             // Some(previous) => previous.borrow().current_side_attacks,
             _ => self.board.calc_attacks_mask(self.side_to_move.flip())
         }
@@ -67,22 +66,33 @@ impl State {
     }
 
     pub fn update_halfmove_clock(&mut self) {
-        if self.context.borrow().halfmove_clock < 100 {
+        if unsafe { (*self.context).halfmove_clock < 100 } {
             self.result = GameResult::FiftyMoveRule;
         }
     }
 
     pub fn update_threefold_repetition(&mut self) {
-        if self.context.borrow().has_threefold_repetition_occurred() {
+        if unsafe { (*self.context).has_threefold_repetition_occurred() } {
             self.result = GameResult::ThreefoldRepetition;
         }
     }
 }
 
+// impl Drop for State {
+//     fn drop(&mut self) {
+//         unsafe {
+//             let mut context_ptr = self.context;
+//             while let Some(previous) = (*context_ptr).previous {
+//                 let _ = Box::from_raw(context_ptr);
+//                 context_ptr = previous;
+//             }
+//             // let _ = Box::from_raw(context_ptr);
+//         }
+//     }
+// }
+
 #[cfg(test)]
 mod state_tests {
-    use std::cell::RefCell;
-    use std::rc::Rc;
     use crate::utils::{Color, ColoredPiece, PieceType, Square};
     use crate::state::{GameContext, GameResult, State};
     use crate::utils::charboard::print_bb;
@@ -128,7 +138,7 @@ mod state_tests {
         let initial_state = State::initial();
         let initial_black_attacks = initial_state.board.calc_attacks_mask(initial_state.side_to_move.flip());
         assert_eq!(initial_state.opposite_side_attacks(), initial_black_attacks);
-        initial_state.context.borrow_mut().initialize_current_side_attacks(initial_black_attacks);
+        unsafe { (*initial_state.context).initialize_current_side_attacks(initial_black_attacks) };
         
         let mut next_state_board = initial_state.board.clone();
         next_state_board.move_colored_piece(
@@ -138,19 +148,20 @@ mod state_tests {
         );
         let next_state_zobrist = next_state_board.zobrist_hash;
         
-        
-        let next_state_context = GameContext::new_with_previous(
-            &initial_state.context,
-            next_state_zobrist,
-            0
-        );
+        let next_state_context = unsafe {
+            GameContext::new_with_previous(
+                initial_state.context,
+                next_state_zobrist,
+                0,
+            )
+        };
         
         let next_state = State {
             board: next_state_board,
             side_to_move: Color::Black,
             halfmove: 1,
             result: GameResult::None,
-            context: Rc::new(RefCell::new(next_state_context)),
+            context: Box::into_raw(Box::new(next_state_context)),
         };
         
         let next_state_white_attacks = next_state.board.calc_attacks_mask(next_state.side_to_move.flip());

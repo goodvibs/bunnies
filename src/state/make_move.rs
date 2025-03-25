@@ -1,7 +1,5 @@
 //! Contains the implementation of the `State::make_move` method.
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::utils::Bitboard;
 use crate::utils::Color;
 use crate::utils::ColoredPiece;
@@ -89,11 +87,11 @@ impl State {
             attacks_mask = self.current_side_attacks();
         }
 
-        self.context.borrow_mut().initialize_current_side_attacks(attacks_mask);
+        unsafe { (*self.context).initialize_current_side_attacks(attacks_mask) };
 
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = GameContext::new_with_previous(&self.context, 0, 0);
+        let mut new_context = unsafe { GameContext::new_with_previous(self.context, 0, 0) };
 
         self.board.move_color(self.side_to_move, dst_square, src_square);
 
@@ -109,7 +107,7 @@ impl State {
         // update data members
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.flip();
-        self.context = Rc::new(RefCell::new(new_context));
+        self.context = Box::into_raw(Box::new(new_context));
     }
 }
 
