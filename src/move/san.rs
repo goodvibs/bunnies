@@ -9,7 +9,7 @@ impl Move {
         let flag = self.get_flag();
 
         let move_str = if flag == MoveFlag::Castling {
-            match dst_square.get_file() {
+            match dst_square.file() {
                 6 => "O-O".to_string(),
                 2 => "O-O-O".to_string(),
                 _ => panic!("Invalid castling move")
@@ -19,7 +19,7 @@ impl Move {
             let promotion = self.get_promotion();
 
             let piece_str = match moved_piece {
-                PieceType::Pawn => if is_capture { src_square.get_file_char().to_string() } else { "".to_string() },
+                PieceType::Pawn => if is_capture { src_square.file_char().to_string() } else { "".to_string() },
                 PieceType::Knight => "N".to_string(),
                 PieceType::Bishop => "B".to_string(),
                 PieceType::Rook => "R".to_string(),

@@ -45,7 +45,7 @@ impl State {
     }
 
     fn unprocess_castling(&mut self, dst_square: Square, src_square: Square) {
-        let dst_mask = dst_square.get_mask();
+        let dst_mask = dst_square.mask();
 
         self.board.move_piece_type(PieceType::King, src_square, dst_square); // move king back
 

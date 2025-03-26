@@ -57,11 +57,11 @@ impl PgnMove for PgnNonCastlingMove {
         } else if self.is_capture != mv.is_capture(initial_state) {
             return false
         } else if let Some(file) = self.disambiguation_file {
-            if src.get_file() != file as u8 - 'a' as u8 {
+            if src.file() != file as u8 - 'a' as u8 {
                 return false
             }
         } else if let Some(rank) = self.disambiguation_rank {
-            if src.get_rank() != rank as u8 - '1' as u8 {
+            if src.rank() != rank as u8 - '1' as u8 {
                 return false
             }
         }

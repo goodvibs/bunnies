@@ -93,14 +93,14 @@ impl MoveTreeNode {
                     match disambiguation_moves.len() {
                         0 => "".to_string(),
                         _ => {
-                            let file = mv_source.get_file();
-                            let rank = mv_source.get_rank();
-                            let is_file_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_file() == file);
-                            let is_rank_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().get_rank() == rank);
+                            let file = mv_source.file();
+                            let rank = mv_source.rank();
+                            let is_file_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().file() == file);
+                            let is_rank_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
                                 (true, true) => mv_source.to_string(),
-                                (true, false) => mv_source.get_rank_char().to_string(),
-                                (false, true) => mv_source.get_file_char().to_string(),
+                                (true, false) => mv_source.rank_char().to_string(),
+                                (false, true) => mv_source.file_char().to_string(),
                                 (false, false) => "".to_string()
                             }
                         }

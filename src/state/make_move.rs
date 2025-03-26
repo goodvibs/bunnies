@@ -30,7 +30,7 @@ impl State {
     }
 
     fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut GameContext) {
-        let dst_mask = dst_square.get_mask();
+        let dst_mask = dst_square.mask();
         let opposite_color = self.side_to_move.flip();
         
         self.board.remove_color_at(opposite_color, dst_square);
@@ -59,7 +59,7 @@ impl State {
     }
     
     fn process_castling(&mut self, dst_square: Square, src_square: Square, new_context: &mut GameContext) {
-        let dst_mask = dst_square.get_mask();
+        let dst_mask = dst_square.mask();
 
         self.board.move_piece_type(PieceType::King, dst_square, src_square);
 
@@ -141,7 +141,7 @@ impl GameContext {
     }
 
     fn process_normal_rook_move_disregarding_capture(&mut self, moved_piece_color: Color, src_square: Square) {
-        let src_mask = src_square.get_mask();
+        let src_mask = src_square.mask();
         let castling_color_adjustment = calc_castling_color_adjustment(moved_piece_color);
 
         let is_king_side = src_mask & (1u64 << (moved_piece_color as u64 * 7 * 8));
@@ -188,8 +188,8 @@ const fn calc_castling_color_adjustment(color: Color) -> usize {
 }
 
 const fn is_double_pawn_push(dst_square: Square, src_square: Square) -> bool {
-    let dst_mask = dst_square.get_mask();
-    let src_mask = src_square.get_mask();
+    let dst_mask = dst_square.mask();
+    let src_mask = src_square.mask();
 
     dst_mask & (src_mask << 16) != 0 || dst_mask & (src_mask >> 16) != 0
 }

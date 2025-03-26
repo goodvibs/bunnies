@@ -31,7 +31,7 @@ impl PgnMove for PgnCastlingMove {
         let flag = mv.get_flag();
         if flag != MoveFlag::Castling {
             return false
-        } else if self.is_kingside != (mv.get_destination().get_file() == 6) {
+        } else if self.is_kingside != (mv.get_destination().file() == 6) {
             return false
         }
 

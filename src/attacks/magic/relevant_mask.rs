@@ -33,9 +33,9 @@ impl PrecomputedMasksForSquares {
 
 /// Calculate the relevant mask for a rook on a given square
 fn calc_rook_relevant_mask(square: Square) -> Bitboard {
-    let file_mask = square.get_file_mask();
-    let rank_mask = square.get_rank_mask();
-    let mut res = (file_mask | rank_mask) & !square.get_mask();
+    let file_mask = square.file_mask();
+    let rank_mask = square.rank_mask();
+    let mut res = (file_mask | rank_mask) & !square.mask();
     let edge_masks = [FILE_A, FILE_H, RANK_1, RANK_8];
     for edge_mask in edge_masks {
         if file_mask != edge_mask && rank_mask != edge_mask {
@@ -47,7 +47,7 @@ fn calc_rook_relevant_mask(square: Square) -> Bitboard {
 
 /// Calculate the relevant mask for a bishop on a given square
 fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
-    let square_mask = square.get_mask();
+    let square_mask = square.mask();
     let mut res = 0 as Bitboard;
     for &diagonal in DIAGONALS.iter() {
         if diagonal & square_mask != 0 {

@@ -19,7 +19,7 @@ fn benchmark_rook_attacks(c: &mut Criterion) {
     let mut group = c.benchmark_group("Rook Attacks");
 
     // Warm up static initialization
-    let _ = magic::magic_single_rook_attacks(Square::A6, Square::B3.get_mask());
+    let _ = magic::magic_single_rook_attacks(Square::A6, Square::B3.mask());
 
     group.bench_function("Manual Rook Attacks", |b| {
         b.iter(|| sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, manual::manual_single_rook_attacks))
@@ -36,7 +36,7 @@ fn benchmark_bishop_attacks(c: &mut Criterion) {
     let mut group = c.benchmark_group("Bishop Attacks");
 
     // Warm up static initialization
-    let _ = magic::magic_single_bishop_attacks(Square::A6, Square::B3.get_mask());
+    let _ = magic::magic_single_bishop_attacks(Square::A6, Square::B3.mask());
 
     group.bench_function("Manual Bishop Attacks", |b| {
         b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, manual::manual_single_bishop_attacks))
@@ -59,7 +59,7 @@ fn benchmark_king_attacks(c: &mut Criterion) {
     group.bench_function("Manual King Attacks", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_king_attacks(square.get_mask());
+                let _ = manual::multi_king_attacks(square.mask());
             }
         })
     });
@@ -85,7 +85,7 @@ fn benchmark_knight_attacks(c: &mut Criterion) {
     group.bench_function("Manual Knight Attacks", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_knight_attacks(square.get_mask());
+                let _ = manual::multi_knight_attacks(square.mask());
             }
         })
     });
@@ -108,7 +108,7 @@ fn benchmark_pawn_attacks(c: &mut Criterion) {
     group.bench_function("Manual White Pawn Attacks", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_pawn_attacks(square.get_mask(), Color::White);
+                let _ = manual::multi_pawn_attacks(square.mask(), Color::White);
             }
         })
     });
@@ -117,7 +117,7 @@ fn benchmark_pawn_attacks(c: &mut Criterion) {
     group.bench_function("Manual Black Pawn Attacks", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_pawn_attacks(square.get_mask(), Color::Black);
+                let _ = manual::multi_pawn_attacks(square.mask(), Color::Black);
             }
         })
     });
@@ -132,7 +132,7 @@ fn benchmark_pawn_pushes(c: &mut Criterion) {
     group.bench_function("Manual White Pawn Pushes", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_pawn_moves(square.get_mask(), Color::White);
+                let _ = manual::multi_pawn_moves(square.mask(), Color::White);
             }
         })
     });
@@ -141,7 +141,7 @@ fn benchmark_pawn_pushes(c: &mut Criterion) {
     group.bench_function("Manual Black Pawn Pushes", |b| {
         b.iter(|| {
             for square in Square::ALL {
-                let _ = manual::multi_pawn_moves(square.get_mask(), Color::Black);
+                let _ = manual::multi_pawn_moves(square.mask(), Color::Black);
             }
         })
     });

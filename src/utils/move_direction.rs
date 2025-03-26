@@ -40,7 +40,7 @@ impl QueenLikeMoveDirection {
             positive_direction = QueenLikeMoveDirection::Down;
         } else if value_change % 9 == 0 {
             positive_direction = QueenLikeMoveDirection::DownRight;
-        } else if src_square.get_rank() == dst_square.get_rank() {
+        } else if src_square.rank() == dst_square.rank() {
             positive_direction = QueenLikeMoveDirection::Right;
         } else {
             positive_direction = QueenLikeMoveDirection::DownLeft;
@@ -65,7 +65,7 @@ impl QueenLikeMoveDirection {
         } else if value_change % 9 == 0 {
             positive_direction = QueenLikeMoveDirection::DownRight;
             distance_temp = value_change / 9;
-        } else if src_square.get_rank() == dst_square.get_rank() {
+        } else if src_square.rank() == dst_square.rank() {
             positive_direction = QueenLikeMoveDirection::Right;
             distance_temp = value_change;
         } else {

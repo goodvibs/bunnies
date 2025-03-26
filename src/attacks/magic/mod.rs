@@ -48,7 +48,7 @@ mod tests {
                     };
                     if magic_attacks != manual_attacks {
                         println!("Square mask:");
-                        print_bb_pretty(src_square.get_mask());
+                        print_bb_pretty(src_square.mask());
                         println!("\nOccupied mask:");
                         print_bb_pretty(occupied_mask);
                         println!("\nMagic attacks:");

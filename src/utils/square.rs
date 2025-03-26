@@ -42,33 +42,33 @@ impl Square {
     }
 
     /// Returns the bitboard mask for the square.
-    pub const fn get_mask(&self) -> Bitboard {
+    pub const fn mask(&self) -> Bitboard {
         1 << (63 - *self as u8)
     }
 
     /// Returns the file of the square (0-7).
-    pub const fn get_file(&self) -> u8 {
+    pub const fn file(&self) -> u8 {
         *self as u8 % 8
     }
 
     /// Returns the file mask for the square.
-    pub const fn get_file_mask(&self) -> Bitboard {
-        FILES[self.get_file() as usize]
+    pub const fn file_mask(&self) -> Bitboard {
+        FILES[self.file() as usize]
     }
 
     /// Returns the rank of the square (0-7).
-    pub const fn get_rank(&self) -> u8 {
+    pub const fn rank(&self) -> u8 {
         7 - *self as u8 / 8
     }
 
     /// Returns the rank mask for the square.
-    pub const fn get_rank_mask(&self) -> Bitboard {
-        RANKS[self.get_rank() as usize]
+    pub const fn rank_mask(&self) -> Bitboard {
+        RANKS[self.rank() as usize]
     }
     
     /// Returns the square above the current square, if it exists.
     pub const fn up(&self) -> Option<Square> {
-        if self.get_rank() == 7 {
+        if self.rank() == 7 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 - 8) })
@@ -77,7 +77,7 @@ impl Square {
     
     /// Returns the square below the current square, if it exists.
     pub const fn down(&self) -> Option<Square> {
-        if self.get_rank() == 0 {
+        if self.rank() == 0 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 + 8) })
@@ -86,7 +86,7 @@ impl Square {
     
     /// Returns the square to the left of the current square, if it exists.
     pub const fn left(&self) -> Option<Square> {
-        if self.get_file() == 0 {
+        if self.file() == 0 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 - 1) })
@@ -95,7 +95,7 @@ impl Square {
     
     /// Returns the square to the right of the current square, if it exists.
     pub const fn right(&self) -> Option<Square> {
-        if self.get_file() == 7 {
+        if self.file() == 7 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 + 1) })
@@ -104,7 +104,7 @@ impl Square {
     
     /// Returns the square northwest of the current square, if it exists.
     pub const fn up_left(&self) -> Option<Square> {
-        if self.get_rank() == 7 || self.get_file() == 0 {
+        if self.rank() == 7 || self.file() == 0 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 - 9) })
@@ -113,7 +113,7 @@ impl Square {
     
     /// Returns the square northeast of the current square, if it exists.
     pub const fn up_right(&self) -> Option<Square> {
-        if self.get_rank() == 7 || self.get_file() == 7 {
+        if self.rank() == 7 || self.file() == 7 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 - 7) })
@@ -122,7 +122,7 @@ impl Square {
     
     /// Returns the square southwest of the current square, if it exists.
     pub const fn down_left(&self) -> Option<Square> {
-        if self.get_rank() == 0 || self.get_file() == 0 {
+        if self.rank() == 0 || self.file() == 0 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 + 7) })
@@ -131,7 +131,7 @@ impl Square {
     
     /// Returns the square southeast of the current square, if it exists.
     pub const fn down_right(&self) -> Option<Square> {
-        if self.get_rank() == 0 || self.get_file() == 7 {
+        if self.rank() == 0 || self.file() == 7 {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 + 9) })
@@ -144,13 +144,13 @@ impl Square {
     }
 
     /// Returns the character corresponding to the file of the square.
-    pub const fn get_file_char(&self) -> char {
-        (b'a' + self.get_file()) as char
+    pub const fn file_char(&self) -> char {
+        (b'a' + self.file()) as char
     }
 
     /// Returns the character corresponding to the rank of the square.
-    pub const fn get_rank_char(&self) -> char {
-        (b'1' + self.get_rank()) as char
+    pub const fn rank_char(&self) -> char {
+        (b'1' + self.rank()) as char
     }
 
     /// Returns a string representing the square in algebraic notation.
@@ -234,53 +234,53 @@ mod tests {
 
     #[test]
     fn test_get_mask() {
-        assert_eq!(Square::A8.get_mask(), 1u64 << 63);
-        assert_eq!(Square::H1.get_mask(), 1u64);
-        assert_eq!(Square::E4.get_mask(), 1u64 << 27);
+        assert_eq!(Square::A8.mask(), 1u64 << 63);
+        assert_eq!(Square::H1.mask(), 1u64);
+        assert_eq!(Square::E4.mask(), 1u64 << 27);
     }
 
     #[test]
     fn test_get_file() {
-        assert_eq!(Square::A8.get_file(), 0);
-        assert_eq!(Square::H8.get_file(), 7);
-        assert_eq!(Square::E4.get_file(), 4);
+        assert_eq!(Square::A8.file(), 0);
+        assert_eq!(Square::H8.file(), 7);
+        assert_eq!(Square::E4.file(), 4);
     }
 
     #[test]
     fn test_get_file_mask() {
         // This test assumes FILES is correctly implemented
         // Testing that the correct file mask is returned
-        let a_file_mask = Square::A1.get_file_mask();
-        let h_file_mask = Square::H1.get_file_mask();
+        let a_file_mask = Square::A1.file_mask();
+        let h_file_mask = Square::H1.file_mask();
 
         assert_eq!(a_file_mask, FILES[0]);
         assert_eq!(h_file_mask, FILES[7]);
 
         // Check that all squares in the same file return the same mask
-        assert_eq!(Square::A1.get_file_mask(), Square::A8.get_file_mask());
-        assert_eq!(Square::H1.get_file_mask(), Square::H8.get_file_mask());
+        assert_eq!(Square::A1.file_mask(), Square::A8.file_mask());
+        assert_eq!(Square::H1.file_mask(), Square::H8.file_mask());
     }
 
     #[test]
     fn test_get_rank() {
-        assert_eq!(Square::A8.get_rank(), 7);
-        assert_eq!(Square::A1.get_rank(), 0);
-        assert_eq!(Square::E4.get_rank(), 3);
+        assert_eq!(Square::A8.rank(), 7);
+        assert_eq!(Square::A1.rank(), 0);
+        assert_eq!(Square::E4.rank(), 3);
     }
 
     #[test]
     fn test_get_rank_mask() {
         // This test assumes RANKS is correctly implemented
         // Testing that the correct rank mask is returned
-        let rank_1_mask = Square::A1.get_rank_mask();
-        let rank_8_mask = Square::A8.get_rank_mask();
+        let rank_1_mask = Square::A1.rank_mask();
+        let rank_8_mask = Square::A8.rank_mask();
 
         assert_eq!(rank_1_mask, RANKS[0]);
         assert_eq!(rank_8_mask, RANKS[7]);
 
         // Check that all squares in the same rank return the same mask
-        assert_eq!(Square::A1.get_rank_mask(), Square::H1.get_rank_mask());
-        assert_eq!(Square::A8.get_rank_mask(), Square::H8.get_rank_mask());
+        assert_eq!(Square::A1.rank_mask(), Square::H1.rank_mask());
+        assert_eq!(Square::A8.rank_mask(), Square::H8.rank_mask());
     }
 
     #[test]
@@ -360,16 +360,16 @@ mod tests {
 
     #[test]
     fn test_get_file_char() {
-        assert_eq!(Square::A1.get_file_char(), 'a');
-        assert_eq!(Square::H8.get_file_char(), 'h');
-        assert_eq!(Square::E4.get_file_char(), 'e');
+        assert_eq!(Square::A1.file_char(), 'a');
+        assert_eq!(Square::H8.file_char(), 'h');
+        assert_eq!(Square::E4.file_char(), 'e');
     }
 
     #[test]
     fn test_get_rank_char() {
-        assert_eq!(Square::A1.get_rank_char(), '1');
-        assert_eq!(Square::H8.get_rank_char(), '8');
-        assert_eq!(Square::E4.get_rank_char(), '4');
+        assert_eq!(Square::A1.rank_char(), '1');
+        assert_eq!(Square::H8.rank_char(), '8');
+        assert_eq!(Square::E4.rank_char(), '4');
     }
 
     #[test]
