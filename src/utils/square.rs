@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use crate::utils::Bitboard;
 use crate::utils::charboard::SQUARE_NAMES;
-use crate::utils::Color;
 use crate::utils::masks::{FILES, RANKS};
 
 #[repr(u8)]
@@ -18,40 +17,56 @@ pub enum Square {
 }
 
 impl Square {
+    /// Returns a square from a square number (0-63).
+    /// Square numbers are ordered from A8 to H1, left to right, top to bottom.
+    /// # Safety
+    /// This function is unsafe because it does not check if the square number is out of bounds.
     pub const unsafe fn from(square_number: u8) -> Square {
         assert!(square_number < 64, "Square number out of bounds");
-        std::mem::transmute::<u8, Square>(square_number)
+        unsafe { std::mem::transmute::<u8, Square>(square_number) }
     }
 
+    /// Returns a square from a bitboard.
+    /// # Safety
+    /// This function is unsafe because it does not check if the bitboard has exactly one bit set.
     pub const unsafe fn from_bitboard(bitboard: Bitboard) -> Square {
-        Square::from(bitboard.leading_zeros() as u8)
+        unsafe { Square::from(bitboard.leading_zeros() as u8) }
     }
     
+    /// Returns a square from a rank and file (0-7).
+    /// # Safety
+    /// This function is unsafe because it does not check if the rank or file is out of bounds.
     pub const unsafe fn from_rank_file(rank: u8, file: u8) -> Square {
         assert!(rank < 8 && file < 8, "Rank or file out of bounds");
-        std::mem::transmute::<u8, Square>((7 - rank) * 8 + file)
+        unsafe { std::mem::transmute::<u8, Square>((7 - rank) * 8 + file) }
     }
 
+    /// Returns the bitboard mask for the square.
     pub const fn get_mask(&self) -> Bitboard {
         1 << (63 - *self as u8)
     }
 
+    /// Returns the file of the square (0-7).
     pub const fn get_file(&self) -> u8 {
         *self as u8 % 8
     }
 
+    /// Returns the file mask for the square.
     pub const fn get_file_mask(&self) -> Bitboard {
         FILES[self.get_file() as usize]
     }
 
+    /// Returns the rank of the square (0-7).
     pub const fn get_rank(&self) -> u8 {
         7 - *self as u8 / 8
     }
 
+    /// Returns the rank mask for the square.
     pub const fn get_rank_mask(&self) -> Bitboard {
         RANKS[self.get_rank() as usize]
     }
     
+    /// Returns the square above the current square, if it exists.
     pub const fn up(&self) -> Option<Square> {
         if self.get_rank() == 7 {
             None
@@ -60,6 +75,7 @@ impl Square {
         }
     }
     
+    /// Returns the square below the current square, if it exists.
     pub const fn down(&self) -> Option<Square> {
         if self.get_rank() == 0 {
             None
@@ -68,6 +84,7 @@ impl Square {
         }
     }
     
+    /// Returns the square to the left of the current square, if it exists.
     pub const fn left(&self) -> Option<Square> {
         if self.get_file() == 0 {
             None
@@ -76,6 +93,7 @@ impl Square {
         }
     }
     
+    /// Returns the square to the right of the current square, if it exists.
     pub const fn right(&self) -> Option<Square> {
         if self.get_file() == 7 {
             None
@@ -84,6 +102,7 @@ impl Square {
         }
     }
     
+    /// Returns the square northwest of the current square, if it exists.
     pub const fn up_left(&self) -> Option<Square> {
         if self.get_rank() == 7 || self.get_file() == 0 {
             None
@@ -92,6 +111,7 @@ impl Square {
         }
     }
     
+    /// Returns the square northeast of the current square, if it exists.
     pub const fn up_right(&self) -> Option<Square> {
         if self.get_rank() == 7 || self.get_file() == 7 {
             None
@@ -100,6 +120,7 @@ impl Square {
         }
     }
     
+    /// Returns the square southwest of the current square, if it exists.
     pub const fn down_left(&self) -> Option<Square> {
         if self.get_rank() == 0 || self.get_file() == 0 {
             None
@@ -108,6 +129,7 @@ impl Square {
         }
     }
     
+    /// Returns the square southeast of the current square, if it exists.
     pub const fn down_right(&self) -> Option<Square> {
         if self.get_rank() == 0 || self.get_file() == 7 {
             None
@@ -116,40 +138,27 @@ impl Square {
         }
     }
     
-    pub const fn reflect_rank(&self) -> Square {
-        unsafe { Square::from((self.get_rank() * 8) + self.get_file()) }
-    }
-    
+    /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
     pub const fn rotated_perspective(&self) -> Square {
         unsafe { Square::from(63 - *self as u8) }
     }
-    
-    pub const fn to_perspective_from_white(&self, desired_perspective: Color) -> Square {
-        match desired_perspective {
-            Color::White => *self,
-            Color::Black => self.rotated_perspective()
-        }
-    }
-    
-    pub const fn to_perspective_from_black(&self, desired_perspective: Color) -> Square {
-        match desired_perspective {
-            Color::White => self.rotated_perspective(),
-            Color::Black => *self
-        }
-    }
 
+    /// Returns the character corresponding to the file of the square.
     pub const fn get_file_char(&self) -> char {
         (b'a' + self.get_file()) as char
     }
 
+    /// Returns the character corresponding to the rank of the square.
     pub const fn get_rank_char(&self) -> char {
         (b'1' + self.get_rank()) as char
     }
 
+    /// Returns a string representing the square in algebraic notation.
     pub const fn readable(&self) -> &str {
         SQUARE_NAMES[*self as usize]
     }
 
+    /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
     pub const ALL: [Square; 64] = [
         Square::A8, Square::B8, Square::C8, Square::D8, Square::E8, Square::F8, Square::G8, Square::H8,
         Square::A7, Square::B7, Square::C7, Square::D7, Square::E7, Square::F7, Square::G7, Square::H7,
@@ -171,7 +180,6 @@ impl Display for Square {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::Color;
 
     #[test]
     fn test_square_values() {
@@ -343,30 +351,11 @@ mod tests {
     }
 
     #[test]
-    fn test_reflect_rank() {
-        assert_eq!(Square::A1.reflect_rank(), Square::A8);
-        assert_eq!(Square::H1.reflect_rank(), Square::H8);
-        assert_eq!(Square::E4.reflect_rank(), Square::E5);
-        assert_eq!(Square::D5.reflect_rank(), Square::D4);
-    }
-
-    #[test]
     fn test_rotated_perspective() {
         assert_eq!(Square::A8.rotated_perspective(), Square::H1);
         assert_eq!(Square::H8.rotated_perspective(), Square::A1);
         assert_eq!(Square::E4.rotated_perspective(), Square::D5);
         assert_eq!(Square::A1.rotated_perspective(), Square::H8);
-    }
-
-    #[test]
-    fn test_perspective_transforms() {
-        // White perspective
-        assert_eq!(Square::E2.to_perspective_from_white(Color::White), Square::E2);
-        assert_eq!(Square::E2.to_perspective_from_white(Color::Black), Square::D7);
-
-        // Black perspective
-        assert_eq!(Square::E7.to_perspective_from_black(Color::White), Square::D2);
-        assert_eq!(Square::E7.to_perspective_from_black(Color::Black), Square::E7);
     }
 
     #[test]
