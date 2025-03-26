@@ -1,4 +1,4 @@
-use bunnies::state::State;
+use bunnies::State;
 
 fn run_perft_test(state: State, depth: u8, expected_nodes: u64) {
     let nodes = state.perft(depth);

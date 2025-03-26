@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use bunnies::state::State;
+use bunnies::State;
 
 fn perform_perft(state: &State, depth: u8) -> u64 {
     state.perft(depth)
