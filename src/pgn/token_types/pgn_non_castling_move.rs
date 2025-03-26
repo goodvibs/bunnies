@@ -81,7 +81,7 @@ impl PgnMove for PgnNonCastlingMove {
         let piece = if self.piece_moved == PieceType::Pawn {
             ""
         } else {
-            &*self.piece_moved.to_uppercase_char().to_string()
+            &*self.piece_moved.uppercase_ascii().to_string()
         };
 
         let disambiguation = match (self.disambiguation_file, self.disambiguation_rank) {
@@ -96,7 +96,7 @@ impl PgnMove for PgnNonCastlingMove {
         let destination = self.to.to_string();
 
         let promotion = if self.promoted_to != PieceType::NoPieceType {
-            format!("={}", self.promoted_to.to_uppercase_char())
+            format!("={}", self.promoted_to.uppercase_ascii())
         } else {
             "".to_string()
         };
@@ -113,7 +113,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
         if let Some(captures) = COMPILED_NON_CASTLING_MOVE_REGEX.captures(text) {
             let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
                 None => PieceType::Pawn,
-                Some(c) => unsafe { PieceType::from_char(c) }
+                Some(c) => unsafe { PieceType::from_uppercase_char(c) }
             };
 
             let disambiguation_file = captures.get(2).map(|m| m.as_str().chars().next().unwrap());
@@ -126,7 +126,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let to = unsafe { Square::from_rank_file(to_rank, to_file) };
 
             let promoted_to = match captures.get(7) {
-                Some(m) => unsafe { PieceType::from_char(m.as_str().chars().next().unwrap()) },
+                Some(m) => unsafe { PieceType::from_uppercase_char(m.as_str().chars().next().unwrap()) },
                 None => PieceType::NoPieceType
             };
 

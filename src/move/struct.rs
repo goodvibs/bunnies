@@ -72,7 +72,7 @@ impl Move {
     /// Returns a readable representation of the move.
     pub fn readable(&self) -> String {
         let (dst, src, promotion, flag) = self.unpack();
-        let (dst_str, src_str, promotion_char, flag_str) = (src.readable(), dst.readable(), promotion.to_uppercase_char(), flag.to_readable());
+        let (dst_str, src_str, promotion_char, flag_str) = (src.readable(), dst.readable(), promotion.uppercase_ascii(), flag.to_readable());
         format!("{}{}{}", dst_str, src_str, flag_str.replace('?', &promotion_char.to_string()))
     }
 
@@ -81,7 +81,7 @@ impl Move {
         let (dst, src, promotion, flag) = self.unpack();
         let (dst_str, src_str) = (dst.readable(), src.readable());
         let promotion_str = match flag {
-            MoveFlag::Promotion => promotion.to_uppercase_char().to_string(),
+            MoveFlag::Promotion => promotion.uppercase_ascii().to_string(),
             _ => "".to_string()
         };
         format!("{}{}{}", src_str, dst_str, promotion_str)
