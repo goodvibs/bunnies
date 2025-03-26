@@ -1,6 +1,5 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use std::mem;
 use crate::utils::{Bitboard, Color, PieceType};
 use crate::state::{Board, GameContext, GameResult};
 

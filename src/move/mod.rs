@@ -2,7 +2,7 @@
 
 mod move_flag;
 mod san;
-mod r#move;
+mod r#struct;
 
-pub use r#move::*;
+pub use r#struct::*;
 pub use move_flag::*;

@@ -8,13 +8,13 @@ mod movegen;
 mod unmake_move;
 mod zobrist;
 mod fen;
-mod state;
+mod r#struct;
 mod validation;
 mod castling;
 mod insufficient_material;
 mod perft;
 
-pub use state::*;
+pub use r#struct::*;
 pub use board::*;
 pub use context::*;
 pub use termination::*;
