@@ -33,9 +33,7 @@ which is not nearly as fast as programs like `Stockfish` (which is able to gener
 - Identify and remove bottlenecks
 - Some more benchmarks
 - Some more integration tests
-- Is the public API good enough?
 - Support for PGN comments
 - Unit tests for draw detection
-- More docs
 
 Feedback and contributions welcome!
