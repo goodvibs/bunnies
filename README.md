@@ -1,5 +1,7 @@
 # bunnies
 
+[![Crates.io](https://img.shields.io/crates/v/bunnies)](https://crates.io/crates/bunnies)
+
 A fast chess library for chess engines. **Currently in alpha**.
 
 ## Current Features
