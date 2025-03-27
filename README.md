@@ -1,23 +1,23 @@
 # bunnies
 
-A fast chess library, mainly targeting chess engines. **Currently in alpha**.
+A fast chess library for chess engines. **Currently in alpha**.
 
-## General features
+## Current Features
 - Game state representation
-- Move generation and application (and un-application)
+- (Pseudo-legal) move generation and application (and un-application)
 - FEN parsing and generation
 - UCI generation
 - Full PGN parsing and generation
-  - Support for comments, NAGs, and variations
+  - Support for NAGs and variations (comments are parsed, but not generated)
   - Support for nested variations
 - Perft testing
 - Game termination detection (and draw detection)
 
 ## Optimizations
 `bunnies` makes use of the following optimizations:
-- Bitboards for board representation
+- Bitboard-based board representation
 - Pseudo-legal move generation
-- Make-unmake move application (eliminating the need to copy board state)
+- Make-unmake move application (eliminating the need to copy game state)
 - Magic bitboards for sliding piece attack generation
 - Precomputed attacks for knights and kings
 - Zobrist hashing for board state hashing
@@ -28,9 +28,12 @@ which is not nearly as fast as programs like `Stockfish` (which is able to gener
 
 ## Contribution
 `bunnies` needs the following to make 1.0.0 happen:
+- Identify and remove bottlenecks
 - Some more benchmarks
 - Some more integration tests
 - Is the public API good enough?
+- Support for PGN comments
+- Unit tests for draw detection
 - More docs
 
 Feedback and contributions welcome!
