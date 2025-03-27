@@ -4,6 +4,7 @@ use crate::utils::masks::{FILES, RANKS};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+/// Represents a square on the chess board.
 pub enum Square {
     A8=0, B8=1, C8=2, D8=3, E8=4, F8=5, G8=6, H8=7,
     A7=8, B7=9, C7=10, D7=11, E7=12, F7=13, G7=14, H7=15,

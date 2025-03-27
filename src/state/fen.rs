@@ -6,6 +6,7 @@ use crate::state::{Board, GameContext, GameResult, GameState};
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #[derive(Eq, PartialEq, Debug)]
+/// An error that occurs when parsing a FEN string.
 pub enum FenParseError {
     InvalidFieldCount(usize),
     InvalidRankCount(usize),

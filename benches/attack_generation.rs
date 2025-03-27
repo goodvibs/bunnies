@@ -1,9 +1,9 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use bunnies::attacks::{magic, manual, precomputed};
 use bunnies::attacks::magic::relevant_mask::{PrecomputedMasksForSquares, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
-use bunnies::utils::{iter_bit_combinations, Bitboard};
-use bunnies::utils::Color;
-use bunnies::utils::Square;
+use bunnies::{iter_bit_combinations, Bitboard};
+use bunnies::Color;
+use bunnies::Square;
 
 fn sliding_piece_attacks_test(relevant_masks: &PrecomputedMasksForSquares, get_attacks: impl Fn(Square, Bitboard) -> Bitboard) {
     for square in Square::ALL {

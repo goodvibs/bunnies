@@ -12,7 +12,7 @@ use crate::state::board::Board;
 static ZOBRIST_TABLE: [[Bitboard; 12]; 64] = generate_zobrist_table();
 
 /// Generates a table of random bitboards for each piece type on each square.
-pub fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
+fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
     let mut rng = rand::rng();
     let mut zobrist: [[Bitboard; 12]; 64] = [[0; 12]; 64];
     for i in 0..64 {
