@@ -4,7 +4,7 @@ use std::rc::Rc;
 use indexmap::IndexMap;
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::state::State;
+use crate::state::GameState;
 
 pub struct PgnObject {
     pub tree_root: Rc<RefCell<MoveTreeNode>>,
@@ -35,7 +35,7 @@ impl PgnObject {
             result.push_str(&format!("[{} \"{}\"]\n", key, value));
         }
         result.push_str(&self.tree_root.borrow().render(
-            State::initial(),
+            GameState::initial(),
             &[],
             include_variations,
             config,

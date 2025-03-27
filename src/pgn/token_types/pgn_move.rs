@@ -1,9 +1,9 @@
 use regex::Match;
 use crate::r#move::Move;
-use crate::state::State;
+use crate::state::GameState;
 
 pub trait PgnMove: std::fmt::Debug {
-    fn matches_move(&self, mv: Move, from_state: &State) -> bool;
+    fn matches_move(&self, mv: Move, from_state: &GameState) -> bool;
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 

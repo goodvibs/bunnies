@@ -5,7 +5,7 @@ use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::r#move::{Move, MoveFlag};
-use crate::state::State;
+use crate::state::GameState;
 
 /// The regex pattern for a castling move.
 /// Capturing groups:
@@ -27,7 +27,7 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move(&self, mv: Move, initial_state: &State) -> bool {
+    fn matches_move(&self, mv: Move, initial_state: &GameState) -> bool {
         let flag = mv.get_flag();
         if flag != MoveFlag::Castling {
             return false
@@ -85,7 +85,7 @@ mod tests {
     use crate::pgn::token_types::pgn_move::PgnMove;
     use crate::r#move::{Move, MoveFlag};
     use crate::utils::Square;
-    use crate::state::State;
+    use crate::state::GameState;
 
     #[test]
     fn test_parse_kingside_castling_move() {
@@ -190,7 +190,7 @@ mod tests {
                 nag: None
             }
         };
-        let state = State::initial();
+        let state = GameState::initial();
         let kingside_castling_move = Move::new_non_promotion(Square::G8, Square::E8, MoveFlag::Castling);
         let queenside_castling_move = Move::new_non_promotion(Square::C8, Square::E8, MoveFlag::Castling);
         assert_eq!(castling_move.matches_move(kingside_castling_move, &state), true);

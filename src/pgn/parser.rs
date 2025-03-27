@@ -12,7 +12,7 @@ use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnTag;
-use crate::state::{State};
+use crate::state::{GameState};
 
 pub struct PgnParser<'a> {
     pub lexer: Lexer<'a, PgnToken>,
@@ -26,7 +26,7 @@ impl<'a> PgnParser<'a> {
         let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
-        let buffered_position_manager = PgnBufferedPositionBrancher::new(&current_node, State::initial());
+        let buffered_position_manager = PgnBufferedPositionBrancher::new(&current_node, GameState::initial());
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,

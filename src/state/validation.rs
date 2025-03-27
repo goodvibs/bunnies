@@ -1,8 +1,8 @@
-use crate::state::State;
+use crate::state::GameState;
 use crate::utils::{Bitboard, Color, PieceType};
 use crate::utils::masks::{FILES, RANK_4, STARTING_BK, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR, STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK};
 
-impl State {
+impl GameState {
     /// Rigorous check for whether the current positional information is consistent and valid.
     pub fn is_unequivocally_valid(&self) -> bool {
         self.board.is_unequivocally_valid() &&

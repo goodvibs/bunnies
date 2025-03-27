@@ -5,7 +5,7 @@ use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::state::{State, GameResult};
+use crate::state::{GameState, GameResult};
 
 pub struct MoveTreeNode {
     pub move_data: Option<PgnMoveData>, // None for the root node
@@ -49,7 +49,7 @@ impl MoveTreeNode {
         self.continuations.iter().skip(1).map(|c| Rc::clone(c)).collect()
     }
 
-    pub fn render(&self, mut state: State, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, config: PgnRenderingConfig, depth: u16, remind_fullmove: bool) -> String {
+    pub fn render(&self, mut state: GameState, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, config: PgnRenderingConfig, depth: u16, remind_fullmove: bool) -> String {
         let rendered_last_continuations = {
             let mut result = String::new();
             for continuation in last_continuations {

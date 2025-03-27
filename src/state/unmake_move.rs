@@ -6,9 +6,9 @@ use crate::r#move::{Move, MoveFlag};
 use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT};
 use crate::utils::PieceType;
 use crate::utils::Square;
-use crate::state::{GameResult, State};
+use crate::state::{GameResult, GameState};
 
-impl State {
+impl GameState {
     fn unprocess_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType) {
         self.board.remove_piece_type_at(promotion, dst_square); // remove promoted piece
         self.board.put_piece_type_at(PieceType::Pawn, src_square); // put pawn back

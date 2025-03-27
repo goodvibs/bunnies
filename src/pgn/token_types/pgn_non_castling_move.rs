@@ -7,7 +7,7 @@ use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
-use crate::state::State;
+use crate::state::GameState;
 
 /// Regex for parsing non-castling moves.
 /// Capturing groups:
@@ -39,7 +39,7 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move(&self, mv: Move, initial_state: &State) -> bool {
+    fn matches_move(&self, mv: Move, initial_state: &GameState) -> bool {
         let dst = mv.get_destination();
         let src = mv.get_source();
         let flag = mv.get_flag();
@@ -333,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = State::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4").unwrap();
+        let state = GameState::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4").unwrap();
 
         // Test knight move
         let knight_move = PgnNonCastlingMove {

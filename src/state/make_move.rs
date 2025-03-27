@@ -8,9 +8,9 @@ use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
 use crate::state::context::GameContext;
-use crate::state::State;
+use crate::state::GameState;
 
-impl State {
+impl GameState {
     fn process_promotion(&mut self, dst_square: Square, src_square: Square, promotion: PieceType, new_context: &mut GameContext) {
         self.process_possible_capture(dst_square, new_context);
         

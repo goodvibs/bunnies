@@ -7,7 +7,7 @@ use crate::utils::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::Square;
-use crate::state::{State};
+use crate::state::{GameState};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     PieceType::PROMOTION_PIECES.map(|promotion_piece| {
@@ -15,7 +15,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
     })
 }
 
-impl State {
+impl GameState {
     fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator, attacks_mask: &mut Bitboard) {
         let opposite_color = self.side_to_move.other();
         let opposite_color_bb = self.board.color_masks[opposite_color as usize];
