@@ -19,9 +19,8 @@ impl Color {
         }
     }
 
-    pub fn iter() -> impl Iterator<Item = Color> {
-        (0..=1).map(|n| unsafe { std::mem::transmute::<u8, Color>(n) })
-    }
+    /// An array of all Colors (2 colors).
+    pub const ALL: [Color; 2] = [Color::White, Color::Black];
 }
 
 #[cfg(test)]
