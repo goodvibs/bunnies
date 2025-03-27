@@ -39,6 +39,7 @@ pub fn iter_set_bits(mask: Bitboard) -> SetBitMaskIterator {
 }
 
 #[derive(Debug, Clone)]
+/// An iterator that generates the squares of a bitboard.
 pub struct SquaresFromMaskIterator {
     current_mask: Bitboard,
 }

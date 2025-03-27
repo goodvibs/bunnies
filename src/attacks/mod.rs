@@ -1,4 +1,6 @@
 //! This module contains functions to calculate attack bitboards for different pieces.
+//! The direct exports are the recommended way to calculate attack masks.
+//! However, the `precomputed`, `manual`, and `magic` submodules may also be used.
 
 use crate::utils::Bitboard;
 use crate::utils::Color;

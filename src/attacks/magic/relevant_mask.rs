@@ -11,21 +11,24 @@ pub static ROOK_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksFor
 #[dynamic]
 pub static BISHOP_RELEVANT_MASKS: PrecomputedMasksForSquares = PrecomputedMasksForSquares::init(&calc_bishop_relevant_mask);
 
+/// Initializes 64 masks for the 64 squares on the board using a provided initializer function
 pub struct PrecomputedMasksForSquares {
     masks: [Bitboard; 64]
 }
 
 impl PrecomputedMasksForSquares {
-    fn init(calc_relevant_mask: &impl Fn(Square) -> Bitboard) -> Self {
+    /// Initializes the precomputed masks for squares using the provided mask calculation function
+    pub fn init(calc_mask: &impl Fn(Square) -> Bitboard) -> Self {
         let mut relevant_masks = [0; 64];
         for (i, square) in Square::ALL.into_iter().enumerate() {
-            relevant_masks[i] = calc_relevant_mask(square);
+            relevant_masks[i] = calc_mask(square);
         }
         PrecomputedMasksForSquares {
             masks: relevant_masks
         }
     }
 
+    /// Returns the mask for a given square
     pub fn get(&self, square: Square) -> Bitboard {
         self.masks[square as usize]
     }

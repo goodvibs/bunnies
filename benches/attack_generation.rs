@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use bunnies::attacks::{magic, manual, precomputed};
-use bunnies::attacks::magic::relevant_mask::{PrecomputedMasksForSquares, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
+use bunnies::attacks::magic::{PrecomputedMasksForSquares, BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use bunnies::{iter_bit_combinations, Bitboard};
 use bunnies::Color;
 use bunnies::Square;

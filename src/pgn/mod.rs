@@ -1,3 +1,5 @@
+//! This module provides functionality for parsing and rendering PGN (Portable Game Notation).
+
 mod parser;
 mod token;
 mod parsing_error;

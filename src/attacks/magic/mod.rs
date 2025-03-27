@@ -1,3 +1,5 @@
+//! This module provides functionality for calculating sliding piece attacks using magic bitboards.
+
 use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTACKS_LOOKUP};
 use crate::utils::Bitboard;
 use crate::utils::Square;
@@ -5,8 +7,10 @@ use crate::utils::Square;
 mod lookup;
 mod random;
 mod magic_info;
-pub mod relevant_mask;
+mod relevant_mask;
 mod initializer;
+
+pub use relevant_mask::*;
 
 /// Calculate the attack mask for a rook on a given square with a given occupied mask
 pub fn magic_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {

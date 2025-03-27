@@ -3,6 +3,7 @@ use crate::utils::ColoredPieceType;
 use crate::utils::Square;
 use crate::state::{Board, GameContext, GameResult, GameState};
 
+/// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #[derive(Eq, PartialEq, Debug)]

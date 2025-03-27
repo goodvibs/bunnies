@@ -1,3 +1,5 @@
+//! This module contains bitboard masks that may be useful.
+
 use crate::utils::Bitboard;
 
 pub const FILE_A: Bitboard = 0x8080808080808080;
