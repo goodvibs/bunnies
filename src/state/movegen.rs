@@ -17,7 +17,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 
 impl State {
     fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator, attacks_mask: &mut Bitboard) {
-        let opposite_color = self.side_to_move.flip();
+        let opposite_color = self.side_to_move.other();
         let opposite_color_bb = self.board.color_masks[opposite_color as usize];
 
         let promotion_rank = match self.side_to_move {

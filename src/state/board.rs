@@ -184,7 +184,7 @@ impl Board {
     /// Returns the color at `square`.
     pub fn get_color_at(&self, square: Square) -> Color {
         let mask = square.mask();
-        Color::from(self.color_masks[Color::Black as usize] & mask != 0)
+        Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
     }
     
     /// Returns the colored piece at `square`.

@@ -1,15 +1,18 @@
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+/// Represents a side of the board.
 pub enum Color {
     White=0, Black=1
 }
 
 impl Color {
-    pub const fn from(is_black: bool) -> Color {
+    /// Returns a Color from a boolean value, where true is black and false is white.
+    pub const fn from_is_black(is_black: bool) -> Color {
         unsafe { std::mem::transmute::<bool, Color>(is_black) }
     }
 
-    pub const fn flip(&self) -> Color {
+    /// Returns the other color.
+    pub const fn other(&self) -> Color {
         match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
@@ -29,9 +32,9 @@ mod tests {
     fn test_color() {
         assert_eq!(Color::White as u8, 0);
         assert_eq!(Color::Black as u8, 1);
-        assert_eq!(Color::White.flip(), Color::Black);
-        assert_eq!(Color::Black.flip(), Color::White);
-        assert_eq!(Color::from(false), Color::White);
-        assert_eq!(Color::from(true), Color::Black);
+        assert_eq!(Color::White.other(), Color::Black);
+        assert_eq!(Color::Black.other(), Color::White);
+        assert_eq!(Color::from_is_black(false), Color::White);
+        assert_eq!(Color::from_is_black(true), Color::Black);
     }
 }

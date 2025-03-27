@@ -49,7 +49,7 @@ impl State {
 
         self.board.move_piece_type(PieceType::King, src_square, dst_square); // move king back
 
-        let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move.flip() as usize] != 0;
+        let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move.other() as usize] != 0;
 
         let rook_src_square = match is_king_side {
             true => unsafe { Square::from(src_square as u8 + 3) },
@@ -60,7 +60,7 @@ impl State {
             false => unsafe { Square::from(src_square as u8 - 1) }
         };
 
-        self.board.move_colored_piece(ColoredPieceType::new(self.side_to_move.flip(), PieceType::Rook), rook_src_square, rook_dst_square); // move rook back
+        self.board.move_colored_piece(ColoredPieceType::new(self.side_to_move.other(), PieceType::Rook), rook_src_square, rook_dst_square); // move rook back
     }
 
     /// Undoes a move from State without checking if it is valid, legal, or even applied to the current position.
@@ -69,7 +69,7 @@ impl State {
     pub fn unmake_move(&mut self, mv: Move) {
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        self.board.move_color(self.side_to_move.flip(), src_square, dst_square);
+        self.board.move_color(self.side_to_move.other(), src_square, dst_square);
 
         match flag {
             MoveFlag::NormalMove => self.unprocess_normal(dst_square, src_square),
@@ -80,7 +80,7 @@ impl State {
         
         // update data members
         self.halfmove -= 1;
-        self.side_to_move = self.side_to_move.flip();
+        self.side_to_move = self.side_to_move.other();
         let old_context = unsafe { (*self.context).previous.expect("No previous context") };
         let _ = unsafe { Box::from_raw(self.context) };
         self.context = old_context;

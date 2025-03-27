@@ -94,7 +94,7 @@ impl State {
                 if self.halfmove < 1 {
                     return false;
                 }
-                let color_just_moved = self.side_to_move.flip();
+                let color_just_moved = self.side_to_move.other();
                 let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize];
                 let colored_pawns_bb = pawns_bb & self.board.color_masks[color_just_moved as usize];
                 let file_mask = FILES[file as usize];

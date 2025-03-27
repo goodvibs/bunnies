@@ -31,7 +31,7 @@ impl State {
 
     fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut GameContext) {
         let dst_mask = dst_square.mask();
-        let opposite_color = self.side_to_move.flip();
+        let opposite_color = self.side_to_move.other();
         
         self.board.remove_color_at(opposite_color, dst_square);
 
@@ -44,7 +44,7 @@ impl State {
     }
     
     fn process_en_passant(&mut self, dst_square: Square, src_square: Square, new_context: &mut GameContext) {
-        let opposite_color = self.side_to_move.flip();
+        let opposite_color = self.side_to_move.other();
         
         let en_passant_capture_square = match opposite_color {
             Color::White => unsafe { Square::from(dst_square as u8 - 8) },
@@ -106,7 +106,7 @@ impl State {
         
         // update data members
         self.halfmove += 1;
-        self.side_to_move = self.side_to_move.flip();
+        self.side_to_move = self.side_to_move.other();
         self.context = Box::into_raw(Box::new(new_context));
     }
 }

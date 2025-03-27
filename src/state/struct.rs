@@ -42,7 +42,7 @@ impl State {
     pub fn opposite_side_attacks(&self) -> Bitboard {
         match unsafe { &(*self.context).previous } {
             // Some(previous) => previous.borrow().current_side_attacks,
-            _ => self.board.calc_attacks_mask(self.side_to_move.flip())
+            _ => self.board.calc_attacks_mask(self.side_to_move.other())
         }
     }
 
@@ -54,7 +54,7 @@ impl State {
 
     pub fn is_opposite_side_in_check(&self) -> bool {
         let kings_bb = self.board.piece_type_masks[PieceType::King as usize];
-        let opposite_side_bb = self.board.color_masks[self.side_to_move.flip() as usize];
+        let opposite_side_bb = self.board.color_masks[self.side_to_move.other() as usize];
         kings_bb & opposite_side_bb & self.current_side_attacks() != 0
     }
 
@@ -135,7 +135,7 @@ mod state_tests {
     #[test]
     fn test_opposite_side_attacks() {
         let initial_state = State::initial();
-        let initial_black_attacks = initial_state.board.calc_attacks_mask(initial_state.side_to_move.flip());
+        let initial_black_attacks = initial_state.board.calc_attacks_mask(initial_state.side_to_move.other());
         assert_eq!(initial_state.opposite_side_attacks(), initial_black_attacks);
         unsafe { (*initial_state.context).initialize_current_side_attacks(initial_black_attacks) };
         
@@ -163,7 +163,7 @@ mod state_tests {
             context: Box::into_raw(Box::new(next_state_context)),
         };
         
-        let next_state_white_attacks = next_state.board.calc_attacks_mask(next_state.side_to_move.flip());
+        let next_state_white_attacks = next_state.board.calc_attacks_mask(next_state.side_to_move.other());
         assert_eq!(next_state.opposite_side_attacks(), next_state_white_attacks);
     }
 }
