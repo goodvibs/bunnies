@@ -1,6 +1,5 @@
 use std::fmt::Display;
 use crate::utils::Bitboard;
-use crate::utils::charboard::SQUARE_NAMES;
 use crate::utils::masks::{FILES, RANKS};
 
 #[repr(u8)]
@@ -155,7 +154,7 @@ impl Square {
 
     /// Returns a string representing the square in algebraic notation.
     pub const fn readable(&self) -> &str {
-        SQUARE_NAMES[*self as usize]
+        Self::ALL_STR[*self as usize]
     }
 
     /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
@@ -168,6 +167,17 @@ impl Square {
         Square::A3, Square::B3, Square::C3, Square::D3, Square::E3, Square::F3, Square::G3, Square::H3,
         Square::A2, Square::B2, Square::C2, Square::D2, Square::E2, Square::F2, Square::G2, Square::H2,
         Square::A1, Square::B1, Square::C1, Square::D1, Square::E1, Square::F1, Square::G1, Square::H1
+    ];
+
+    pub const ALL_STR: [&'static str; 64] = [
+        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+        "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+        "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+        "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+        "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+        "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+        "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+        "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
     ];
 }
 

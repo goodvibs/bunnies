@@ -92,9 +92,8 @@ impl State {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::utils::{Color, ColoredPieceType, PieceType, Square};
+    use crate::utils::{print_bb, Color, ColoredPieceType, PieceType, Square};
     use crate::state::{GameContext, GameResult, State};
-    use crate::utils::charboard::print_bb;
 
     #[test]
     fn test_initial_state() {

@@ -110,6 +110,14 @@ pub fn get_bit_combinations_iter(mask: Bitboard) -> BitCombinationsIterator {
     mask.into()
 }
 
+/// Prints a Bitboard as a binary number.
+pub fn print_bb(bb: Bitboard) {
+    for i in 0..8 {
+        let shift_amt = 8 * (7 - i);
+        println!("{:08b}", (bb & (0xFF << shift_amt)) >> shift_amt);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

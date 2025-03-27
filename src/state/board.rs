@@ -1,7 +1,9 @@
 //! Board struct and methods
 
+use std::fmt::Display;
 use crate::attacks::*;
 use crate::utils::{get_squares_from_mask_iter, Bitboard};
+use crate::utils::charboard::{cb_to_string, Charboard};
 use crate::utils::Color;
 use crate::utils::ColoredPieceType;
 use crate::utils::masks::*;
@@ -251,5 +253,29 @@ impl Board {
     /// Prints the board to the console.
     pub fn print(&self) {
         println!("{}", self);
+    }
+
+    pub fn to_cb(&self) -> Charboard {
+        let mut cb: Charboard = [[' '; 8]; 8];
+        for (i, square) in Square::ALL.into_iter().enumerate() {
+            let colored_piece = self.get_colored_piece_at(square);
+            cb[i / 8][i % 8] = colored_piece.ascii();
+        }
+        cb
+    }
+
+    pub fn to_cb_pretty(&self) -> Charboard {
+        let mut cb: Charboard = [[' '; 8]; 8];
+        for (i, square) in Square::ALL.into_iter().enumerate() {
+            let colored_piece = self.get_colored_piece_at(square);
+            cb[i / 8][i % 8] = colored_piece.unicode();
+        }
+        cb
+    }
+}
+
+impl Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", cb_to_string(&self.to_cb_pretty()).as_str())
     }
 }
