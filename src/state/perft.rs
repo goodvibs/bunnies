@@ -1,6 +1,6 @@
 use crate::state::State;
 
-pub fn count_nodes(state: &mut State, depth: u8) -> u64 {
+fn count_nodes(state: &mut State, depth: u8) -> u64 {
     if !state.is_probably_valid() {
         0
     } else if depth == 0 {
