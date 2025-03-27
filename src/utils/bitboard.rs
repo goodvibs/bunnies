@@ -26,10 +26,10 @@ impl Iterator for SetBitMaskIterator {
             return None;
         }
 
-        let ls1b = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
-        self.current_mask &= !ls1b;  // Clear the least significant set bit
+        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
+        self.current_mask &= !ls1b_mask;  // Clear the least significant set bit
 
-        Some(ls1b)
+        Some(ls1b_mask)
     }
 }
 
@@ -40,13 +40,13 @@ pub fn iter_set_bits(mask: Bitboard) -> SetBitMaskIterator {
 
 #[derive(Debug, Clone)]
 pub struct SquaresFromMaskIterator {
-    mask: Bitboard,
+    current_mask: Bitboard,
 }
 
 impl From<Bitboard> for SquaresFromMaskIterator {
     fn from(mask: Bitboard) -> Self {
         SquaresFromMaskIterator {
-            mask,
+            current_mask: mask,
         }
     }
 }
@@ -55,16 +55,15 @@ impl Iterator for SquaresFromMaskIterator {
     type Item = Square;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.mask == 0 {
+        if self.current_mask == 0 {
             return None;
         }
 
-        let ls1b = self.mask & self.mask.wrapping_neg();  // Isolate the least significant set bit
-        self.mask &= !ls1b;  // Clear the least significant set bit
-        let square_index = ls1b.leading_zeros();  // Index of the set bit
+        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
+        self.current_mask &= !ls1b_mask;  // Clear the least significant set bit
 
         unsafe {
-            Some(Square::from(square_index as u8))
+            Some(Square::from_bitboard(ls1b_mask))
         }
     }
 }
