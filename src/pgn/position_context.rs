@@ -4,7 +4,7 @@ use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::state::GameState;
 
 #[derive(Clone)]
-pub struct PgnPositionContext {
-    pub node: Rc<RefCell<MoveTreeNode>>,
-    pub state_after_move: GameState,
+pub(crate) struct PgnPositionContext {
+    pub(crate) node: Rc<RefCell<MoveTreeNode>>,
+    pub(crate) state_after_move: GameState,
 }

@@ -14,11 +14,12 @@ use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnTag;
 use crate::state::{GameState};
 
+/// The main parser for PGN strings.
 pub struct PgnParser<'a> {
     pub lexer: Lexer<'a, PgnToken>,
     pub parse_state: PgnParsingState,
     pub constructed_object: PgnObject,
-    pub buffered_position_manager: PgnBufferedPositionBrancher
+    buffered_position_manager: PgnBufferedPositionBrancher
 }
 
 impl<'a> PgnParser<'a> {

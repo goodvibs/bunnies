@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+/// Represents errors that can occur during PGN lexing.
 #[derive(Debug, PartialEq, Clone)]
 pub enum PgnLexingError {
     InvalidMove(String),

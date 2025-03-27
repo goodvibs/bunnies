@@ -1,4 +1,5 @@
 
+/// Contains a configuration for rendering PGN (Portable Game Notation) data.
 #[derive(Debug, Clone, Copy)]
 pub struct PgnRenderingConfig {
     pub include_annotations: bool,
@@ -17,6 +18,7 @@ impl Default for PgnRenderingConfig {
 }
 
 impl PgnRenderingConfig {
+    /// Creates a new `PgnRenderingConfig` specifying no annotations, NAGs, or comments.
     pub fn no_markings() -> PgnRenderingConfig {
         PgnRenderingConfig {
             include_annotations: false,
@@ -25,16 +27,19 @@ impl PgnRenderingConfig {
         }
     }
 
+    /// Sets whether to include annotations.
     pub fn annotations(&mut self, include: bool) -> &mut Self {
         self.include_annotations = include;
         self
     }
 
+    /// Sets whether to include NAGs (Numeric Annotation Glyphs).
     pub fn nags(&mut self, include: bool) -> &mut Self {
         self.include_nags = include;
         self
     }
 
+    /// Sets whether to include comments.
     pub fn comments(&mut self, include: bool) -> &mut Self {
         self.include_comments = include;
         self

@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
+/// Represents errors that can occur during PGN parsing.
 pub enum PgnParsingError {
     InvalidTag(String),
     IncorrectMoveNumber(String),

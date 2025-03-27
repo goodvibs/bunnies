@@ -6,13 +6,13 @@ use crate::pgn::position_context::PgnPositionContext;
 use crate::state::GameState;
 
 #[derive(Clone)]
-pub struct PgnBufferedPositionContext {
-    pub current: PgnPositionContext,
-    pub previous: Option<PgnPositionContext>,
+pub(crate) struct PgnBufferedPositionContext {
+    pub(crate) current: PgnPositionContext,
+    pub(crate) previous: Option<PgnPositionContext>,
 }
 
 impl PgnBufferedPositionContext {
-    pub fn append_new_move(&mut self, new_move_data: PgnMoveData, new_state: GameState) {
+    pub(crate) fn append_new_move(&mut self, new_move_data: PgnMoveData, new_state: GameState) {
         let new_node = Rc::new(RefCell::new(MoveTreeNode::new(new_move_data, None)));
         self.current.node.borrow_mut().add_continuation(&new_node);
 

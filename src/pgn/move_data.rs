@@ -2,14 +2,14 @@ use crate::utils::PieceType;
 use crate::r#move::Move;
 
 #[derive(Debug, Clone)]
-pub struct PgnMoveData {
-    pub mv: Move,
-    pub annotation: Option<String>,
-    pub nag: Option<u8>,
+pub(crate) struct PgnMoveData {
+    pub(crate) mv: Move,
+    pub(crate) annotation: Option<String>,
+    pub(crate) nag: Option<u8>,
 }
 
 impl PgnMoveData {
-    pub fn render(&self, moved_piece: PieceType, disambiguation_str: &str, is_check: bool, is_checkmate: bool, is_capture: bool, include_annotations: bool, include_nags: bool) -> String {
+    pub(crate) fn render(&self, moved_piece: PieceType, disambiguation_str: &str, is_check: bool, is_checkmate: bool, is_capture: bool, include_annotations: bool, include_nags: bool) -> String {
         let mut result = self.mv.san(moved_piece, disambiguation_str, is_check, is_checkmate, is_capture);
 
         if include_annotations {

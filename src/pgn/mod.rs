@@ -20,7 +20,6 @@ pub use parsing_error::*;
 pub use object::*;
 pub use lexing_error::*;
 pub use parsing_state::*;
-pub use move_data::*;
 pub use rendering_config::*;
 
 #[cfg(test)]

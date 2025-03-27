@@ -6,6 +6,7 @@ use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::state::GameState;
 
+/// Represents a parsed PGN string.
 pub struct PgnObject {
     pub tree_root: Rc<RefCell<MoveTreeNode>>,
     pub tags: IndexMap<String, String>,
@@ -18,6 +19,7 @@ impl Default for PgnObject {
 }
 
 impl PgnObject {
+    /// Creates a new PgnObject representing an empty PGN string.
     pub fn new() -> PgnObject {
         PgnObject {
             tags: IndexMap::new(),
@@ -25,10 +27,12 @@ impl PgnObject {
         }
     }
 
+    /// Adds a tag to the PGN object.
     pub fn add_tag(&mut self, key: String, value: String) {
         self.tags.insert(key, value);
     }
 
+    /// Returns a PGN string representation, rendered with the given configuration.
     pub fn render(&self, include_variations: bool, config: PgnRenderingConfig) -> String {
         let mut result = String::new();
         for (key, value) in self.tags.iter() {
