@@ -7,7 +7,7 @@ authors = ["Vibhav Singamshetty <vibsingamshetty@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/goodvibs/bunnies"
 readme = "README.md"
-keywords = ["chess", "fast", "move", "generation", "engine"]
+keywords = ["chess", "fast", "move", "gen", "engine"]
 categories = ["games", "mathematics"]
 
 [dependencies]
