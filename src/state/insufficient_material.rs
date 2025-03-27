@@ -1,5 +1,5 @@
 use crate::state::Board;
-use crate::utils::{Color, PieceType};
+use crate::{Color, PieceType};
 
 impl Board {
     /// Returns true if there is insufficient material on both sides to checkmate.

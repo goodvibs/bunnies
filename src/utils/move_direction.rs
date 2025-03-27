@@ -1,4 +1,4 @@
-use crate::utils::Square;
+use crate::Square;
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

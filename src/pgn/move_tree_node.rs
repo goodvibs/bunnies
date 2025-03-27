@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::utils::Color;
+use crate::Color;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::utils::PieceType;
+use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::state::{GameState, GameResult};
 

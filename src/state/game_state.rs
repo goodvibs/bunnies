@@ -1,6 +1,6 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use crate::utils::{Bitboard, Color, PieceType};
+use crate::{Bitboard, Color, PieceType};
 use crate::state::{Board, GameContext, GameResult};
 
 /// A struct containing all the information needed to represent a position in a chess game.
@@ -92,8 +92,9 @@ impl GameState {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::utils::{print_bb, Color, ColoredPieceType, PieceType, Square};
+    use crate::{Color, ColoredPieceType, PieceType, Square};
     use crate::state::{GameContext, GameResult, GameState};
+    use crate::utils::print_bb;
 
     #[test]
     fn test_initial_state() {

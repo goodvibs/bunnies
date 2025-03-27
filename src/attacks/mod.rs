@@ -2,9 +2,9 @@
 //! The direct exports are the recommended way to calculate attack masks.
 //! However, the `precomputed`, `manual`, and `magic` submodules may also be used.
 
-use crate::utils::Bitboard;
-use crate::utils::Color;
-use crate::utils::Square;
+use crate::Bitboard;
+use crate::Color;
+use crate::Square;
 
 pub mod manual;
 pub mod precomputed;

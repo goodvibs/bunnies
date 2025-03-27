@@ -1,4 +1,4 @@
-use crate::utils::Bitboard;
+use crate::Bitboard;
 
 /// A type alias for a chess board represented as a 2D array of characters.
 pub type Charboard = [[char; 8]; 8];

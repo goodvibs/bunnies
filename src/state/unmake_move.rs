@@ -1,11 +1,11 @@
 //! Contains the implementation of the `State::unmake_move` method.
 
-use crate::utils::Color;
-use crate::utils::ColoredPieceType;
+use crate::Color;
+use crate::ColoredPieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT};
-use crate::utils::PieceType;
-use crate::utils::Square;
+use crate::masks::{STARTING_KING_ROOK_GAP_SHORT};
+use crate::PieceType;
+use crate::Square;
 use crate::state::{GameResult, GameState};
 
 impl GameState {

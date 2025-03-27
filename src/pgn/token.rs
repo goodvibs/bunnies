@@ -1,5 +1,5 @@
 use logos::{Logos, Lexer};
-use crate::utils::Color;
+use crate::Color;
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::token_types::PgnComment;
@@ -54,8 +54,8 @@ pub enum PgnToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::PieceType;
-    use crate::utils::Square;
+    use crate::PieceType;
+    use crate::Square;
 
     #[test]
     fn test_lexing_variations() {

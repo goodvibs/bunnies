@@ -1,12 +1,12 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_rook_attacks};
-use crate::utils::{iter_set_bits, iter_squares_from_mask, Bitboard, MaskBitsIterator};
-use crate::utils::Color;
-use crate::utils::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
-use crate::utils::PieceType;
+use crate::utils::{iter_set_bits, iter_squares_from_mask, MaskBitsIterator};
+use crate::{Bitboard, Color};
+use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
+use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::utils::Square;
+use crate::Square;
 use crate::state::{GameState};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {

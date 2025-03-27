@@ -1,6 +1,6 @@
-use crate::utils::Color;
-use crate::utils::ColoredPieceType;
-use crate::utils::Square;
+use crate::Color;
+use crate::ColoredPieceType;
+use crate::Square;
 use crate::state::{Board, GameContext, GameResult, GameState};
 
 /// The FEN string representing the starting position of a standard chess game.

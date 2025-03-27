@@ -2,13 +2,13 @@
 
 use std::fmt::Display;
 use crate::attacks::*;
-use crate::utils::{iter_squares_from_mask, Bitboard};
+use crate::utils::{iter_squares_from_mask};
 use crate::utils::{cb_to_string, Charboard};
-use crate::utils::Color;
-use crate::utils::ColoredPieceType;
-use crate::utils::masks::*;
-use crate::utils::PieceType;
-use crate::utils::Square;
+use crate::{Bitboard, Color};
+use crate::ColoredPieceType;
+use crate::masks::*;
+use crate::PieceType;
+use crate::Square;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
 /// and the zobrist hash of the position.

@@ -2,9 +2,9 @@
 
 use static_init::dynamic;
 use crate::attacks::manual;
-use crate::SquareMasks;
-use crate::utils::Bitboard;
-use crate::utils::Square;
+use crate::Bitboard;
+use crate::Square;
+use crate::utils::SquareMasks;
 
 /// Precomputed attacks table for kings.
 #[dynamic]

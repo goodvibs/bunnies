@@ -2,9 +2,9 @@
 
 use rand::Rng;
 use static_init::dynamic;
-use crate::utils::{iter_squares_from_mask, Bitboard};
-use crate::utils::PieceType;
-use crate::utils::Square;
+use crate::utils::{iter_squares_from_mask};
+use crate::{Bitboard, PieceType};
+use crate::Square;
 use crate::state::board::Board;
 
 /// A table of random bitboards for each piece type on each square.

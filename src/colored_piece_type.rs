@@ -1,5 +1,5 @@
-use crate::utils::Color;
-use crate::utils::PieceType;
+use crate::Color;
+use crate::PieceType;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

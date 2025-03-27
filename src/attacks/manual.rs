@@ -1,10 +1,10 @@
 //! Contains functions that manually calculate attacks for all pieces
 
 use std::cmp;
-use crate::utils::Bitboard;
-use crate::utils::Color;
-use crate::utils::masks::*;
-use crate::utils::Square;
+use crate::Bitboard;
+use crate::Color;
+use crate::masks::*;
+use crate::Square;
 
 /// Returns a bitboard with all squares attacked by knights indicated by the bits in `knights_mask`
 pub fn multi_knight_attacks(knights_mask: Bitboard) -> Bitboard {

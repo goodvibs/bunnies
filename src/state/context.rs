@@ -1,7 +1,7 @@
 //! Context struct and methods
 
-use crate::utils::Bitboard;
-use crate::utils::PieceType;
+use crate::Bitboard;
+use crate::PieceType;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -128,8 +128,8 @@ impl GameContext {
 
 #[cfg(test)]
 mod game_context_tests {
-    use crate::utils::Bitboard;
-    use crate::utils::PieceType;
+    use crate::Bitboard;
+    use crate::PieceType;
     use crate::state::GameContext;
 
     #[test]

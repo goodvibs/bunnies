@@ -1,4 +1,4 @@
-use crate::utils::PieceType;
+use crate::PieceType;
 use crate::r#move::Move;
 
 #[derive(Debug, Clone)]

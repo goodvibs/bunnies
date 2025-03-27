@@ -1,8 +1,8 @@
 //! This module provides functionality for calculating sliding piece attacks using magic bitboards.
 
 use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTACKS_LOOKUP};
-use crate::utils::Bitboard;
-use crate::utils::Square;
+use crate::Bitboard;
+use crate::Square;
 
 mod lookup;
 mod random;
@@ -29,8 +29,8 @@ mod tests {
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::utils::iter_bit_combinations;
     use crate::utils::print_bb_pretty;
-    use crate::utils::PieceType;
-    use crate::utils::Square;
+    use crate::PieceType;
+    use crate::Square;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {

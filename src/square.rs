@@ -1,6 +1,6 @@
 use std::fmt::Display;
-use crate::utils::Bitboard;
-use crate::utils::masks::{FILES, RANKS};
+use crate::Bitboard;
+use crate::masks::{FILES, RANKS};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

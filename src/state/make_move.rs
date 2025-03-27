@@ -1,12 +1,12 @@
 //! Contains the implementation of the `State::make_move` method.
 
-use crate::utils::Bitboard;
-use crate::utils::Color;
-use crate::utils::ColoredPieceType;
-use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
-use crate::utils::PieceType;
+use crate::Bitboard;
+use crate::Color;
+use crate::ColoredPieceType;
+use crate::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
+use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::utils::Square;
+use crate::Square;
 use crate::state::context::GameContext;
 use crate::state::GameState;
 

@@ -4,9 +4,9 @@ use static_init::dynamic;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::utils::PieceType;
+use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::utils::Square;
+use crate::Square;
 use crate::state::GameState;
 
 /// Regex for parsing non-castling moves.
@@ -157,9 +157,9 @@ mod tests {
     use logos::Logos;
     use super::*;
     use crate::pgn::token::PgnToken;
-    use crate::utils::PieceType;
+    use crate::PieceType;
     use crate::r#move::Move;
-    use crate::utils::Square;
+    use crate::Square;
 
     #[test]
     fn test_parse_pawn_move() {
