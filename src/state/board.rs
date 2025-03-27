@@ -3,7 +3,7 @@
 use crate::attacks::*;
 use crate::utils::{get_squares_from_mask_iter, Bitboard};
 use crate::utils::Color;
-use crate::utils::ColoredPiece;
+use crate::utils::ColoredPieceType;
 use crate::utils::masks::*;
 use crate::utils::PieceType;
 use crate::utils::Square;
@@ -95,9 +95,9 @@ impl Board {
 
     /// Populates a square with `colored_piece`.
     /// Updates the zobrist hash.
-    pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
-        let piece_type = colored_piece.get_piece_type();
-        let color = colored_piece.get_color();
+    pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
+        let piece_type = colored_piece.piece_type();
+        let color = colored_piece.color();
 
         self.put_color_at(color, square);
         self.put_piece_type_at(piece_type, square);
@@ -121,9 +121,9 @@ impl Board {
 
     /// Removes `colored_piece` from a square.
     /// Updates the zobrist hash.
-    pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
-        let piece_type = colored_piece.get_piece_type();
-        let color = colored_piece.get_color();
+    pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
+        let piece_type = colored_piece.piece_type();
+        let color = colored_piece.color();
 
         self.remove_color_at(color, square);
         self.remove_piece_type_at(piece_type, square);
@@ -157,9 +157,9 @@ impl Board {
     
     /// Moves a `colored_piece` from `src_square` to `dst_square`.
     /// Updates the zobrist hash.
-    pub fn move_colored_piece(&mut self, colored_piece: ColoredPiece, dst_square: Square, src_square: Square) {
-        let piece_type = colored_piece.get_piece_type();
-        let color = colored_piece.get_color();
+    pub fn move_colored_piece(&mut self, colored_piece: ColoredPieceType, dst_square: Square, src_square: Square) {
+        let piece_type = colored_piece.piece_type();
+        let color = colored_piece.color();
         
         self.move_color(color, dst_square, src_square);
         self.move_piece_type(piece_type, dst_square, src_square);
@@ -188,10 +188,10 @@ impl Board {
     }
     
     /// Returns the colored piece at `square`.
-    pub fn get_colored_piece_at(&self, square: Square) -> ColoredPiece {
+    pub fn get_colored_piece_at(&self, square: Square) -> ColoredPieceType {
         let piece_type = self.get_piece_type_at(square);
         let color = self.get_color_at(square);
-        ColoredPiece::from(color, piece_type)
+        ColoredPieceType::new(color, piece_type)
     }
     
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).

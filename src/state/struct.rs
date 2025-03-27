@@ -92,7 +92,7 @@ impl State {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::utils::{Color, ColoredPiece, PieceType, Square};
+    use crate::utils::{Color, ColoredPieceType, PieceType, Square};
     use crate::state::{GameContext, GameResult, State};
     use crate::utils::charboard::print_bb;
 
@@ -141,7 +141,7 @@ mod state_tests {
         
         let mut next_state_board = initial_state.board.clone();
         next_state_board.move_colored_piece(
-            ColoredPiece::from(Color::White, PieceType::Pawn),
+            ColoredPieceType::new(Color::White, PieceType::Pawn),
             Square::E4,
             Square::E2
         );

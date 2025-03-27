@@ -2,7 +2,7 @@
 
 use crate::utils::Bitboard;
 use crate::utils::Color;
-use crate::utils::ColoredPiece;
+use crate::utils::ColoredPieceType;
 use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
 use crate::utils::PieceType;
 use crate::r#move::{Move, MoveFlag};
@@ -26,7 +26,7 @@ impl State {
         let moved_piece = self.board.get_piece_type_at(src_square);
         assert_ne!(moved_piece, PieceType::NoPieceType);
         self.board.move_piece_type(moved_piece, dst_square, src_square);
-        new_context.process_normal_disregarding_capture(ColoredPiece::from(self.side_to_move, moved_piece), dst_square, src_square);
+        new_context.process_normal_disregarding_capture(ColoredPieceType::new(self.side_to_move, moved_piece), dst_square, src_square);
     }
 
     fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut GameContext) {
@@ -39,7 +39,7 @@ impl State {
         let captured_piece = self.board.get_piece_type_at(dst_square);
         if captured_piece != PieceType::NoPieceType {
             self.board.remove_piece_type_at(captured_piece, dst_square);
-            new_context.process_capture(ColoredPiece::from(opposite_color, captured_piece), dst_mask);
+            new_context.process_capture(ColoredPieceType::new(opposite_color, captured_piece), dst_mask);
         }
     }
     
@@ -74,7 +74,7 @@ impl State {
             false => unsafe { Square::from(src_square as u8 - 1) }
         };
 
-        self.board.move_colored_piece(ColoredPiece::from(self.side_to_move, PieceType::Rook), rook_dst_square, rook_src_square);
+        self.board.move_colored_piece(ColoredPieceType::new(self.side_to_move, PieceType::Rook), rook_dst_square, rook_src_square);
 
         new_context.process_castling(self.side_to_move);
     }
@@ -116,9 +116,9 @@ impl GameContext {
         self.halfmove_clock = 0;
     }
 
-    fn process_normal_disregarding_capture(&mut self, moved_piece: ColoredPiece, dst_square: Square, src_square: Square) {
-        let moved_piece_type = moved_piece.get_piece_type();
-        let moved_piece_color = moved_piece.get_color();
+    fn process_normal_disregarding_capture(&mut self, moved_piece: ColoredPieceType, dst_square: Square, src_square: Square) {
+        let moved_piece_type = moved_piece.piece_type();
+        let moved_piece_color = moved_piece.color();
 
         match moved_piece_type {
             PieceType::Pawn => self.process_normal_pawn_move_disregarding_capture(dst_square, src_square),
@@ -163,9 +163,9 @@ impl GameContext {
         self.castling_rights &= !(0b00001100 >> right_shift);
     }
 
-    fn process_capture(&mut self, captured_colored_piece: ColoredPiece, dst_mask: Bitboard) {
-        let captured_color = captured_colored_piece.get_color();
-        let captured_piece = captured_colored_piece.get_piece_type();
+    fn process_capture(&mut self, captured_colored_piece: ColoredPieceType, dst_mask: Bitboard) {
+        let captured_color = captured_colored_piece.color();
+        let captured_piece = captured_colored_piece.piece_type();
 
         self.captured_piece = captured_piece;
         self.halfmove_clock = 0;

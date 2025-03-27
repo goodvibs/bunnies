@@ -1,7 +1,7 @@
 //! Contains the implementation of the `State::unmake_move` method.
 
 use crate::utils::Color;
-use crate::utils::ColoredPiece;
+use crate::utils::ColoredPieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::utils::masks::{STARTING_KING_ROOK_GAP_SHORT};
 use crate::utils::PieceType;
@@ -60,7 +60,7 @@ impl State {
             false => unsafe { Square::from(src_square as u8 - 1) }
         };
 
-        self.board.move_colored_piece(ColoredPiece::from(self.side_to_move.flip(), PieceType::Rook), rook_src_square, rook_dst_square); // move rook back
+        self.board.move_colored_piece(ColoredPieceType::new(self.side_to_move.flip(), PieceType::Rook), rook_src_square, rook_dst_square); // move rook back
     }
 
     /// Undoes a move from State without checking if it is valid, legal, or even applied to the current position.

@@ -54,7 +54,7 @@ impl PieceType {
     /// Returns the uppercase ASCII character corresponding to the PieceType.
     pub const fn uppercase_ascii(&self) -> char {
         match self {
-            PieceType::NoPieceType => '_',
+            PieceType::NoPieceType => ' ',
             PieceType::Pawn => 'P',
             PieceType::Knight => 'N',
             PieceType::Bishop => 'B',
@@ -67,7 +67,7 @@ impl PieceType {
     /// Returns the lowercase ASCII character corresponding to the PieceType.
     pub const fn lowercase_ascii(&self) -> char {
         match self {
-            PieceType::NoPieceType => '_',
+            PieceType::NoPieceType => ' ',
             PieceType::Pawn => 'p',
             PieceType::Knight => 'n',
             PieceType::Bishop => 'b',

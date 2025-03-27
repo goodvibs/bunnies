@@ -112,7 +112,7 @@ impl Board {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
             let colored_piece = self.get_colored_piece_at(square);
-            cb[i / 8][i % 8] = colored_piece.to_char();
+            cb[i / 8][i % 8] = colored_piece.ascii();
         }
         cb
     }
@@ -121,7 +121,7 @@ impl Board {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
             let colored_piece = self.get_colored_piece_at(square);
-            cb[i / 8][i % 8] = colored_piece.to_char_pretty();
+            cb[i / 8][i % 8] = colored_piece.unicode();
         }
         cb
     }

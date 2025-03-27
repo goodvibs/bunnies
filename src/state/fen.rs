@@ -1,5 +1,5 @@
 use crate::utils::Color;
-use crate::utils::ColoredPiece;
+use crate::utils::ColoredPieceType;
 use crate::utils::Square;
 use crate::state::{Board, GameContext, GameResult, State};
 
@@ -86,8 +86,8 @@ fn parse_fen_board_row(row: &str, row_from_top: u8, board: &mut Board) -> Result
             }
         }
         else if c.is_ascii_alphabetic() {
-            match ColoredPiece::from_char(c) {
-                ColoredPiece::NoPiece => return Err(FenParseError::InvalidBoardRow(row.to_string())),
+            match ColoredPieceType::from_ascii(c) {
+                ColoredPieceType::NoPiece => return Err(FenParseError::InvalidBoardRow(row.to_string())),
                 colored_piece => {
                     let dst =  unsafe { Square::from(row_from_top * 8 + file) };
                     board.put_colored_piece_at(colored_piece, dst);
