@@ -24,7 +24,7 @@ mod tests {
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::utils::iter_bit_combinations;
-    use crate::utils::charboard::print_bb_pretty;
+    use crate::utils::print_bb_pretty;
     use crate::utils::PieceType;
     use crate::utils::Square;
 
