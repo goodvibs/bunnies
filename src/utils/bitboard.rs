@@ -6,19 +6,19 @@ pub type Bitboard = u64;
 
 #[derive(Debug, Clone)]
 /// An iterator that generates the set bits of a bitboard.
-pub struct SetBitMaskIterator {
+pub struct MaskBitsIterator {
     current_mask: Bitboard,
 }
 
-impl From<Bitboard> for SetBitMaskIterator {
+impl From<Bitboard> for MaskBitsIterator {
     fn from(mask: Bitboard) -> Self {
-        SetBitMaskIterator {
+        MaskBitsIterator {
             current_mask: mask,
         }
     }
 }
 
-impl Iterator for SetBitMaskIterator {
+impl Iterator for MaskBitsIterator {
     type Item = Bitboard;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -34,25 +34,25 @@ impl Iterator for SetBitMaskIterator {
 }
 
 /// Returns an iterator that generates the set bits of a bitboard.
-pub fn iter_set_bits(mask: Bitboard) -> SetBitMaskIterator {
+pub fn iter_set_bits(mask: Bitboard) -> MaskBitsIterator {
     mask.into()
 }
 
 #[derive(Debug, Clone)]
 /// An iterator that generates the squares of a bitboard.
-pub struct SquaresFromMaskIterator {
+pub struct MaskSquaresIterator {
     current_mask: Bitboard,
 }
 
-impl From<Bitboard> for SquaresFromMaskIterator {
+impl From<Bitboard> for MaskSquaresIterator {
     fn from(mask: Bitboard) -> Self {
-        SquaresFromMaskIterator {
+        MaskSquaresIterator {
             current_mask: mask,
         }
     }
 }
 
-impl Iterator for SquaresFromMaskIterator {
+impl Iterator for MaskSquaresIterator {
     type Item = Square;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -70,7 +70,7 @@ impl Iterator for SquaresFromMaskIterator {
 }
 
 /// Returns an iterator that generates the squares of a bitboard.
-pub fn iter_squares_from_mask(mask: Bitboard) -> SquaresFromMaskIterator {
+pub fn iter_squares_from_mask(mask: Bitboard) -> MaskSquaresIterator {
     mask.into()
 }
 

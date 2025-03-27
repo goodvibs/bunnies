@@ -1,7 +1,7 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_rook_attacks};
-use crate::utils::{iter_set_bits, iter_squares_from_mask, Bitboard, SetBitMaskIterator};
+use crate::utils::{iter_set_bits, iter_squares_from_mask, Bitboard, MaskBitsIterator};
 use crate::utils::Color;
 use crate::utils::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::utils::PieceType;
@@ -16,7 +16,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 }
 
 impl GameState {
-    fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator, attacks_mask: &mut Bitboard) {
+    fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator, attacks_mask: &mut Bitboard) {
         let opposite_color = self.side_to_move.other();
         let opposite_color_bb = self.board.color_masks[opposite_color as usize];
 
@@ -73,7 +73,7 @@ impl GameState {
         }
     }
     
-    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: SetBitMaskIterator) {
+    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator) {
         let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
         let promotion_rank = RANK_8 >> (self.side_to_move as u8 * 7 * 8); // RANK_8 for white, RANK_1 for black
