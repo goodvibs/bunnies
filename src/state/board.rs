@@ -3,7 +3,7 @@
 use std::fmt::Display;
 use crate::attacks::*;
 use crate::utils::{iter_squares_from_mask, Bitboard};
-use crate::utils::charboard::{cb_to_string, Charboard};
+use crate::utils::{cb_to_string, Charboard};
 use crate::utils::Color;
 use crate::utils::ColoredPieceType;
 use crate::utils::masks::*;
