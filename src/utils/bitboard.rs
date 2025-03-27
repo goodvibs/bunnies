@@ -1,16 +1,19 @@
 use crate::utils::Square;
 
+/// A type alias for a bitboard. A bitboard is a 64-bit unsigned integer that represents an aspect of board state.
+/// Each bit represents a square on the board, with the most significant bit representing A8 and the least significant bit representing H1.
 pub type Bitboard = u64;
 
 #[derive(Debug, Clone)]
+/// An iterator that generates the set bits of a bitboard.
 pub struct SetBitMaskIterator {
-    mask: Bitboard,
+    current_mask: Bitboard,
 }
 
 impl From<Bitboard> for SetBitMaskIterator {
     fn from(mask: Bitboard) -> Self {
         SetBitMaskIterator {
-            mask,
+            current_mask: mask,
         }
     }
 }
@@ -19,18 +22,19 @@ impl Iterator for SetBitMaskIterator {
     type Item = Bitboard;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.mask == 0 {
+        if self.current_mask == 0 {
             return None;
         }
 
-        let ls1b = self.mask & self.mask.wrapping_neg();  // Isolate the least significant set bit
-        self.mask &= !ls1b;  // Clear the least significant set bit
+        let ls1b = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
+        self.current_mask &= !ls1b;  // Clear the least significant set bit
 
         Some(ls1b)
     }
 }
 
-pub fn get_set_bit_mask_iter(mask: Bitboard) -> SetBitMaskIterator {
+/// Returns an iterator that generates the set bits of a bitboard.
+pub fn iter_set_bits(mask: Bitboard) -> SetBitMaskIterator {
     mask.into()
 }
 
@@ -65,11 +69,13 @@ impl Iterator for SquaresFromMaskIterator {
     }
 }
 
-pub fn get_squares_from_mask_iter(mask: Bitboard) -> SquaresFromMaskIterator {
+/// Returns an iterator that generates the squares of a bitboard.
+pub fn iter_squares_from_mask(mask: Bitboard) -> SquaresFromMaskIterator {
     mask.into()
 }
 
 #[derive(Debug, Clone)]
+/// An iterator that generates all possible set bit combinations of a bitboard.
 pub struct BitCombinationsIterator {
     set: Bitboard,
     subset: Bitboard,
@@ -106,7 +112,8 @@ impl Iterator for BitCombinationsIterator {
     }
 }
 
-pub fn get_bit_combinations_iter(mask: Bitboard) -> BitCombinationsIterator {
+/// Returns an iterator that generates all possible set bit combinations of a bitboard.
+pub fn iter_bit_combinations(mask: Bitboard) -> BitCombinationsIterator {
     mask.into()
 }
 
@@ -127,19 +134,19 @@ mod tests {
         // Test with an empty bitmask
         let mask = 0;
         let expected: Vec<Bitboard> = vec![];
-        let result: Vec<Bitboard> = get_bit_combinations_iter(mask).collect();
+        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
         assert_eq!(result, expected);
 
         // Test with a bitmask that has one bit set
         let mask = 0b0001;
         let expected: Vec<Bitboard> = vec![0b0000, 0b0001];
-        let result: Vec<Bitboard> = get_bit_combinations_iter(mask).collect();
+        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
         assert_eq!(result, expected);
 
         // Test with a bitmask that has multiple bits set
         let mask = 0b1010;
         let expected: Vec<Bitboard> = vec![0b0000, 0b0010, 0b1000, 0b1010];
-        let result: Vec<Bitboard> = get_bit_combinations_iter(mask).collect();
+        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
         assert_eq!(result, expected);
 
         // Test with a full bitmask (all bits set for a small size)
@@ -150,7 +157,7 @@ mod tests {
             0b1000, 0b1001, 0b1010, 0b1011,
             0b1100, 0b1101, 0b1110, 0b1111,
         ];
-        let result: Vec<Bitboard> = get_bit_combinations_iter(mask).collect();
+        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
         assert_eq!(result, expected);
     }
 }

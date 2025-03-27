@@ -2,7 +2,7 @@ use crate::attacks::magic::lookup::MagicAttacksLookup;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::random::gen_random_magic_number;
 use crate::attacks::magic::relevant_mask::PrecomputedMasksForSquares;
-use crate::utils::{get_bit_combinations_iter, Bitboard};
+use crate::utils::{iter_bit_combinations, Bitboard};
 use crate::utils::Square;
 
 /// Struct responsible for initializing the MagicAttacksLookup
@@ -61,7 +61,7 @@ impl MagicAttacksInitializer {
         let num_relevant_bits = relevant_mask.count_ones() as usize;
         let right_shift_amount = 64 - num_relevant_bits as u8;
 
-        let occupancy_patterns: Vec<Bitboard> = get_bit_combinations_iter(relevant_mask).collect();
+        let occupancy_patterns: Vec<Bitboard> = iter_bit_combinations(relevant_mask).collect();
         let attack_masks: Vec<Bitboard> = occupancy_patterns.iter()
             .map(|&occupied| calc_attack_mask(occupied))
             .collect();

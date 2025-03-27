@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 use crate::attacks::*;
-use crate::utils::{get_squares_from_mask_iter, Bitboard};
+use crate::utils::{iter_squares_from_mask, Bitboard};
 use crate::utils::charboard::{cb_to_string, Charboard};
 use crate::utils::Color;
 use crate::utils::ColoredPieceType;
@@ -66,11 +66,11 @@ impl Board {
 
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
 
-        for src_square in get_squares_from_mask_iter((bishops_mask | queens_mask) & attacking_color_mask) {
+        for src_square in iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask) {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in get_squares_from_mask_iter((rooks_mask | queens_mask) & attacking_color_mask) {
+        for src_square in iter_squares_from_mask((rooks_mask | queens_mask) & attacking_color_mask) {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
 

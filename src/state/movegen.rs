@@ -1,7 +1,7 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_rook_attacks};
-use crate::utils::{get_set_bit_mask_iter, get_squares_from_mask_iter, Bitboard, SetBitMaskIterator};
+use crate::utils::{iter_set_bits, iter_squares_from_mask, Bitboard, SetBitMaskIterator};
 use crate::utils::Color;
 use crate::utils::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::utils::PieceType;
@@ -33,7 +33,7 @@ impl State {
 
             let pawn_captures = pawn_attacks & opposite_color_bb;
 
-            for dst in get_set_bit_mask_iter(pawn_captures) {
+            for dst in iter_set_bits(pawn_captures) {
                 let move_dst = unsafe { Square::from_bitboard(dst) };
                 if dst & promotion_rank != 0 {
                     moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
@@ -117,7 +117,7 @@ impl State {
     fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
-        let pawn_srcs = get_set_bit_mask_iter(pawns_bb);
+        let pawn_srcs = iter_set_bits(pawns_bb);
 
         self.add_normal_pawn_captures_pseudolegal(moves, pawn_srcs.clone(), attacks_mask);
         self.add_en_passant_pseudolegal(moves);
@@ -128,13 +128,13 @@ impl State {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let knights_bb = self.board.piece_type_masks[PieceType::Knight as usize] & same_color_bb;
 
-        for src_square in get_squares_from_mask_iter(knights_bb) {
+        for src_square in iter_squares_from_mask(knights_bb) {
             let knight_attacks = single_knight_attacks(src_square);
             *attacks_mask |= knight_attacks;
 
             let knight_moves = knight_attacks & !same_color_bb;
 
-            for dst_square in get_squares_from_mask_iter(knight_moves) {
+            for dst_square in iter_squares_from_mask(knight_moves) {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
@@ -146,13 +146,13 @@ impl State {
 
         let bishops_bb = self.board.piece_type_masks[PieceType::Bishop as usize] & same_color_bb;
 
-        for src_square in get_squares_from_mask_iter(bishops_bb) {
+        for src_square in iter_squares_from_mask(bishops_bb) {
             let bishop_attacks = single_bishop_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= bishop_attacks;
 
             let bishop_moves = bishop_attacks & !same_color_bb;
 
-            for dst_square in get_squares_from_mask_iter(bishop_moves) {
+            for dst_square in iter_squares_from_mask(bishop_moves) {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
@@ -164,13 +164,13 @@ impl State {
 
         let rooks_bb = self.board.piece_type_masks[PieceType::Rook as usize] & same_color_bb;
 
-        for src_square in get_squares_from_mask_iter(rooks_bb) {
+        for src_square in iter_squares_from_mask(rooks_bb) {
             let rook_attacks = single_rook_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= rook_attacks;
 
             let rook_moves = rook_attacks & !same_color_bb;
 
-            for dst_square in get_squares_from_mask_iter(rook_moves) {
+            for dst_square in iter_squares_from_mask(rook_moves) {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
@@ -182,13 +182,13 @@ impl State {
 
         let queens_bb = self.board.piece_type_masks[PieceType::Queen as usize] & same_color_bb;
 
-        for src_square in get_squares_from_mask_iter(queens_bb) {
+        for src_square in iter_squares_from_mask(queens_bb) {
             let queen_attacks = single_rook_attacks(src_square, all_occupancy_bb) | single_bishop_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= queen_attacks;
 
             let queen_moves = queen_attacks & !same_color_bb;
 
-            for dst_square in get_squares_from_mask_iter(queen_moves) {
+            for dst_square in iter_squares_from_mask(queen_moves) {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
@@ -206,7 +206,7 @@ impl State {
 
         let king_moves = king_attacks & !same_color_bb;
 
-        for dst_square in get_squares_from_mask_iter(king_moves) {
+        for dst_square in iter_squares_from_mask(king_moves) {
             moves.push(Move::new_non_promotion(dst_square, king_src_square, MoveFlag::NormalMove));
         }
     }

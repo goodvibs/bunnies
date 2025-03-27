@@ -2,7 +2,7 @@
 
 use rand::Rng;
 use static_init::dynamic;
-use crate::utils::{get_squares_from_mask_iter, Bitboard};
+use crate::utils::{iter_squares_from_mask, Bitboard};
 use crate::utils::PieceType;
 use crate::utils::Square;
 use crate::state::board::Board;
@@ -34,7 +34,7 @@ impl Board {
         let mut hash: Bitboard = 0;
         for piece_type in PieceType::PIECES { // skip PieceType::NoPieceType
             let pieces_mask = self.piece_type_masks[piece_type as usize];
-            for square in get_squares_from_mask_iter(pieces_mask) {
+            for square in iter_squares_from_mask(pieces_mask) {
                 hash ^= get_piece_zobrist_hash(square, piece_type);
             }
         }
