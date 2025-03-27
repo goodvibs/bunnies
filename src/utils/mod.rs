@@ -1,3 +1,6 @@
+//! This module contains various utility functions, structs, and types that are
+//! useful (internally and externally), but are not needed in the top-level API.
+
 mod mask_iterators;
 mod move_direction;
 mod charboard;
