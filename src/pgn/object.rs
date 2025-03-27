@@ -11,6 +11,12 @@ pub struct PgnObject {
     pub tags: IndexMap<String, String>,
 }
 
+impl Default for PgnObject {
+    fn default() -> Self {
+        PgnObject::new()
+    }
+}
+
 impl PgnObject {
     pub fn new() -> PgnObject {
         PgnObject {

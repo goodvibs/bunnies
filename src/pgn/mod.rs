@@ -12,9 +12,9 @@ mod parsing_state;
 mod move_data;
 mod rendering_config;
 
+use move_tree_node::*;
 pub use parser::*;
 pub use parsing_error::*;
-pub use move_tree_node::*;
 pub use object::*;
 pub use lexing_error::*;
 pub use parsing_state::*;
