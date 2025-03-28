@@ -7,7 +7,7 @@ pub mod pgn;
 mod piece_type;
 mod square;
 mod state;
-pub mod utils;
+pub mod utilities;
 
 pub use color::*;
 pub use colored_piece_type::*;

@@ -3,7 +3,7 @@ use bunnies::Color;
 use bunnies::Square;
 use bunnies::attacks::magic::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use bunnies::attacks::{magic, manual, precomputed};
-use bunnies::utils::{SquareMasks, iter_bit_combinations};
+use bunnies::utilities::{SquareMasks, iter_bit_combinations};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn sliding_piece_attacks_test(

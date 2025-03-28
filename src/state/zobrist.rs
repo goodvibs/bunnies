@@ -2,7 +2,7 @@
 
 use crate::Square;
 use crate::state::board::Board;
-use crate::utils::iter_squares_from_mask;
+use crate::utilities::iter_squares_from_mask;
 use crate::{Bitboard, PieceType};
 use rand::Rng;
 use static_init::dynamic;

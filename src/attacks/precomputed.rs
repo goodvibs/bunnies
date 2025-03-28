@@ -3,7 +3,7 @@
 use crate::Bitboard;
 use crate::Square;
 use crate::attacks::manual;
-use crate::utils::SquareMasks;
+use crate::utilities::SquareMasks;
 use static_init::dynamic;
 
 /// Precomputed attacks table for kings.

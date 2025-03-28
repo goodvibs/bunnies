@@ -5,8 +5,8 @@ use crate::PieceType;
 use crate::Square;
 use crate::attacks::*;
 use crate::masks::*;
-use crate::utils::iter_squares_from_mask;
-use crate::utils::{Charboard, cb_to_string};
+use crate::utilities::iter_squares_from_mask;
+use crate::utilities::{Charboard, cb_to_string};
 use crate::{Bitboard, Color};
 use std::fmt::Display;
 

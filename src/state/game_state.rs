@@ -96,7 +96,7 @@ impl GameState {
 #[cfg(test)]
 mod state_tests {
     use crate::state::{GameContext, GameResult, GameState};
-    use crate::utils::print_bb;
+    use crate::utilities::print_bb;
     use crate::{Color, ColoredPieceType, PieceType, Square};
 
     #[test]

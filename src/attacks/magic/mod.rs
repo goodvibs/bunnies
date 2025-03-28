@@ -29,8 +29,8 @@ mod tests {
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-    use crate::utils::iter_bit_combinations;
-    use crate::utils::print_bb_pretty;
+    use crate::utilities::iter_bit_combinations;
+    use crate::utilities::print_bb_pretty;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {

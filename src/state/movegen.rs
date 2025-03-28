@@ -9,7 +9,7 @@ use crate::attacks::{
 use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::r#move::{Move, MoveFlag};
 use crate::state::GameState;
-use crate::utils::{MaskBitsIterator, iter_set_bits, iter_squares_from_mask};
+use crate::utilities::{MaskBitsIterator, iter_set_bits, iter_squares_from_mask};
 use crate::{Bitboard, Color};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
