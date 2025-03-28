@@ -15,7 +15,7 @@ pub enum PieceType {
 
 impl PieceType {
     pub const LIMIT: u8 = 7;
-    pub const AllPieceTypes: PieceType = PieceType::NoPieceType;
+    pub const ALL_PIECE_TYPES: PieceType = PieceType::NoPieceType;
 
     /// Returns the PieceType from the given number.
     /// # Safety

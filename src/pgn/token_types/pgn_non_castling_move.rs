@@ -119,7 +119,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
         if let Some(captures) = COMPILED_NON_CASTLING_MOVE_REGEX.captures(text) {
             let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
                 None => PieceType::Pawn,
-                Some(c) => unsafe { PieceType::from_uppercase_char(c) },
+                Some(c) => PieceType::from_uppercase_char(c),
             };
 
             let disambiguation_file = captures.get(2).map(|m| m.as_str().chars().next().unwrap());
@@ -132,9 +132,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let to = unsafe { Square::from_rank_file(to_rank, to_file) };
 
             let promoted_to = match captures.get(7) {
-                Some(m) => unsafe {
-                    PieceType::from_uppercase_char(m.as_str().chars().next().unwrap())
-                },
+                Some(m) => PieceType::from_uppercase_char(m.as_str().chars().next().unwrap()),
                 None => PieceType::NoPieceType,
             };
 

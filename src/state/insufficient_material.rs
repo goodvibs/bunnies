@@ -33,7 +33,7 @@ impl Board {
                 // king and two knights
                 let opposite_side_bb =
                     self.color_masks[Color::from_is_black(color_int != 0).other() as usize];
-                let all_occupancy = self.piece_type_masks[PieceType::AllPieceTypes as usize];
+                let all_occupancy = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
                 let opposite_side_is_lone_king =
                     (opposite_side_bb & all_occupancy).count_ones() == 1;
                 return opposite_side_is_lone_king;

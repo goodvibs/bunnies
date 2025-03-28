@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 /// Represents a parsed PGN string.
 pub struct PgnObject {
-    pub tree_root: Rc<RefCell<MoveTreeNode>>,
+    pub(crate) tree_root: Rc<RefCell<MoveTreeNode>>,
     pub tags: IndexMap<String, String>,
 }
 

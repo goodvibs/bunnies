@@ -40,7 +40,7 @@ impl GameState {
     /// Else, returns false.
     const fn has_castling_space_short(&self) -> bool {
         STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize]
-            & self.board.piece_type_masks[PieceType::AllPieceTypes as usize]
+            & self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize]
             == 0
     }
 
@@ -48,7 +48,7 @@ impl GameState {
     /// Else, returns false.
     const fn has_castling_space_long(&self) -> bool {
         STARTING_KING_ROOK_GAP_LONG[self.side_to_move as usize]
-            & self.board.piece_type_masks[PieceType::AllPieceTypes as usize]
+            & self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize]
             == 0
     }
 

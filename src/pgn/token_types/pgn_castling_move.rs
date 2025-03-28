@@ -27,11 +27,9 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move(&self, mv: Move, initial_state: &GameState) -> bool {
+    fn matches_move(&self, mv: Move, _initial_state: &GameState) -> bool {
         let flag = mv.get_flag();
-        if flag != MoveFlag::Castling {
-            return false;
-        } else if self.is_kingside != (mv.get_destination().file() == 6) {
+        if flag != MoveFlag::Castling || self.is_kingside != (mv.get_destination().file() == 6) {
             return false;
         }
 

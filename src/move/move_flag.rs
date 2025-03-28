@@ -13,7 +13,7 @@ impl MoveFlag {
     /// Converts a u8 value to a MoveFlag.
     pub const unsafe fn from(value: u8) -> MoveFlag {
         assert!(value < 4, "Invalid MoveFlag value");
-        std::mem::transmute::<u8, MoveFlag>(value)
+        unsafe { std::mem::transmute::<u8, MoveFlag>(value) }
     }
 
     /// Returns a readable representation of the move flag.

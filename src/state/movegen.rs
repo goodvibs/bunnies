@@ -97,7 +97,7 @@ impl GameState {
     }
 
     fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator) {
-        let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let all_occupancy_bb = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let promotion_rank = RANK_8 >> (self.side_to_move as u8 * 7 * 8); // RANK_8 for white, RANK_1 for black
 
@@ -182,7 +182,7 @@ impl GameState {
 
     fn add_bishop_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
-        let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let all_occupancy_bb = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let bishops_bb = self.board.piece_type_masks[PieceType::Bishop as usize] & same_color_bb;
 
@@ -204,7 +204,7 @@ impl GameState {
 
     fn add_rook_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
-        let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let all_occupancy_bb = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let rooks_bb = self.board.piece_type_masks[PieceType::Rook as usize] & same_color_bb;
 
@@ -226,7 +226,7 @@ impl GameState {
 
     fn add_queen_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
-        let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let all_occupancy_bb = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let queens_bb = self.board.piece_type_masks[PieceType::Queen as usize] & same_color_bb;
 
@@ -249,7 +249,7 @@ impl GameState {
 
     fn add_king_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
-        self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
+        self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let king_src_bb = self.board.piece_type_masks[PieceType::King as usize] & same_color_bb;
         let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };

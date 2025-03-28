@@ -269,7 +269,7 @@ impl<'a> PgnParser<'a> {
         Ok(()) // TODO
     }
 
-    fn process_result(&mut self, result: Option<Color>) -> Result<(), PgnParsingError> {
+    fn process_result(&mut self, _result: Option<Color>) -> Result<(), PgnParsingError> {
         match self.parse_state {
             PgnParsingState::Moves {
                 move_number_just_seen: false,

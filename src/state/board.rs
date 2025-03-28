@@ -50,7 +50,7 @@ impl Board {
 
     pub fn calc_attacks_mask(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_masks[by_color as usize];
-        let occupied_mask = self.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let pawns_mask = self.piece_type_masks[PieceType::Pawn as usize];
         let knights_mask = self.piece_type_masks[PieceType::Knight as usize];
@@ -91,7 +91,7 @@ impl Board {
     pub fn put_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
         let mask = square.mask();
         self.piece_type_masks[piece_type as usize] |= mask;
-        self.piece_type_masks[PieceType::AllPieceTypes as usize] |= mask;
+        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] |= mask;
         self.xor_piece_zobrist_hash(square, piece_type);
     }
 
@@ -117,7 +117,7 @@ impl Board {
     pub fn remove_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
         let mask = square.mask();
         self.piece_type_masks[piece_type as usize] &= !mask;
-        self.piece_type_masks[PieceType::AllPieceTypes as usize] &= !mask;
+        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] &= !mask;
         self.xor_piece_zobrist_hash(square, piece_type);
     }
 
@@ -145,7 +145,7 @@ impl Board {
         let src_dst_mask = src_mask | dst_mask;
 
         self.piece_type_masks[piece_type as usize] ^= src_dst_mask;
-        self.piece_type_masks[PieceType::AllPieceTypes as usize] ^= src_dst_mask;
+        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] ^= src_dst_mask;
 
         self.xor_piece_zobrist_hash(dst_square, piece_type);
         self.xor_piece_zobrist_hash(src_square, piece_type);
@@ -190,7 +190,7 @@ impl Board {
 
     pub fn is_occupied_at(&self, square: Square) -> bool {
         let mask = square.mask();
-        self.piece_type_masks[PieceType::AllPieceTypes as usize] & mask != 0
+        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] & mask != 0
     }
 
     /// Returns the color at `square`.
@@ -214,7 +214,7 @@ impl Board {
             return false;
         }
 
-        let all_occupancy_bb = self.piece_type_masks[PieceType::AllPieceTypes as usize];
+        let all_occupancy_bb = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         if (white_bb | black_bb) != all_occupancy_bb {
             return false;

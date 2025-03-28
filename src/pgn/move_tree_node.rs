@@ -7,21 +7,21 @@ use crate::state::{GameResult, GameState};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub struct MoveTreeNode {
-    pub move_data: Option<PgnMoveData>, // None for the root node
-    pub comment: Option<String>, // Root node may have a comment, so this is not part of MoveData
-    pub continuations: Vec<Rc<RefCell<MoveTreeNode>>>,
+pub(crate) struct MoveTreeNode {
+    move_data: Option<PgnMoveData>, // None for the root node
+    comment: Option<String>,        // Root node may have a comment, so this is not part of MoveData
+    continuations: Vec<Rc<RefCell<MoveTreeNode>>>,
 }
 
 impl MoveTreeNode {
-    pub fn new_root(comment: Option<String>) -> MoveTreeNode {
+    pub(crate) fn new_root(comment: Option<String>) -> MoveTreeNode {
         MoveTreeNode {
             move_data: None,
             comment,
             continuations: Vec::new(),
         }
     }
-    pub fn new(move_data: PgnMoveData, comment: Option<String>) -> MoveTreeNode {
+    pub(crate) fn new(move_data: PgnMoveData, comment: Option<String>) -> MoveTreeNode {
         MoveTreeNode {
             move_data: Some(move_data),
             comment,
@@ -29,23 +29,23 @@ impl MoveTreeNode {
         }
     }
 
-    pub fn add_continuation(&mut self, continuation: &Rc<RefCell<MoveTreeNode>>) {
+    pub(crate) fn add_continuation(&mut self, continuation: &Rc<RefCell<MoveTreeNode>>) {
         self.continuations.push(Rc::clone(continuation));
     }
 
-    pub fn has_continuations(&self) -> bool {
+    pub(crate) fn has_continuations(&self) -> bool {
         !self.continuations.is_empty()
     }
 
-    pub fn get_main_continuation(&self) -> Option<Rc<RefCell<MoveTreeNode>>> {
+    pub(crate) fn get_main_continuation(&self) -> Option<Rc<RefCell<MoveTreeNode>>> {
         self.continuations.first().map(|c| Rc::clone(c))
     }
 
-    pub fn has_multiple_continuations(&self) -> bool {
+    pub(crate) fn has_multiple_continuations(&self) -> bool {
         self.continuations.len() > 1
     }
 
-    pub fn get_alternative_continuations(&self) -> Vec<Rc<RefCell<MoveTreeNode>>> {
+    pub(crate) fn get_alternative_continuations(&self) -> Vec<Rc<RefCell<MoveTreeNode>>> {
         self.continuations
             .iter()
             .skip(1)
@@ -53,7 +53,7 @@ impl MoveTreeNode {
             .collect()
     }
 
-    pub fn render(
+    pub(crate) fn render(
         &self,
         mut state: GameState,
         last_continuations: &[Rc<RefCell<MoveTreeNode>>],
