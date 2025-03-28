@@ -1,32 +1,44 @@
-use std::fs::File;
-use std::io;
-use std::io::{Read, Write};
-use static_init::dynamic;
+use crate::Bitboard;
+use crate::Square;
 use crate::attacks::magic::initializer::MagicAttacksInitializer;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-use crate::Bitboard;
-use crate::Square;
+use static_init::dynamic;
+use std::fs::File;
+use std::io;
+use std::io::{Read, Write};
 
 /// The size of the attack table for rooks
-const ROOK_ATTACK_TABLE_SIZE: usize = 36 * 2usize.pow(10) + 28 * 2usize.pow(11) + 4 * 2usize.pow(12);
+const ROOK_ATTACK_TABLE_SIZE: usize =
+    36 * 2usize.pow(10) + 28 * 2usize.pow(11) + 4 * 2usize.pow(12);
 /// The size of the attack table for bishops
-const BISHOP_ATTACK_TABLE_SIZE: usize = 4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
+const BISHOP_ATTACK_TABLE_SIZE: usize =
+    4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
 #[dynamic]
-pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup = MagicAttacksLookup::load_or_generate("data/magic/rook_magic_attacks_lookup.bin", || {
-    MagicAttacksInitializer::new()
-        .with_seed(3141592653)
-        .init_for_piece(&ROOK_RELEVANT_MASKS, &manual_single_rook_attacks, ROOK_ATTACK_TABLE_SIZE)
-}).unwrap();
+pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
+    MagicAttacksLookup::load_or_generate("data/magic/rook_magic_attacks_lookup.bin", || {
+        MagicAttacksInitializer::new()
+            .with_seed(3141592653)
+            .init_for_piece(
+                &ROOK_RELEVANT_MASKS,
+                &manual_single_rook_attacks,
+                ROOK_ATTACK_TABLE_SIZE,
+            )
+    })
+    .unwrap();
 
 #[dynamic]
-pub static BISHOP_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup = MagicAttacksLookup::load_or_generate("data/magic/bishop_magic_attacks_lookup.bin", || {
-    MagicAttacksInitializer::new()
-        .with_seed(0)
-        .init_for_piece(&BISHOP_RELEVANT_MASKS, &manual_single_bishop_attacks, BISHOP_ATTACK_TABLE_SIZE)
-}).unwrap();
+pub static BISHOP_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
+    MagicAttacksLookup::load_or_generate("data/magic/bishop_magic_attacks_lookup.bin", || {
+        MagicAttacksInitializer::new().with_seed(0).init_for_piece(
+            &BISHOP_RELEVANT_MASKS,
+            &manual_single_bishop_attacks,
+            BISHOP_ATTACK_TABLE_SIZE,
+        )
+    })
+    .unwrap();
 
 /// Object that stores all magic-related information for a sliding piece and provides a method to get the attack mask for a given square and occupied mask
 pub struct MagicAttacksLookup {
@@ -47,7 +59,10 @@ impl MagicAttacksLookup {
         self.attacks[key]
     }
 
-    pub fn load_or_generate(filename: &str, generate: impl Fn() -> MagicAttacksLookup) -> io::Result<Self> {
+    pub fn load_or_generate(
+        filename: &str,
+        generate: impl Fn() -> MagicAttacksLookup,
+    ) -> io::Result<Self> {
         match MagicAttacksLookup::load_from_file(filename) {
             Ok(lookup) => Ok(lookup),
             Err(_) => {

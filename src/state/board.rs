@@ -1,14 +1,14 @@
 //! Board struct and methods
 
-use std::fmt::Display;
-use crate::attacks::*;
-use crate::utils::{iter_squares_from_mask};
-use crate::utils::{cb_to_string, Charboard};
-use crate::{Bitboard, Color};
 use crate::ColoredPieceType;
-use crate::masks::*;
 use crate::PieceType;
 use crate::Square;
+use crate::attacks::*;
+use crate::masks::*;
+use crate::utils::iter_squares_from_mask;
+use crate::utils::{Charboard, cb_to_string};
+use crate::{Bitboard, Color};
+use std::fmt::Display;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
 /// and the zobrist hash of the position.
@@ -16,7 +16,7 @@ use crate::Square;
 pub struct Board {
     pub piece_type_masks: [Bitboard; PieceType::LIMIT as usize],
     pub color_masks: [Bitboard; 2],
-    pub zobrist_hash: Bitboard
+    pub zobrist_hash: Bitboard,
 }
 
 impl Board {
@@ -30,13 +30,10 @@ impl Board {
                 STARTING_WB | STARTING_BB,
                 STARTING_WR | STARTING_BR,
                 STARTING_WQ | STARTING_BQ,
-                STARTING_WK | STARTING_BK
+                STARTING_WK | STARTING_BK,
             ],
-            color_masks: [
-                STARTING_WHITE,
-                STARTING_BLACK
-            ],
-            zobrist_hash: 0
+            color_masks: [STARTING_WHITE, STARTING_BLACK],
+            zobrist_hash: 0,
         };
         res.zobrist_hash = res.calc_zobrist_hash();
         res
@@ -47,7 +44,7 @@ impl Board {
         Board {
             piece_type_masks: [0; PieceType::LIMIT as usize],
             color_masks: [0; 2],
-            zobrist_hash: 0
+            zobrist_hash: 0,
         }
     }
 
@@ -66,11 +63,14 @@ impl Board {
 
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
 
-        for src_square in iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask) {
+        for src_square in
+            iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask)
+        {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in iter_squares_from_mask((rooks_mask | queens_mask) & attacking_color_mask) {
+        for src_square in iter_squares_from_mask((rooks_mask | queens_mask) & attacking_color_mask)
+        {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
 
@@ -78,14 +78,14 @@ impl Board {
 
         attacks
     }
-    
+
     /// Populates a square with `color`, but no piece type.
     /// Does not update the zobrist hash.
     pub fn put_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] |= mask;
     }
-    
+
     /// Populates a square with `piece_type`, but no color.
     /// Updates the zobrist hash.
     pub fn put_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
@@ -104,14 +104,14 @@ impl Board {
         self.put_color_at(color, square);
         self.put_piece_type_at(piece_type, square);
     }
-    
+
     /// Removes `color` from a square, but not piece type.
     /// Does not update the zobrist hash.
     pub fn remove_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] &= !mask;
     }
-    
+
     /// Removes `piece_type` from a square, but not color.
     /// Updates the zobrist hash.
     pub fn remove_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
@@ -130,22 +130,27 @@ impl Board {
         self.remove_color_at(color, square);
         self.remove_piece_type_at(piece_type, square);
     }
-    
+
     /// Moves `piece_type` from `src_square` to `dst_square`.
     /// Does not update color.
     /// Updates the zobrist hash.
-    pub fn move_piece_type(&mut self, piece_type: PieceType, dst_square: Square, src_square: Square) {
+    pub fn move_piece_type(
+        &mut self,
+        piece_type: PieceType,
+        dst_square: Square,
+        src_square: Square,
+    ) {
         let dst_mask = dst_square.mask();
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;
-        
+
         self.piece_type_masks[piece_type as usize] ^= src_dst_mask;
         self.piece_type_masks[PieceType::AllPieceTypes as usize] ^= src_dst_mask;
-        
+
         self.xor_piece_zobrist_hash(dst_square, piece_type);
         self.xor_piece_zobrist_hash(src_square, piece_type);
     }
-    
+
     /// Moves `color` from `src_square` to `dst_square`.
     /// Does not update color.
     /// Does not update the zobrist hash.
@@ -153,20 +158,25 @@ impl Board {
         let dst_mask = dst_square.mask();
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;
-        
+
         self.color_masks[color as usize] ^= src_dst_mask;
     }
-    
+
     /// Moves a `colored_piece` from `src_square` to `dst_square`.
     /// Updates the zobrist hash.
-    pub fn move_colored_piece(&mut self, colored_piece: ColoredPieceType, dst_square: Square, src_square: Square) {
+    pub fn move_colored_piece(
+        &mut self,
+        colored_piece: ColoredPieceType,
+        dst_square: Square,
+        src_square: Square,
+    ) {
         let piece_type = colored_piece.piece_type();
         let color = colored_piece.color();
-        
+
         self.move_color(color, dst_square, src_square);
         self.move_piece_type(piece_type, dst_square, src_square);
     }
-    
+
     /// Returns the piece type at `square`.
     pub fn get_piece_type_at(&self, square: Square) -> PieceType {
         let mask = square.mask();
@@ -182,20 +192,20 @@ impl Board {
         let mask = square.mask();
         self.piece_type_masks[PieceType::AllPieceTypes as usize] & mask != 0
     }
-    
+
     /// Returns the color at `square`.
     pub fn get_color_at(&self, square: Square) -> Color {
         let mask = square.mask();
         Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
     }
-    
+
     /// Returns the colored piece at `square`.
     pub fn get_colored_piece_at(&self, square: Square) -> ColoredPieceType {
         let piece_type = self.get_piece_type_at(square);
         let color = self.get_color_at(square);
         ColoredPieceType::new(color, piece_type)
     }
-    
+
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).
     pub fn is_consistent(&self) -> bool {
         let white_bb = self.color_masks[Color::White as usize];
@@ -231,7 +241,7 @@ impl Board {
 
         all_occupancy_bb_reconstructed == all_occupancy_bb
     }
-    
+
     /// Checks if the board has one king of each color.
     pub const fn has_valid_kings(&self) -> bool {
         let white_bb = self.color_masks[Color::White as usize];
@@ -239,12 +249,12 @@ impl Board {
 
         kings_bb.count_ones() == 2 && (white_bb & kings_bb).count_ones() == 1
     }
-    
+
     /// Checks if the zobrist hash is correctly calculated.
     pub fn is_zobrist_valid(&self) -> bool {
         self.zobrist_hash == self.calc_zobrist_hash()
     }
-    
+
     /// Rigorous check for the validity and consistency of the board.
     pub fn is_unequivocally_valid(&self) -> bool {
         self.has_valid_kings() && self.is_consistent() && self.is_zobrist_valid()

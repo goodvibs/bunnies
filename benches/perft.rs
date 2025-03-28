@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use bunnies::GameState;
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 fn perform_perft(state: &GameState, depth: u8) -> u64 {
     state.perft(depth)
@@ -18,7 +18,9 @@ fn bench_initial_position(c: &mut Criterion) {
 }
 
 fn bench_kiwipete(c: &mut Criterion) {
-    let state = GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let state =
+        GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+            .unwrap();
 
     let mut group = c.benchmark_group("Kiwipete");
 
@@ -42,7 +44,9 @@ fn bench_position_3(c: &mut Criterion) {
 }
 
 fn bench_position_4(c: &mut Criterion) {
-    let state = GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1").unwrap();
+    let state =
+        GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1")
+            .unwrap();
 
     let mut group = c.benchmark_group("Position 4");
 
@@ -54,7 +58,8 @@ fn bench_position_4(c: &mut Criterion) {
 }
 
 fn bench_position_5(c: &mut Criterion) {
-    let state = GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
+    let state =
+        GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
 
     let mut group = c.benchmark_group("Position 5");
 
@@ -85,10 +90,15 @@ fn bench_initial_position_depths(c: &mut Criterion) {
 // Benchmark to compare nodes per second across different positions at a fixed, lower depth
 fn bench_nodes_per_second(c: &mut Criterion) {
     let initial_state = GameState::initial();
-    let kiwipete = GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let kiwipete =
+        GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+            .unwrap();
     let position3 = GameState::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
-    let position4 = GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1").unwrap();
-    let position5 = GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
+    let position4 =
+        GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1")
+            .unwrap();
+    let position5 =
+        GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
 
     let mut group = c.benchmark_group("Nodes Per Second Comparison");
     // Use the same lower depth (4) for all positions to make comparison fair

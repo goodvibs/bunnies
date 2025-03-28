@@ -1,11 +1,11 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::Color;
-use crate::pgn::move_data::PgnMoveData;
-use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
-use crate::state::{GameState, GameResult};
+use crate::pgn::move_data::PgnMoveData;
+use crate::pgn::rendering_config::PgnRenderingConfig;
+use crate::state::{GameResult, GameState};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct MoveTreeNode {
     pub move_data: Option<PgnMoveData>, // None for the root node
@@ -46,10 +46,22 @@ impl MoveTreeNode {
     }
 
     pub fn get_alternative_continuations(&self) -> Vec<Rc<RefCell<MoveTreeNode>>> {
-        self.continuations.iter().skip(1).map(|c| Rc::clone(c)).collect()
+        self.continuations
+            .iter()
+            .skip(1)
+            .map(|c| Rc::clone(c))
+            .collect()
     }
 
-    pub fn render(&self, mut state: GameState, last_continuations: &[Rc<RefCell<MoveTreeNode>>], include_variations: bool, config: PgnRenderingConfig, depth: u16, remind_fullmove: bool) -> String {
+    pub fn render(
+        &self,
+        mut state: GameState,
+        last_continuations: &[Rc<RefCell<MoveTreeNode>>],
+        include_variations: bool,
+        config: PgnRenderingConfig,
+        depth: u16,
+        remind_fullmove: bool,
+    ) -> String {
         let rendered_last_continuations = {
             let mut result = String::new();
             for continuation in last_continuations {
@@ -59,7 +71,7 @@ impl MoveTreeNode {
                     include_variations,
                     config,
                     depth + 1,
-                    true
+                    true,
                 );
                 result += &format!(" ({})", rendered_continuation);
             }
@@ -88,20 +100,32 @@ impl MoveTreeNode {
                 PieceType::NoPieceType => panic!("Invalid piece type"),
                 _ => {
                     let all_moves = state.calc_legal_moves(&mut attacks_mask);
-                    let all_other_moves: Vec<Move> = all_moves.iter().filter(|m| **m != mv).cloned().collect();
-                    let disambiguation_moves: Vec<Move> = all_other_moves.iter().filter(|m| m.get_destination() == mv_dest && state.board.get_piece_type_at(m.get_source()) == moved_piece).cloned().collect::<Vec<Move>>();
+                    let all_other_moves: Vec<Move> =
+                        all_moves.iter().filter(|m| **m != mv).cloned().collect();
+                    let disambiguation_moves: Vec<Move> = all_other_moves
+                        .iter()
+                        .filter(|m| {
+                            m.get_destination() == mv_dest
+                                && state.board.get_piece_type_at(m.get_source()) == moved_piece
+                        })
+                        .cloned()
+                        .collect::<Vec<Move>>();
                     match disambiguation_moves.len() {
                         0 => "".to_string(),
                         _ => {
                             let file = mv_source.file();
                             let rank = mv_source.rank();
-                            let is_file_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().file() == file);
-                            let is_rank_ambiguous = disambiguation_moves.iter().any(|m| m.get_source().rank() == rank);
+                            let is_file_ambiguous = disambiguation_moves
+                                .iter()
+                                .any(|m| m.get_source().file() == file);
+                            let is_rank_ambiguous = disambiguation_moves
+                                .iter()
+                                .any(|m| m.get_source().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
                                 (true, true) => mv_source.to_string(),
                                 (true, false) => mv_source.rank_char().to_string(),
                                 (false, true) => mv_source.file_char().to_string(),
-                                (false, false) => "".to_string()
+                                (false, false) => "".to_string(),
                             }
                         }
                     }
@@ -111,7 +135,9 @@ impl MoveTreeNode {
             let is_capture = match mv.get_flag() {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
-                MoveFlag::NormalMove | MoveFlag::Promotion => state.board.get_piece_type_at(mv_dest) != PieceType::NoPieceType,
+                MoveFlag::NormalMove | MoveFlag::Promotion => {
+                    state.board.get_piece_type_at(mv_dest) != PieceType::NoPieceType
+                }
             };
             state.make_move(mv, attacks_mask); // if attacks_mask is 0, then it will be filled in automatically
             let is_check = state.is_current_side_in_check();
@@ -123,12 +149,21 @@ impl MoveTreeNode {
                         state.result = GameResult::Checkmate;
                     }
                     is_checkmate
-                },
-                false => false
+                }
+                false => false,
             };
 
             // Combine move number and move
-            move_number_str + &move_data.render(moved_piece, disambiguation_str.as_str(), is_check, is_checkmate, is_capture, config.include_annotations, config.include_nags)
+            move_number_str
+                + &move_data.render(
+                    moved_piece,
+                    disambiguation_str.as_str(),
+                    is_check,
+                    is_checkmate,
+                    is_capture,
+                    config.include_annotations,
+                    config.include_nags,
+                )
         } else {
             "".to_string()
         };
@@ -143,13 +178,16 @@ impl MoveTreeNode {
             "".to_string()
         };
 
-        let up_till_now = format!("{}{}{}", rendered_move, rendered_comment, rendered_last_continuations);
+        let up_till_now = format!(
+            "{}{}{}",
+            rendered_move, rendered_comment, rendered_last_continuations
+        );
 
         if self.has_continuations() {
             let main_continuation = self.get_main_continuation().unwrap();
             let alternative_continuations = match include_variations {
                 true => self.get_alternative_continuations(),
-                false => Vec::with_capacity(0)
+                false => Vec::with_capacity(0),
             };
             let rendered_main_continuation = main_continuation.borrow().render(
                 state,
@@ -157,7 +195,7 @@ impl MoveTreeNode {
                 include_variations,
                 config,
                 depth + 1,
-                !last_continuations.is_empty()
+                !last_continuations.is_empty(),
             );
 
             // Add appropriate spacing before the next move

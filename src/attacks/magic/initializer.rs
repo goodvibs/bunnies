@@ -2,7 +2,7 @@ use crate::attacks::magic::lookup::MagicAttacksLookup;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::random::gen_random_magic_number;
 use crate::utils::SquareMasks;
-use crate::utils::{iter_bit_combinations};
+use crate::utils::iter_bit_combinations;
 use crate::{Bitboard, Square};
 
 /// Struct responsible for initializing the MagicAttacksLookup
@@ -34,7 +34,12 @@ impl MagicAttacksInitializer {
     }
 
     /// Initialize the magic attacks lookup object for a sliding piece
-    pub fn init_for_piece(&mut self, relevant_mask_lookup: &SquareMasks, calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard, table_size: usize) -> MagicAttacksLookup {
+    pub fn init_for_piece(
+        &mut self,
+        relevant_mask_lookup: &SquareMasks,
+        calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard,
+        table_size: usize,
+    ) -> MagicAttacksLookup {
         self.attacks = vec![0; table_size].into_boxed_slice();
 
         let mut magic_info_for_squares = [MagicInfo::default(); 64];
@@ -42,7 +47,7 @@ impl MagicAttacksInitializer {
         for (i, square) in Square::ALL.into_iter().enumerate() {
             magic_info_for_squares[i] = self.generate_magic_info(
                 relevant_mask_lookup.get(square),
-                |occupied_mask: Bitboard| calc_attack_mask(square, occupied_mask)
+                |occupied_mask: Bitboard| calc_attack_mask(square, occupied_mask),
             );
         }
 
@@ -62,7 +67,8 @@ impl MagicAttacksInitializer {
         let right_shift_amount = 64 - num_relevant_bits as u8;
 
         let occupancy_patterns: Vec<Bitboard> = iter_bit_combinations(relevant_mask).collect();
-        let attack_masks: Vec<Bitboard> = occupancy_patterns.iter()
+        let attack_masks: Vec<Bitboard> = occupancy_patterns
+            .iter()
             .map(|&occupied| calc_attack_mask(occupied))
             .collect();
 
@@ -73,8 +79,9 @@ impl MagicAttacksInitializer {
             magic_number = gen_random_magic_number(&mut self.rng);
 
             // Quick rejection test based on bit count heuristic
-            if (relevant_mask.wrapping_mul(magic_number) & 0xFF_00_00_00_00_00_00_00)
-                .count_ones() < self.min_bits_threshold {
+            if (relevant_mask.wrapping_mul(magic_number) & 0xFF_00_00_00_00_00_00_00).count_ones()
+                < self.min_bits_threshold
+            {
                 continue;
             }
 
@@ -101,7 +108,7 @@ impl MagicAttacksInitializer {
             relevant_mask,
             magic_number,
             right_shift_amount,
-            offset: self.current_offset
+            offset: self.current_offset,
         };
 
         // Fill the attack table

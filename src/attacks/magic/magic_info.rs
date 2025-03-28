@@ -6,7 +6,7 @@ pub struct MagicInfo {
     pub relevant_mask: Bitboard,
     pub magic_number: Bitboard,
     pub right_shift_amount: u8,
-    pub offset: u32
+    pub offset: u32,
 }
 
 impl MagicInfo {
@@ -28,7 +28,7 @@ impl Default for MagicInfo {
             relevant_mask: 0,
             magic_number: 0,
             right_shift_amount: 0,
-            offset: 0
+            offset: 0,
         }
     }
 }

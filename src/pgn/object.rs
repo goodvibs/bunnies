@@ -1,10 +1,10 @@
-use std::cell::RefCell;
-use std::fmt::{Display, Formatter};
-use std::rc::Rc;
-use indexmap::IndexMap;
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::state::GameState;
+use indexmap::IndexMap;
+use std::cell::RefCell;
+use std::fmt::{Display, Formatter};
+use std::rc::Rc;
 
 /// Represents a parsed PGN string.
 pub struct PgnObject {
@@ -23,7 +23,7 @@ impl PgnObject {
     pub fn new() -> PgnObject {
         PgnObject {
             tags: IndexMap::new(),
-            tree_root: Rc::new(RefCell::new(MoveTreeNode::new_root(None)))
+            tree_root: Rc::new(RefCell::new(MoveTreeNode::new_root(None))),
         }
     }
 
@@ -44,7 +44,7 @@ impl PgnObject {
             include_variations,
             config,
             0,
-            false
+            false,
         ));
         result
     }

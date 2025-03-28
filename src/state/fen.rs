@@ -17,14 +17,16 @@ pub enum FenParseError {
     InvalidEnPassantTarget(String),
     InvalidHalfmoveClock(String),
     InvalidFullmoveNumber(String),
-    InvalidPosition(String)
+    InvalidPosition(String),
 }
 
 fn parse_side_to_move(fen_side_to_move: &str) -> Result<Color, FenParseError> {
     match fen_side_to_move {
         "w" => Ok(Color::White),
         "b" => Ok(Color::Black),
-        _ => Err(FenParseError::InvalidSideToMove(fen_side_to_move.to_string()))
+        _ => Err(FenParseError::InvalidSideToMove(
+            fen_side_to_move.to_string(),
+        )),
     }
 }
 
@@ -39,7 +41,11 @@ fn parse_castling_rights(fen_castling_rights: &str) -> Result<u8, FenParseError>
                 'Q' => castling_rights |= 0b0100,
                 'k' => castling_rights |= 0b0010,
                 'q' => castling_rights |= 0b0001,
-                _ => return Err(FenParseError::InvalidCastlingRights(fen_castling_rights.to_string())),
+                _ => {
+                    return Err(FenParseError::InvalidCastlingRights(
+                        fen_castling_rights.to_string(),
+                    ));
+                }
             }
         }
         Ok(castling_rights)
@@ -51,12 +57,16 @@ fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<i8, FenParseEr
         Ok(-1)
     } else {
         if fen_en_passant_target.len() != 2 {
-            return Err(FenParseError::InvalidEnPassantTarget(fen_en_passant_target.to_string()));
+            return Err(FenParseError::InvalidEnPassantTarget(
+                fen_en_passant_target.to_string(),
+            ));
         }
         let file = fen_en_passant_target.chars().nth(0).unwrap();
         let rank = fen_en_passant_target.chars().nth(1).unwrap();
         if file < 'a' || file > 'h' || rank < '1' || rank > '8' {
-            return Err(FenParseError::InvalidEnPassantTarget(fen_en_passant_target.to_string()));
+            return Err(FenParseError::InvalidEnPassantTarget(
+                fen_en_passant_target.to_string(),
+            ));
         }
         Ok(file as i8 - 'a' as i8)
     }
@@ -65,18 +75,26 @@ fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<i8, FenParseEr
 fn parse_fen_halfmove_clock(fen_halfmove_clock: &str) -> Result<u8, FenParseError> {
     match fen_halfmove_clock.parse::<u8>() {
         Ok(halfmove_clock) if halfmove_clock <= 100 => Ok(halfmove_clock),
-        _ => Err(FenParseError::InvalidHalfmoveClock(fen_halfmove_clock.to_string()))
+        _ => Err(FenParseError::InvalidHalfmoveClock(
+            fen_halfmove_clock.to_string(),
+        )),
     }
 }
 
 fn parse_fen_fullmove_number(fen_fullmove_number: &str) -> Result<u16, FenParseError> {
     match fen_fullmove_number.parse::<u16>() {
         Ok(fullmove_number) if fullmove_number > 0 => Ok(fullmove_number),
-        _ => Err(FenParseError::InvalidFullmoveNumber(fen_fullmove_number.to_string()))
+        _ => Err(FenParseError::InvalidFullmoveNumber(
+            fen_fullmove_number.to_string(),
+        )),
     }
 }
 
-fn parse_fen_board_row(row: &str, row_from_top: u8, board: &mut Board) -> Result<(), FenParseError> {
+fn parse_fen_board_row(
+    row: &str,
+    row_from_top: u8,
+    board: &mut Board,
+) -> Result<(), FenParseError> {
     assert!(row_from_top < 8);
 
     let mut file = 0;
@@ -86,19 +104,19 @@ fn parse_fen_board_row(row: &str, row_from_top: u8, board: &mut Board) -> Result
             if file > 8 {
                 return Err(FenParseError::InvalidBoardRow(row.to_string()));
             }
-        }
-        else if c.is_ascii_alphabetic() {
+        } else if c.is_ascii_alphabetic() {
             match ColoredPieceType::from_ascii(c) {
-                ColoredPieceType::NoPiece => return Err(FenParseError::InvalidBoardRow(row.to_string())),
+                ColoredPieceType::NoPiece => {
+                    return Err(FenParseError::InvalidBoardRow(row.to_string()));
+                }
                 colored_piece => {
-                    let dst =  unsafe { Square::from(row_from_top * 8 + file) };
+                    let dst = unsafe { Square::from(row_from_top * 8 + file) };
                     board.put_colored_piece_at(colored_piece, dst);
 
                     file += 1;
                 }
             };
-        }
-        else {
+        } else {
             return Err(FenParseError::InvalidBoardRow(row.to_string()));
         }
     }
@@ -132,7 +150,7 @@ impl GameState {
         if fen_parts.len() != 6 {
             return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
         }
-        
+
         match fen_parts[..] {
             [
                 fen_board,
@@ -140,7 +158,7 @@ impl GameState {
                 fen_castling_rights,
                 fen_en_passant_target,
                 fen_halfmove_clock,
-                fen_fullmove_number
+                fen_fullmove_number,
             ] => {
                 let side_to_move = parse_side_to_move(fen_side_to_move)?;
                 let castling_rights = parse_castling_rights(fen_castling_rights)?;
@@ -150,8 +168,13 @@ impl GameState {
                 let board = parse_fen_board(fen_board)?;
 
                 let zobrist_hash = board.calc_zobrist_hash();
-                let halfmove = (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = GameContext::new_without_previous(castling_rights, zobrist_hash, board.calc_attacks_mask(side_to_move));
+                let halfmove =
+                    (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
+                let mut context = GameContext::new_without_previous(
+                    castling_rights,
+                    zobrist_hash,
+                    board.calc_attacks_mask(side_to_move),
+                );
                 context.double_pawn_push = double_pawn_push;
                 context.halfmove_clock = halfmove_clock;
 
@@ -168,7 +191,7 @@ impl GameState {
                 } else {
                     Err(FenParseError::InvalidPosition(fen.to_string()))
                 }
-            },
+            }
             _ => Err(FenParseError::InvalidFieldCount(fen_parts.len())),
         }
     }
@@ -178,7 +201,7 @@ impl GameState {
 mod tests {
     use super::*;
     use crate::state::GameState;
-    
+
     #[test]
     fn test_from_fen() {
         let fen = "8/1P1n1B2/5P2/4pkNp/1PQ4K/p2p2P1/8/3R1N2 w - - 0 1";
@@ -189,13 +212,16 @@ mod tests {
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 36 18";
         let state_result = GameState::from_fen(fen);
         assert!(state_result.is_err());
-        assert_eq!(state_result.err().unwrap(), FenParseError::InvalidPosition(fen.to_string()));
+        assert_eq!(
+            state_result.err().unwrap(),
+            FenParseError::InvalidPosition(fen.to_string())
+        );
 
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 35 18";
         let state_result = GameState::from_fen(fen);
         assert!(state_result.is_ok(), "{:?}", state_result);
         // assert_eq!(state_result.unwrap().to_fen(), fen);
-        
+
         let fen = "r3k3/P3P3/1B3q2/N3P2P/R6N/8/np2b2p/1K3n2 w q - 100 96";
         let state_result = GameState::from_fen(fen);
         assert!(state_result.is_ok());

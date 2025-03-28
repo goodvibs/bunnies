@@ -2,7 +2,7 @@ use crate::{Bitboard, Square};
 
 /// Stores 64 masks for the 64 squares on the board, initialized using a provided initializer function
 pub struct SquareMasks {
-    masks: [Bitboard; 64]
+    masks: [Bitboard; 64],
 }
 
 impl SquareMasks {
@@ -12,9 +12,7 @@ impl SquareMasks {
         for (i, square) in Square::ALL.into_iter().enumerate() {
             masks[i] = calc_mask(square);
         }
-        SquareMasks {
-            masks
-        }
+        SquareMasks { masks }
     }
 
     /// Returns the mask for a given square

@@ -2,7 +2,8 @@
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// Represents a side of the board.
 pub enum Color {
-    White=0, Black=1
+    White = 0,
+    Black = 1,
 }
 
 impl Color {

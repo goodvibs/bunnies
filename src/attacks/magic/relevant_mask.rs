@@ -1,8 +1,8 @@
-use static_init::dynamic;
 use crate::Bitboard;
-use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
 use crate::Square;
+use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
 use crate::utils::SquareMasks;
+use static_init::dynamic;
 
 /// Precomputed masks for rook relevant squares
 #[dynamic]

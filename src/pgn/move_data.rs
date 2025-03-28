@@ -9,8 +9,23 @@ pub(crate) struct PgnMoveData {
 }
 
 impl PgnMoveData {
-    pub(crate) fn render(&self, moved_piece: PieceType, disambiguation_str: &str, is_check: bool, is_checkmate: bool, is_capture: bool, include_annotations: bool, include_nags: bool) -> String {
-        let mut result = self.mv.san(moved_piece, disambiguation_str, is_check, is_checkmate, is_capture);
+    pub(crate) fn render(
+        &self,
+        moved_piece: PieceType,
+        disambiguation_str: &str,
+        is_check: bool,
+        is_checkmate: bool,
+        is_capture: bool,
+        include_annotations: bool,
+        include_nags: bool,
+    ) -> String {
+        let mut result = self.mv.san(
+            moved_piece,
+            disambiguation_str,
+            is_check,
+            is_checkmate,
+            is_capture,
+        );
 
         if include_annotations {
             if let Some(annotation) = &self.annotation {

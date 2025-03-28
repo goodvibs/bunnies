@@ -1,11 +1,11 @@
+use crate::r#move::{Move, MoveFlag};
+use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
+use crate::state::GameState;
 use logos::Lexer;
 use regex::Regex;
-use static_init::{dynamic};
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
-use crate::pgn::lexing_error::PgnLexingError;
-use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::r#move::{Move, MoveFlag};
-use crate::state::GameState;
+use static_init::dynamic;
 
 /// The regex pattern for a castling move.
 /// Capturing groups:
@@ -23,16 +23,16 @@ static COMPILED_CASTLING_MOVE_REGEX: Regex = Regex::new(CASTLING_MOVE_REGEX).unw
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnCastlingMove {
     pub is_kingside: bool,
-    pub common_move_info: PgnCommonMoveInfo
+    pub common_move_info: PgnCommonMoveInfo,
 }
 
 impl PgnMove for PgnCastlingMove {
     fn matches_move(&self, mv: Move, initial_state: &GameState) -> bool {
         let flag = mv.get_flag();
         if flag != MoveFlag::Castling {
-            return false
+            return false;
         } else if self.is_kingside != (mv.get_destination().file() == 6) {
-            return false
+            return false;
         }
 
         true
@@ -49,7 +49,9 @@ impl PgnMove for PgnCastlingMove {
     fn render(&self, include_annotation: bool, include_nag: bool) -> String {
         let castling = if self.is_kingside { "O-O" } else { "O-O-O" };
 
-        let ending = self.common_move_info.render(include_annotation, include_nag);
+        let ending = self
+            .common_move_info
+            .render(include_annotation, include_nag);
 
         format!("{}{}", castling, ending)
     }
@@ -65,12 +67,10 @@ impl ParsablePgnToken for PgnCastlingMove {
             let annotation = captures.get(4);
             let nag = captures.get(5);
 
-            Ok(
-                PgnCastlingMove {
-                    is_kingside,
-                    common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag)
-                }
-            )
+            Ok(PgnCastlingMove {
+                is_kingside,
+                common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag),
+            })
         } else {
             Err(PgnLexingError::InvalidCastlingMove(text.to_string()))
         }
@@ -79,13 +79,13 @@ impl ParsablePgnToken for PgnCastlingMove {
 
 #[cfg(test)]
 mod tests {
-    use logos::Logos;
     use super::*;
+    use crate::Square;
+    use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::r#move::{Move, MoveFlag};
-    use crate::Square;
     use crate::state::GameState;
+    use logos::Logos;
 
     #[test]
     fn test_parse_kingside_castling_move() {
@@ -143,7 +143,10 @@ mod tests {
         assert_eq!(castling_move.is_kingside, true);
         assert_eq!(castling_move.get_common_move_info().is_check, false);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
-        assert_eq!(castling_move.get_common_move_info().annotation, Some("!?".to_string()));
+        assert_eq!(
+            castling_move.get_common_move_info().annotation,
+            Some("!?".to_string())
+        );
         assert_eq!(castling_move.get_common_move_info().nag, None);
     }
 
@@ -187,13 +190,21 @@ mod tests {
                 is_check: false,
                 is_checkmate: false,
                 annotation: None,
-                nag: None
-            }
+                nag: None,
+            },
         };
         let state = GameState::initial();
-        let kingside_castling_move = Move::new_non_promotion(Square::G8, Square::E8, MoveFlag::Castling);
-        let queenside_castling_move = Move::new_non_promotion(Square::C8, Square::E8, MoveFlag::Castling);
-        assert_eq!(castling_move.matches_move(kingside_castling_move, &state), true);
-        assert_eq!(castling_move.matches_move(queenside_castling_move, &state), false);
+        let kingside_castling_move =
+            Move::new_non_promotion(Square::G8, Square::E8, MoveFlag::Castling);
+        let queenside_castling_move =
+            Move::new_non_promotion(Square::C8, Square::E8, MoveFlag::Castling);
+        assert_eq!(
+            castling_move.matches_move(kingside_castling_move, &state),
+            true
+        );
+        assert_eq!(
+            castling_move.matches_move(queenside_castling_move, &state),
+            false
+        );
     }
 }

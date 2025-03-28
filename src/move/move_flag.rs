@@ -6,7 +6,7 @@ pub enum MoveFlag {
     NormalMove = 0,
     Promotion = 1,
     EnPassant = 2,
-    Castling = 3
+    Castling = 3,
 }
 
 impl MoveFlag {
@@ -22,7 +22,7 @@ impl MoveFlag {
             MoveFlag::NormalMove => "",
             MoveFlag::Promotion => "[P to ?]",
             MoveFlag::EnPassant => "[e.p.]",
-            MoveFlag::Castling => "[castling]"
+            MoveFlag::Castling => "[castling]",
         }
     }
 }

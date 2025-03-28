@@ -8,9 +8,7 @@ pub struct MaskBitsIterator {
 
 impl From<Bitboard> for MaskBitsIterator {
     fn from(mask: Bitboard) -> Self {
-        MaskBitsIterator {
-            current_mask: mask,
-        }
+        MaskBitsIterator { current_mask: mask }
     }
 }
 
@@ -22,8 +20,8 @@ impl Iterator for MaskBitsIterator {
             return None;
         }
 
-        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
-        self.current_mask &= !ls1b_mask;  // Clear the least significant set bit
+        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg(); // Isolate the least significant set bit
+        self.current_mask &= !ls1b_mask; // Clear the least significant set bit
 
         Some(ls1b_mask)
     }
@@ -42,9 +40,7 @@ pub struct MaskSquaresIterator {
 
 impl From<Bitboard> for MaskSquaresIterator {
     fn from(mask: Bitboard) -> Self {
-        MaskSquaresIterator {
-            current_mask: mask,
-        }
+        MaskSquaresIterator { current_mask: mask }
     }
 }
 
@@ -56,12 +52,10 @@ impl Iterator for MaskSquaresIterator {
             return None;
         }
 
-        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg();  // Isolate the least significant set bit
-        self.current_mask &= !ls1b_mask;  // Clear the least significant set bit
+        let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg(); // Isolate the least significant set bit
+        self.current_mask &= !ls1b_mask; // Clear the least significant set bit
 
-        unsafe {
-            Some(Square::from_bitboard(ls1b_mask))
-        }
+        unsafe { Some(Square::from_bitboard(ls1b_mask)) }
     }
 }
 
@@ -148,10 +142,8 @@ mod tests {
         // Test with a full bitmask (all bits set for a small size)
         let mask = 0b1111;
         let expected: Vec<Bitboard> = vec![
-            0b0000, 0b0001, 0b0010, 0b0011,
-            0b0100, 0b0101, 0b0110, 0b0111,
-            0b1000, 0b1001, 0b1010, 0b1011,
-            0b1100, 0b1101, 0b1110, 0b1111,
+            0b0000, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0110, 0b0111, 0b1000, 0b1001, 0b1010,
+            0b1011, 0b1100, 0b1101, 0b1110, 0b1111,
         ];
         let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
         assert_eq!(result, expected);

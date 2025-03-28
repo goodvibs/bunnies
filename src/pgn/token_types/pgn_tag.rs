@@ -1,8 +1,8 @@
+use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
-use crate::pgn::lexing_error::PgnLexingError;
 
 /// Regex for parsing PGN tags.
 /// Capturing groups:
@@ -17,7 +17,7 @@ static COMPILED_TAG_REGEX: Regex = Regex::new(TAG_REGEX).unwrap();
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnTag {
     pub name: String,
-    pub value: String
+    pub value: String,
 }
 
 impl PgnTag {
@@ -42,9 +42,9 @@ impl ParsablePgnToken for PgnTag {
 
 #[cfg(test)]
 mod tests {
-    use logos::Logos;
     use super::PgnTag;
     use crate::pgn::token::{ParsablePgnToken, PgnToken};
+    use logos::Logos;
 
     #[test]
     fn test_pgn_tag() {

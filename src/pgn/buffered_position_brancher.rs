@@ -1,9 +1,9 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::buffered_position_context::PgnBufferedPositionContext;
+use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::position_context::PgnPositionContext;
 use crate::state::GameState;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct PgnBufferedPositionBrancher {
     pub current_and_previous: PgnBufferedPositionContext,
@@ -11,7 +11,10 @@ pub struct PgnBufferedPositionBrancher {
 }
 
 impl PgnBufferedPositionBrancher {
-    pub fn new(root_node: &Rc<RefCell<MoveTreeNode>>, initial_state: GameState) -> PgnBufferedPositionBrancher {
+    pub fn new(
+        root_node: &Rc<RefCell<MoveTreeNode>>,
+        initial_state: GameState,
+    ) -> PgnBufferedPositionBrancher {
         PgnBufferedPositionBrancher {
             current_and_previous: PgnBufferedPositionContext {
                 current: PgnPositionContext {
@@ -25,7 +28,11 @@ impl PgnBufferedPositionBrancher {
     }
 
     pub fn create_branch_from_previous(&mut self) {
-        let clone_of_previous = self.current_and_previous.previous.clone().expect("No previous node to create branch from");
+        let clone_of_previous = self
+            .current_and_previous
+            .previous
+            .clone()
+            .expect("No previous node to create branch from");
         let new_context = PgnBufferedPositionContext {
             current: clone_of_previous,
             previous: None,

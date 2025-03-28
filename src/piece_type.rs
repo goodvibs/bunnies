@@ -4,13 +4,13 @@
 /// Includes NoPieceType, Pawn, Knight, Bishop, Rook, Queen, and King.
 /// The values are 0, 1, 2, 3, 4, 5, and 6 respectively.
 pub enum PieceType {
-    NoPieceType=0,
-    Pawn=1,
-    Knight=2,
-    Bishop=3,
-    Rook=4,
-    Queen=5,
-    King=6
+    NoPieceType = 0,
+    Pawn = 1,
+    Knight = 2,
+    Bishop = 3,
+    Rook = 4,
+    Queen = 5,
+    King = 6,
 }
 
 impl PieceType {
@@ -21,7 +21,10 @@ impl PieceType {
     /// # Safety
     /// The number must be less than PieceType::LIMIT.
     pub const unsafe fn from(piece_type_number: u8) -> PieceType {
-        assert!(piece_type_number < PieceType::LIMIT, "Piece type number out of bounds");
+        assert!(
+            piece_type_number < PieceType::LIMIT,
+            "Piece type number out of bounds"
+        );
         unsafe { std::mem::transmute::<u8, PieceType>(piece_type_number) }
     }
 
@@ -34,10 +37,10 @@ impl PieceType {
             'R' => PieceType::Rook,
             'Q' => PieceType::Queen,
             'K' => PieceType::King,
-            _ => PieceType::NoPieceType
+            _ => PieceType::NoPieceType,
         }
     }
-    
+
     /// Returns the PieceType from the given lowercase char.
     pub const fn from_lowercase_char(piece_char: char) -> PieceType {
         match piece_char {
@@ -47,7 +50,7 @@ impl PieceType {
             'r' => PieceType::Rook,
             'q' => PieceType::Queen,
             'k' => PieceType::King,
-            _ => PieceType::NoPieceType
+            _ => PieceType::NoPieceType,
         }
     }
 
@@ -60,7 +63,7 @@ impl PieceType {
             PieceType::Bishop => 'B',
             PieceType::Rook => 'R',
             PieceType::Queen => 'Q',
-            PieceType::King => 'K'
+            PieceType::King => 'K',
         }
     }
 
@@ -73,7 +76,7 @@ impl PieceType {
             PieceType::Bishop => 'b',
             PieceType::Rook => 'r',
             PieceType::Queen => 'q',
-            PieceType::King => 'k'
+            PieceType::King => 'k',
         }
     }
 
@@ -86,7 +89,7 @@ impl PieceType {
             PieceType::Bishop => '♗',
             PieceType::Rook => '♖',
             PieceType::Queen => '♕',
-            PieceType::King => '♔'
+            PieceType::King => '♔',
         }
     }
 
@@ -99,7 +102,7 @@ impl PieceType {
             PieceType::Bishop => '♝',
             PieceType::Rook => '♜',
             PieceType::Queen => '♛',
-            PieceType::King => '♚'
+            PieceType::King => '♚',
         }
     }
 
@@ -111,7 +114,7 @@ impl PieceType {
         PieceType::Bishop,
         PieceType::Rook,
         PieceType::Queen,
-        PieceType::King
+        PieceType::King,
     ];
 
     /// An array of all PieceTypes representing actual pieces (6 in total).
@@ -121,7 +124,7 @@ impl PieceType {
         PieceType::Bishop,
         PieceType::Rook,
         PieceType::Queen,
-        PieceType::King
+        PieceType::King,
     ];
 
     /// An array of all PieceTypes representing non-king pieces (5 in total).
@@ -130,7 +133,7 @@ impl PieceType {
         PieceType::Knight,
         PieceType::Bishop,
         PieceType::Rook,
-        PieceType::Queen
+        PieceType::Queen,
     ];
 
     /// An array of all PieceTypes representing promotion pieces (4 in total).
@@ -138,6 +141,6 @@ impl PieceType {
         PieceType::Knight,
         PieceType::Bishop,
         PieceType::Rook,
-        PieceType::Queen
+        PieceType::Queen,
     ];
 }

@@ -1,19 +1,75 @@
-use std::fmt::Display;
 use crate::Bitboard;
 use crate::masks::{FILES, RANKS};
+use std::fmt::Display;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// Represents a square on the chess board.
 pub enum Square {
-    A8=0, B8=1, C8=2, D8=3, E8=4, F8=5, G8=6, H8=7,
-    A7=8, B7=9, C7=10, D7=11, E7=12, F7=13, G7=14, H7=15,
-    A6=16, B6=17, C6=18, D6=19, E6=20, F6=21, G6=22, H6=23,
-    A5=24, B5=25, C5=26, D5=27, E5=28, F5=29, G5=30, H5=31,
-    A4=32, B4=33, C4=34, D4=35, E4=36, F4=37, G4=38, H4=39,
-    A3=40, B3=41, C3=42, D3=43, E3=44, F3=45, G3=46, H3=47,
-    A2=48, B2=49, C2=50, D2=51, E2=52, F2=53, G2=54, H2=55,
-    A1=56, B1=57, C1=58, D1=59, E1=60, F1=61, G1=62, H1=63
+    A8 = 0,
+    B8 = 1,
+    C8 = 2,
+    D8 = 3,
+    E8 = 4,
+    F8 = 5,
+    G8 = 6,
+    H8 = 7,
+    A7 = 8,
+    B7 = 9,
+    C7 = 10,
+    D7 = 11,
+    E7 = 12,
+    F7 = 13,
+    G7 = 14,
+    H7 = 15,
+    A6 = 16,
+    B6 = 17,
+    C6 = 18,
+    D6 = 19,
+    E6 = 20,
+    F6 = 21,
+    G6 = 22,
+    H6 = 23,
+    A5 = 24,
+    B5 = 25,
+    C5 = 26,
+    D5 = 27,
+    E5 = 28,
+    F5 = 29,
+    G5 = 30,
+    H5 = 31,
+    A4 = 32,
+    B4 = 33,
+    C4 = 34,
+    D4 = 35,
+    E4 = 36,
+    F4 = 37,
+    G4 = 38,
+    H4 = 39,
+    A3 = 40,
+    B3 = 41,
+    C3 = 42,
+    D3 = 43,
+    E3 = 44,
+    F3 = 45,
+    G3 = 46,
+    H3 = 47,
+    A2 = 48,
+    B2 = 49,
+    C2 = 50,
+    D2 = 51,
+    E2 = 52,
+    F2 = 53,
+    G2 = 54,
+    H2 = 55,
+    A1 = 56,
+    B1 = 57,
+    C1 = 58,
+    D1 = 59,
+    E1 = 60,
+    F1 = 61,
+    G1 = 62,
+    H1 = 63,
 }
 
 impl Square {
@@ -32,7 +88,7 @@ impl Square {
     pub const unsafe fn from_bitboard(bitboard: Bitboard) -> Square {
         unsafe { Square::from(bitboard.leading_zeros() as u8) }
     }
-    
+
     /// Returns a square from a rank and file (0-7).
     /// # Safety
     /// This function is unsafe because it does not check if the rank or file is out of bounds.
@@ -65,7 +121,7 @@ impl Square {
     pub const fn rank_mask(&self) -> Bitboard {
         RANKS[self.rank() as usize]
     }
-    
+
     /// Returns the square above the current square, if it exists.
     pub const fn up(&self) -> Option<Square> {
         if self.rank() == 7 {
@@ -74,7 +130,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 - 8) })
         }
     }
-    
+
     /// Returns the square below the current square, if it exists.
     pub const fn down(&self) -> Option<Square> {
         if self.rank() == 0 {
@@ -83,7 +139,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 + 8) })
         }
     }
-    
+
     /// Returns the square to the left of the current square, if it exists.
     pub const fn left(&self) -> Option<Square> {
         if self.file() == 0 {
@@ -92,7 +148,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 - 1) })
         }
     }
-    
+
     /// Returns the square to the right of the current square, if it exists.
     pub const fn right(&self) -> Option<Square> {
         if self.file() == 7 {
@@ -101,7 +157,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 + 1) })
         }
     }
-    
+
     /// Returns the square northwest of the current square, if it exists.
     pub const fn up_left(&self) -> Option<Square> {
         if self.rank() == 7 || self.file() == 0 {
@@ -110,7 +166,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 - 9) })
         }
     }
-    
+
     /// Returns the square northeast of the current square, if it exists.
     pub const fn up_right(&self) -> Option<Square> {
         if self.rank() == 7 || self.file() == 7 {
@@ -119,7 +175,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 - 7) })
         }
     }
-    
+
     /// Returns the square southwest of the current square, if it exists.
     pub const fn down_left(&self) -> Option<Square> {
         if self.rank() == 0 || self.file() == 0 {
@@ -128,7 +184,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 + 7) })
         }
     }
-    
+
     /// Returns the square southeast of the current square, if it exists.
     pub const fn down_right(&self) -> Option<Square> {
         if self.rank() == 0 || self.file() == 7 {
@@ -137,7 +193,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 + 9) })
         }
     }
-    
+
     /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
     pub const fn rotated_perspective(&self) -> Square {
         unsafe { Square::from(63 - *self as u8) }
@@ -160,25 +216,78 @@ impl Square {
 
     /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
     pub const ALL: [Square; 64] = [
-        Square::A8, Square::B8, Square::C8, Square::D8, Square::E8, Square::F8, Square::G8, Square::H8,
-        Square::A7, Square::B7, Square::C7, Square::D7, Square::E7, Square::F7, Square::G7, Square::H7,
-        Square::A6, Square::B6, Square::C6, Square::D6, Square::E6, Square::F6, Square::G6, Square::H6,
-        Square::A5, Square::B5, Square::C5, Square::D5, Square::E5, Square::F5, Square::G5, Square::H5,
-        Square::A4, Square::B4, Square::C4, Square::D4, Square::E4, Square::F4, Square::G4, Square::H4,
-        Square::A3, Square::B3, Square::C3, Square::D3, Square::E3, Square::F3, Square::G3, Square::H3,
-        Square::A2, Square::B2, Square::C2, Square::D2, Square::E2, Square::F2, Square::G2, Square::H2,
-        Square::A1, Square::B1, Square::C1, Square::D1, Square::E1, Square::F1, Square::G1, Square::H1
+        Square::A8,
+        Square::B8,
+        Square::C8,
+        Square::D8,
+        Square::E8,
+        Square::F8,
+        Square::G8,
+        Square::H8,
+        Square::A7,
+        Square::B7,
+        Square::C7,
+        Square::D7,
+        Square::E7,
+        Square::F7,
+        Square::G7,
+        Square::H7,
+        Square::A6,
+        Square::B6,
+        Square::C6,
+        Square::D6,
+        Square::E6,
+        Square::F6,
+        Square::G6,
+        Square::H6,
+        Square::A5,
+        Square::B5,
+        Square::C5,
+        Square::D5,
+        Square::E5,
+        Square::F5,
+        Square::G5,
+        Square::H5,
+        Square::A4,
+        Square::B4,
+        Square::C4,
+        Square::D4,
+        Square::E4,
+        Square::F4,
+        Square::G4,
+        Square::H4,
+        Square::A3,
+        Square::B3,
+        Square::C3,
+        Square::D3,
+        Square::E3,
+        Square::F3,
+        Square::G3,
+        Square::H3,
+        Square::A2,
+        Square::B2,
+        Square::C2,
+        Square::D2,
+        Square::E2,
+        Square::F2,
+        Square::G2,
+        Square::H2,
+        Square::A1,
+        Square::B1,
+        Square::C1,
+        Square::D1,
+        Square::E1,
+        Square::F1,
+        Square::G1,
+        Square::H1,
     ];
 
     pub const ALL_STR: [&'static str; 64] = [
-        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-        "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
-        "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
-        "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
-        "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
-        "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
-        "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
-        "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
+        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
+        "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",
+        "g5", "h5", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a3", "b3", "c3", "d3", "e3",
+        "f3", "g3", "h3", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", "a1", "b1", "c1", "d1",
+        "e1", "f1", "g1", "h1",
     ];
 }
 

@@ -5,9 +5,19 @@ use crate::PieceType;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// Represents a colored (white or black) piece on the board.
 pub enum ColoredPieceType {
-    NoPiece=0,
-    WhitePawn=1, WhiteKnight=2, WhiteBishop=3, WhiteRook=4, WhiteQueen=5, WhiteKing=6,
-    BlackPawn=9, BlackKnight=10, BlackBishop=11, BlackRook=12, BlackQueen=13, BlackKing=14
+    NoPiece = 0,
+    WhitePawn = 1,
+    WhiteKnight = 2,
+    WhiteBishop = 3,
+    WhiteRook = 4,
+    WhiteQueen = 5,
+    WhiteKing = 6,
+    BlackPawn = 9,
+    BlackKnight = 10,
+    BlackBishop = 11,
+    BlackRook = 12,
+    BlackQueen = 13,
+    BlackKing = 14,
 }
 
 impl ColoredPieceType {
@@ -49,7 +59,7 @@ impl ColoredPieceType {
             'r' => ColoredPieceType::BlackRook,
             'q' => ColoredPieceType::BlackQueen,
             'k' => ColoredPieceType::BlackKing,
-            _ => ColoredPieceType::NoPiece
+            _ => ColoredPieceType::NoPiece,
         }
     }
 
@@ -68,7 +78,7 @@ impl ColoredPieceType {
             ColoredPieceType::BlackBishop => 'b',
             ColoredPieceType::BlackRook => 'r',
             ColoredPieceType::BlackQueen => 'q',
-            ColoredPieceType::BlackKing => 'k'
+            ColoredPieceType::BlackKing => 'k',
         }
     }
 
@@ -88,7 +98,7 @@ impl ColoredPieceType {
             ColoredPieceType::BlackBishop => '♝',
             ColoredPieceType::BlackRook => '♜',
             ColoredPieceType::BlackQueen => '♛',
-            ColoredPieceType::BlackKing => '♚'
+            ColoredPieceType::BlackKing => '♚',
         }
     }
 }
@@ -106,8 +116,14 @@ mod tests {
         assert_eq!(ColoredPieceType::LIMIT, 15);
         assert_eq!(ColoredPieceType::COLOR_DIFFERENCE, 8);
 
-        assert_eq!(ColoredPieceType::new(Color::White, PieceType::Pawn), ColoredPieceType::WhitePawn);
-        assert_eq!(ColoredPieceType::new(Color::Black, PieceType::Pawn), ColoredPieceType::BlackPawn);
+        assert_eq!(
+            ColoredPieceType::new(Color::White, PieceType::Pawn),
+            ColoredPieceType::WhitePawn
+        );
+        assert_eq!(
+            ColoredPieceType::new(Color::Black, PieceType::Pawn),
+            ColoredPieceType::BlackPawn
+        );
 
         assert_eq!(ColoredPieceType::WhitePawn.color(), Color::White);
         assert_eq!(ColoredPieceType::BlackPawn.color(), Color::Black);
@@ -115,8 +131,14 @@ mod tests {
         assert_eq!(ColoredPieceType::WhitePawn.piece_type(), PieceType::Pawn);
         assert_eq!(ColoredPieceType::BlackPawn.piece_type(), PieceType::Pawn);
 
-        assert_eq!(ColoredPieceType::from_ascii('P'), ColoredPieceType::WhitePawn);
-        assert_eq!(ColoredPieceType::from_ascii('p'), ColoredPieceType::BlackPawn);
+        assert_eq!(
+            ColoredPieceType::from_ascii('P'),
+            ColoredPieceType::WhitePawn
+        );
+        assert_eq!(
+            ColoredPieceType::from_ascii('p'),
+            ColoredPieceType::BlackPawn
+        );
         assert_eq!(ColoredPieceType::from_ascii(' '), ColoredPieceType::NoPiece);
 
         assert_eq!(ColoredPieceType::WhitePawn.ascii(), 'P');

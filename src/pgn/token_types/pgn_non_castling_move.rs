@@ -1,13 +1,13 @@
+use crate::PieceType;
+use crate::Square;
+use crate::r#move::{Move, MoveFlag};
+use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
+use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
+use crate::state::GameState;
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
-use crate::pgn::lexing_error::PgnLexingError;
-use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::PieceType;
-use crate::r#move::{Move, MoveFlag};
-use crate::Square;
-use crate::state::GameState;
 
 /// Regex for parsing non-castling moves.
 /// Capturing groups:
@@ -22,7 +22,8 @@ use crate::state::GameState;
 /// 8. Check or checkmate (optional)
 /// 9. Annotation (optional)
 /// 10. NAG (optional)
-const NON_CASTLING_MOVE_REGEX: &str = r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
+const NON_CASTLING_MOVE_REGEX: &str =
+    r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
 
 #[dynamic]
 static COMPILED_NON_CASTLING_MOVE_REGEX: Regex = Regex::new(NON_CASTLING_MOVE_REGEX).unwrap();
@@ -35,7 +36,7 @@ pub struct PgnNonCastlingMove {
     pub piece_moved: PieceType,
     pub promoted_to: PieceType,
     pub is_capture: bool,
-    pub common_move_info: PgnCommonMoveInfo
+    pub common_move_info: PgnCommonMoveInfo,
 }
 
 impl PgnMove for PgnNonCastlingMove {
@@ -45,24 +46,24 @@ impl PgnMove for PgnNonCastlingMove {
         let flag = mv.get_flag();
         let promotion = match flag {
             MoveFlag::Promotion => mv.get_promotion(),
-            _ => PieceType::NoPieceType
+            _ => PieceType::NoPieceType,
         };
 
         if self.to != dst {
-            return false
+            return false;
         } else if self.promoted_to != promotion {
-            return false
+            return false;
         } else if self.piece_moved != initial_state.board.get_piece_type_at(src) {
-            return false
+            return false;
         } else if self.is_capture != mv.is_capture(initial_state) {
-            return false
+            return false;
         } else if let Some(file) = self.disambiguation_file {
             if src.file() != file as u8 - 'a' as u8 {
-                return false
+                return false;
             }
         } else if let Some(rank) = self.disambiguation_rank {
             if src.rank() != rank as u8 - '1' as u8 {
-                return false
+                return false;
             }
         }
 
@@ -88,7 +89,7 @@ impl PgnMove for PgnNonCastlingMove {
             (Some(file), Some(rank)) => format!("{}{}", file, rank),
             (Some(file), None) => file.to_string(),
             (None, Some(rank)) => rank.to_string(),
-            (None, None) => "".to_string()
+            (None, None) => "".to_string(),
         };
 
         let capture = if self.is_capture { "x" } else { "" };
@@ -101,9 +102,14 @@ impl PgnMove for PgnNonCastlingMove {
             "".to_string()
         };
 
-        let ending = self.common_move_info.render(include_annotation, include_nag);
+        let ending = self
+            .common_move_info
+            .render(include_annotation, include_nag);
 
-        format!("{}{}{}{}{}{}", piece, disambiguation, capture, destination, promotion, ending)
+        format!(
+            "{}{}{}{}{}{}",
+            piece, disambiguation, capture, destination, promotion, ending
+        )
     }
 }
 
@@ -113,7 +119,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
         if let Some(captures) = COMPILED_NON_CASTLING_MOVE_REGEX.captures(text) {
             let piece_moved = match captures.get(1).map(|m| m.as_str().chars().next().unwrap()) {
                 None => PieceType::Pawn,
-                Some(c) => unsafe { PieceType::from_uppercase_char(c) }
+                Some(c) => unsafe { PieceType::from_uppercase_char(c) },
             };
 
             let disambiguation_file = captures.get(2).map(|m| m.as_str().chars().next().unwrap());
@@ -126,8 +132,10 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let to = unsafe { Square::from_rank_file(to_rank, to_file) };
 
             let promoted_to = match captures.get(7) {
-                Some(m) => unsafe { PieceType::from_uppercase_char(m.as_str().chars().next().unwrap()) },
-                None => PieceType::NoPieceType
+                Some(m) => unsafe {
+                    PieceType::from_uppercase_char(m.as_str().chars().next().unwrap())
+                },
+                None => PieceType::NoPieceType,
             };
 
             let is_capture = captures.get(4).is_some();
@@ -135,17 +143,15 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let annotation = captures.get(9);
             let nag = captures.get(10);
 
-            Ok(
-                PgnNonCastlingMove {
-                    disambiguation_file,
-                    disambiguation_rank,
-                    to,
-                    piece_moved,
-                    promoted_to,
-                    is_capture,
-                    common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag)
-                }
-            )
+            Ok(PgnNonCastlingMove {
+                disambiguation_file,
+                disambiguation_rank,
+                to,
+                piece_moved,
+                promoted_to,
+                is_capture,
+                common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag),
+            })
         } else {
             Err(PgnLexingError::InvalidMove(text.to_string()))
         }
@@ -154,12 +160,12 @@ impl ParsablePgnToken for PgnNonCastlingMove {
 
 #[cfg(test)]
 mod tests {
-    use logos::Logos;
     use super::*;
-    use crate::pgn::token::PgnToken;
     use crate::PieceType;
-    use crate::r#move::Move;
     use crate::Square;
+    use crate::r#move::Move;
+    use crate::pgn::token::PgnToken;
+    use logos::Logos;
 
     #[test]
     fn test_parse_pawn_move() {
@@ -301,7 +307,10 @@ mod tests {
 
         assert_eq!(move_data.piece_moved, PieceType::Queen);
         assert_eq!(move_data.to, Square::E4);
-        assert_eq!(move_data.common_move_info.annotation, Some("!?".to_string()));
+        assert_eq!(
+            move_data.common_move_info.annotation,
+            Some("!?".to_string())
+        );
     }
 
     #[test]
@@ -327,13 +336,19 @@ mod tests {
         assert_eq!(move_data.disambiguation_file, Some('d'));
         assert_eq!(move_data.disambiguation_rank, Some('3'));
         assert_eq!(move_data.common_move_info.is_check, true);
-        assert_eq!(move_data.common_move_info.annotation, Some("!?".to_string()));
+        assert_eq!(
+            move_data.common_move_info.annotation,
+            Some("!?".to_string())
+        );
         assert_eq!(move_data.common_move_info.nag, Some(2));
     }
 
     #[test]
     fn test_matches_move() {
-        let state = GameState::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4").unwrap();
+        let state = GameState::from_fen(
+            "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
+        )
+        .unwrap();
 
         // Test knight move
         let knight_move = PgnNonCastlingMove {
@@ -347,15 +362,11 @@ mod tests {
                 is_check: false,
                 is_checkmate: false,
                 annotation: None,
-                nag: None
-            }
+                nag: None,
+            },
         };
 
-        let actual_move = Move::new_non_promotion(
-            Square::D4,
-            Square::F3,
-            MoveFlag::NormalMove
-        );
+        let actual_move = Move::new_non_promotion(Square::D4, Square::F3, MoveFlag::NormalMove);
 
         assert!(knight_move.matches_move(actual_move, &state));
 

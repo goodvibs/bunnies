@@ -1,17 +1,20 @@
+use crate::masks::{
+    FILES, RANK_4, STARTING_BK, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR,
+    STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
+};
 use crate::state::GameState;
 use crate::{Bitboard, Color, PieceType};
-use crate::masks::{FILES, RANK_4, STARTING_BK, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR, STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK};
 
 impl GameState {
     /// Rigorous check for whether the current positional information is consistent and valid.
     pub fn is_unequivocally_valid(&self) -> bool {
-        self.board.is_unequivocally_valid() &&
-            self.has_valid_side_to_move() &&
-            self.has_valid_castling_rights() &&
-            self.has_valid_double_pawn_push() &&
-            self.has_valid_halfmove_clock() &&
-            self.is_not_in_illegal_check() &&
-            self.is_zobrist_consistent()
+        self.board.is_unequivocally_valid()
+            && self.has_valid_side_to_move()
+            && self.has_valid_castling_rights()
+            && self.has_valid_double_pawn_push()
+            && self.has_valid_halfmove_clock()
+            && self.is_not_in_illegal_check()
+            && self.is_zobrist_consistent()
     }
 
     /// Quick check for whether the state is probably valid, should be used after making pseudo-legal moves.

@@ -34,7 +34,14 @@ impl GameResult {
     }
 
     pub fn is_draw(self) -> bool {
-        matches!(self, GameResult::Stalemate | GameResult::InsufficientMaterial | GameResult::ThreefoldRepetition | GameResult::FiftyMoveRule | GameResult::OtherDraw)
+        matches!(
+            self,
+            GameResult::Stalemate
+                | GameResult::InsufficientMaterial
+                | GameResult::ThreefoldRepetition
+                | GameResult::FiftyMoveRule
+                | GameResult::OtherDraw
+        )
     }
 
     pub fn is_unknown(self) -> bool {

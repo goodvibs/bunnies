@@ -1,4 +1,3 @@
-use logos::{Logos, Lexer};
 use crate::Color;
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token_types::PgnCastlingMove;
@@ -6,6 +5,7 @@ use crate::pgn::token_types::PgnComment;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
+use logos::{Lexer, Logos};
 
 pub trait ParsablePgnToken: Sized {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError>;
@@ -27,7 +27,10 @@ pub enum PgnToken {
     #[regex(r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?", PgnNonCastlingMove::parse)]
     NonCastlingMove(PgnNonCastlingMove),
 
-    #[regex(r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?", PgnCastlingMove::parse)]
+    #[regex(
+        r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?",
+        PgnCastlingMove::parse
+    )]
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
@@ -48,7 +51,7 @@ pub enum PgnToken {
     Result(Option<Color>),
 
     #[token("*")]
-    Incomplete
+    Incomplete,
 }
 
 #[cfg(test)]
@@ -69,10 +72,16 @@ mod tests {
     #[test]
     fn test_lexing_results() {
         let mut lexer = PgnToken::lexer("1-0");
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::Result(Some(Color::White))))));
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::Result(Some(Color::White))))
+        ));
 
         let mut lexer = PgnToken::lexer("0-1");
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::Result(Some(Color::Black))))));
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::Result(Some(Color::Black))))
+        ));
 
         let mut lexer = PgnToken::lexer("1/2-1/2");
         assert!(matches!(lexer.next(), Some(Ok(PgnToken::Result(None)))));
@@ -93,60 +102,92 @@ mod tests {
         let mut lexer = PgnToken::lexer(pgn);
 
         // Tags
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::Tag(tag))) if tag.name == "Event" && tag.value == "World Championship"));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::Tag(tag))) if tag.name == "Site" && tag.value == "London, England"));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::Tag(tag))) if tag.name == "Event" && tag.value == "World Championship")
+        );
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::Tag(tag))) if tag.name == "Site" && tag.value == "London, England")
+        );
 
         // First move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 1));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Pawn && mv.to == Square::E4
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 1)
+        );
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Pawn && mv.to == Square::E4
+            )
+        );
 
         // First black move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Pawn && mv.to == Square::E5
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Pawn && mv.to == Square::E5
+            )
+        );
 
         // Second move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Knight && mv.to == Square::F3
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2)
+        );
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Knight && mv.to == Square::F3
+            )
+        );
 
         // Second black move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Knight && mv.to == Square::C6
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Knight && mv.to == Square::C6
+            )
+        );
 
         // Third move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Bishop && mv.to == Square::B5
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3)
+        );
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Bishop && mv.to == Square::B5
+            )
+        );
 
         // Third black move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Pawn && mv.to == Square::A6
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Pawn && mv.to == Square::A6
+            )
+        );
 
         // Comment
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::Comment(comment))) if
-            comment.comment == "The Ruy Lopez".to_string()
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::Comment(comment))) if
+                comment.comment == "The Ruy Lopez".to_string()
+            )
+        );
 
         // Fourth move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 4));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Bishop && mv.to == Square::A4
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 4)
+        );
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Bishop && mv.to == Square::A4
+            )
+        );
 
         // Fourth black move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-            mv.piece_moved == PieceType::Knight && mv.to == Square::F6
-        ));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
+                mv.piece_moved == PieceType::Knight && mv.to == Square::F6
+            )
+        );
 
         // Fifth move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 5));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 5)
+        );
         assert!(matches!(lexer.next(), Some(Ok(PgnToken::CastlingMove(mv))) if mv.is_kingside));
 
         // Result
@@ -160,38 +201,74 @@ mod tests {
         let mut lexer = PgnToken::lexer(pgn);
 
         // First move and response
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 1));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 1)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Second move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Variation start
         assert!(matches!(lexer.next(), Some(Ok(PgnToken::StartVariation))));
 
         // Alternative second move
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Response in variation
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Third move in variation
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Variation end
         assert!(matches!(lexer.next(), Some(Ok(PgnToken::EndVariation))));
 
         // Second black move in main line
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 2)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
 
         // Third move in main line
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3));
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(_)))));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 3)
+        );
+        assert!(matches!(
+            lexer.next(),
+            Some(Ok(PgnToken::NonCastlingMove(_)))
+        ));
     }
 
     #[test]
@@ -236,6 +313,10 @@ mod tests {
         }
 
         // This complex PGN should have at least 100 tokens
-        assert!(token_count > 100, "Expected more than 100 tokens, got {}", token_count);
+        assert!(
+            token_count > 100,
+            "Expected more than 100 tokens, got {}",
+            token_count
+        );
     }
 }

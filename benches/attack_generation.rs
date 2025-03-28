@@ -1,12 +1,15 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-use bunnies::attacks::{magic, manual, precomputed};
-use bunnies::attacks::magic::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
-use bunnies::{Bitboard};
+use bunnies::Bitboard;
 use bunnies::Color;
 use bunnies::Square;
-use bunnies::utils::{iter_bit_combinations, SquareMasks};
+use bunnies::attacks::magic::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
+use bunnies::attacks::{magic, manual, precomputed};
+use bunnies::utils::{SquareMasks, iter_bit_combinations};
+use criterion::{Criterion, criterion_group, criterion_main};
 
-fn sliding_piece_attacks_test(relevant_masks: &SquareMasks, get_attacks: impl Fn(Square, Bitboard) -> Bitboard) {
+fn sliding_piece_attacks_test(
+    relevant_masks: &SquareMasks,
+    get_attacks: impl Fn(Square, Bitboard) -> Bitboard,
+) {
     for square in Square::ALL {
         let relevant_mask = relevant_masks.get(square);
         let occupied_masks_iter = iter_bit_combinations(relevant_mask);
@@ -23,11 +26,15 @@ fn benchmark_rook_attacks(c: &mut Criterion) {
     let _ = magic::magic_single_rook_attacks(Square::A6, Square::B3.mask());
 
     group.bench_function("Manual Rook Attacks", |b| {
-        b.iter(|| sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, manual::manual_single_rook_attacks))
+        b.iter(|| {
+            sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, manual::manual_single_rook_attacks)
+        })
     });
 
     group.bench_function("Magic Rook Attacks", |b| {
-        b.iter(|| sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, magic::magic_single_rook_attacks))
+        b.iter(|| {
+            sliding_piece_attacks_test(&ROOK_RELEVANT_MASKS, magic::magic_single_rook_attacks)
+        })
     });
 
     group.finish();
@@ -40,11 +47,15 @@ fn benchmark_bishop_attacks(c: &mut Criterion) {
     let _ = magic::magic_single_bishop_attacks(Square::A6, Square::B3.mask());
 
     group.bench_function("Manual Bishop Attacks", |b| {
-        b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, manual::manual_single_bishop_attacks))
+        b.iter(|| {
+            sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, manual::manual_single_bishop_attacks)
+        })
     });
 
     group.bench_function("Magic Bishop Attacks", |b| {
-        b.iter(|| sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, magic::magic_single_bishop_attacks))
+        b.iter(|| {
+            sliding_piece_attacks_test(&BISHOP_RELEVANT_MASKS, magic::magic_single_bishop_attacks)
+        })
     });
 
     group.finish();

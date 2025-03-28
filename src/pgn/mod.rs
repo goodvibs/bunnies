@@ -1,24 +1,24 @@
 //! This module provides functionality for parsing and rendering PGN (Portable Game Notation).
 
-mod parser;
-mod token;
-mod parsing_error;
+mod buffered_position_brancher;
+mod buffered_position_context;
+mod lexing_error;
+mod move_data;
 mod move_tree_node;
 mod object;
-mod lexing_error;
-mod token_types;
-mod position_context;
-mod buffered_position_context;
-mod buffered_position_brancher;
+mod parser;
+mod parsing_error;
 mod parsing_state;
-mod move_data;
+mod position_context;
 mod rendering_config;
+mod token;
+mod token_types;
 
+pub use lexing_error::*;
 use move_tree_node::*;
+pub use object::*;
 pub use parser::*;
 pub use parsing_error::*;
-pub use object::*;
-pub use lexing_error::*;
 pub use parsing_state::*;
 pub use rendering_config::*;
 

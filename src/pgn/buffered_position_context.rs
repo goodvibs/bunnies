@@ -1,9 +1,9 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::pgn::MoveTreeNode;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::position_context::PgnPositionContext;
 use crate::state::GameState;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub(crate) struct PgnBufferedPositionContext {

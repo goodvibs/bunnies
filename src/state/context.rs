@@ -9,23 +9,38 @@ pub struct GameContext {
     // copied from previous and then possibly modified
     pub halfmove_clock: u8,
     pub double_pawn_push: i8, // file of double pawn push, if any, else -1
-    pub castling_rights: u8, // 0, 0, 0, 0, wk, wq, bk, bq
+    pub castling_rights: u8,  // 0, 0, 0, 0, wk, wq, bk, bq
 
     // updated after every move
     pub captured_piece: PieceType,
     pub previous: Option<*mut GameContext>,
     pub zobrist_hash: Bitboard,
-    pub current_side_attacks: Bitboard
+    pub current_side_attacks: Bitboard,
 }
 
 impl GameContext {
     /// Creates a new context linking to the previous context
-    pub unsafe fn new_with_previous(previous_context: *mut GameContext, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
+    pub unsafe fn new_with_previous(
+        previous_context: *mut GameContext,
+        zobrist_hash: Bitboard,
+        current_side_attacks: Bitboard,
+    ) -> GameContext {
         let (previous_halfmove_clock, previous_castling_rights) = unsafe {
-            assert_ne!((*previous_context).current_side_attacks, 0, "Previous context must have an updated attacks_mask");
-            assert_ne!((*previous_context).zobrist_hash, 0, "Previous context must have an updated zobrist_hash");
+            assert_ne!(
+                (*previous_context).current_side_attacks,
+                0,
+                "Previous context must have an updated attacks_mask"
+            );
+            assert_ne!(
+                (*previous_context).zobrist_hash,
+                0,
+                "Previous context must have an updated zobrist_hash"
+            );
 
-            ((*previous_context).halfmove_clock, (*previous_context).castling_rights)
+            (
+                (*previous_context).halfmove_clock,
+                (*previous_context).castling_rights,
+            )
         };
         GameContext {
             halfmove_clock: previous_halfmove_clock + 1,
@@ -34,7 +49,7 @@ impl GameContext {
             captured_piece: PieceType::NoPieceType,
             previous: Some(previous_context),
             zobrist_hash,
-            current_side_attacks
+            current_side_attacks,
         }
     }
 
@@ -45,7 +60,11 @@ impl GameContext {
     }
 
     /// Creates a new context with no previous context.
-    pub const fn new_without_previous(castling_rights: u8, zobrist_hash: Bitboard, current_side_attacks: Bitboard) -> GameContext {
+    pub const fn new_without_previous(
+        castling_rights: u8,
+        zobrist_hash: Bitboard,
+        current_side_attacks: Bitboard,
+    ) -> GameContext {
         GameContext {
             halfmove_clock: 0,
             double_pawn_push: -1,
@@ -53,7 +72,7 @@ impl GameContext {
             captured_piece: PieceType::NoPieceType,
             previous: None,
             zobrist_hash,
-            current_side_attacks
+            current_side_attacks,
         }
     }
 
@@ -69,7 +88,7 @@ impl GameContext {
     pub const fn has_valid_halfmove_clock(&self) -> bool {
         self.halfmove_clock <= 100
     }
-    
+
     /// Gets the last context belonging to a position that could be the same as the current position
     /// (same side to move, nonzero halfmove clock), if it exists.
     /// Else, returns None.
@@ -83,13 +102,13 @@ impl GameContext {
                 }
                 match (*previous).previous {
                     Some(previous_previous) => Some(previous_previous.clone()),
-                    None => None
+                    None => None,
                 }
             },
-            None => None
+            None => None,
         }
     }
-    
+
     /// Checks if threefold repetition has occurred by checking if the zobrist hash of the current
     /// position has occurred three times, searching backward until the halfmove clock indicates
     /// that no more possible repetitions could have occurred, or until there are no more previous
@@ -100,7 +119,7 @@ impl GameContext {
         }
 
         let mut count = 1;
-        
+
         let mut current_context = self.get_previous_possible_repetition();
         let mut expected_halfmove_clock = self.halfmove_clock - 2;
 
@@ -121,7 +140,7 @@ impl GameContext {
                 current_context = (*context).get_previous_possible_repetition();
             }
         }
-        
+
         false
     }
 }
@@ -151,11 +170,8 @@ mod game_context_tests {
         let attacks_mask: Bitboard = 0xFEDCBA9876543210;
         let castling_rights: u8 = 0b00001010;
 
-        let context = GameContext::new_without_previous(
-            castling_rights,
-            zobrist_hash,
-            attacks_mask
-        );
+        let context =
+            GameContext::new_without_previous(castling_rights, zobrist_hash, attacks_mask);
 
         assert_eq!(context.halfmove_clock, 0);
         assert_eq!(context.double_pawn_push, -1);
@@ -170,23 +186,15 @@ mod game_context_tests {
     fn test_new_with_previous() {
         let prev_zobrist: Bitboard = 0x123456789ABCDEF0;
         let prev_attacks: Bitboard = 0xFEDCBA9876543210;
-        let mut prev_context = GameContext::new_without_previous(
-            0b00001111,
-            prev_zobrist,
-            prev_attacks
-        );
+        let mut prev_context =
+            GameContext::new_without_previous(0b00001111, prev_zobrist, prev_attacks);
         prev_context.halfmove_clock = 1; // Simulate a previous context with a halfmove clock of 1
         prev_context.castling_rights = 0b00001011; // Simulate castling rights
         prev_context.captured_piece = PieceType::Pawn; // Simulate a captured piece
         prev_context.double_pawn_push = 4; // Simulate a double pawn push
 
-        let new_context = unsafe {
-            GameContext::new_with_previous(
-                Box::into_raw(Box::new(prev_context)),
-                0,
-                0,
-            )
-        };
+        let new_context =
+            unsafe { GameContext::new_with_previous(Box::into_raw(Box::new(prev_context)), 0, 0) };
 
         assert_eq!(new_context.halfmove_clock, 2); // Incremented from previous
         assert_eq!(new_context.double_pawn_push, -1);

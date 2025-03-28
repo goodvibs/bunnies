@@ -1,8 +1,8 @@
+use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
-use crate::pgn::lexing_error::PgnLexingError;
 
 /// The regex pattern for a comment.
 /// Capturing groups:
@@ -15,7 +15,7 @@ static COMPILED_COMMENT_REGEX: Regex = Regex::new(COMMENT_REGEX).unwrap();
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PgnComment {
-    pub comment: String
+    pub comment: String,
 }
 
 impl PgnComment {
@@ -32,8 +32,8 @@ impl ParsablePgnToken for PgnComment {
             Some(captures) => {
                 let comment = captures.get(1).unwrap().as_str().to_string();
                 Ok(Self { comment })
-            },
-            None => Err(PgnLexingError::InvalidComment(text.to_string()))
+            }
+            None => Err(PgnLexingError::InvalidComment(text.to_string())),
         }
     }
 }

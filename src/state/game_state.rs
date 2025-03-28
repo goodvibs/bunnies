@@ -1,7 +1,7 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use crate::{Bitboard, Color, PieceType};
 use crate::state::{Board, GameContext, GameResult};
+use crate::{Bitboard, Color, PieceType};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -42,7 +42,7 @@ impl GameState {
     pub fn opposite_side_attacks(&self) -> Bitboard {
         match unsafe { &(*self.context).previous } {
             // Some(previous) => previous.borrow().current_side_attacks,
-            _ => self.board.calc_attacks_mask(self.side_to_move.other())
+            _ => self.board.calc_attacks_mask(self.side_to_move.other()),
         }
     }
 
@@ -59,7 +59,10 @@ impl GameState {
     }
 
     pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
-        if self.board.are_both_sides_insufficient_material(use_uscf_rules) {
+        if self
+            .board
+            .are_both_sides_insufficient_material(use_uscf_rules)
+        {
             self.result = GameResult::InsufficientMaterial;
         }
     }
@@ -92,9 +95,9 @@ impl GameState {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::{Color, ColoredPieceType, PieceType, Square};
     use crate::state::{GameContext, GameResult, GameState};
     use crate::utils::print_bb;
+    use crate::{Color, ColoredPieceType, PieceType, Square};
 
     #[test]
     fn test_initial_state() {
@@ -135,26 +138,23 @@ mod state_tests {
     #[test]
     fn test_opposite_side_attacks() {
         let initial_state = GameState::initial();
-        let initial_black_attacks = initial_state.board.calc_attacks_mask(initial_state.side_to_move.other());
+        let initial_black_attacks = initial_state
+            .board
+            .calc_attacks_mask(initial_state.side_to_move.other());
         assert_eq!(initial_state.opposite_side_attacks(), initial_black_attacks);
         unsafe { (*initial_state.context).initialize_current_side_attacks(initial_black_attacks) };
-        
+
         let mut next_state_board = initial_state.board.clone();
         next_state_board.move_colored_piece(
             ColoredPieceType::new(Color::White, PieceType::Pawn),
             Square::E4,
-            Square::E2
+            Square::E2,
         );
         let next_state_zobrist = next_state_board.zobrist_hash;
-        
-        let next_state_context = unsafe {
-            GameContext::new_with_previous(
-                initial_state.context,
-                next_state_zobrist,
-                0,
-            )
-        };
-        
+
+        let next_state_context =
+            unsafe { GameContext::new_with_previous(initial_state.context, next_state_zobrist, 0) };
+
         let next_state = GameState {
             board: next_state_board,
             side_to_move: Color::Black,
@@ -162,8 +162,10 @@ mod state_tests {
             result: GameResult::None,
             context: Box::into_raw(Box::new(next_state_context)),
         };
-        
-        let next_state_white_attacks = next_state.board.calc_attacks_mask(next_state.side_to_move.other());
+
+        let next_state_white_attacks = next_state
+            .board
+            .calc_attacks_mask(next_state.side_to_move.other());
         assert_eq!(next_state.opposite_side_attacks(), next_state_white_attacks);
     }
 }

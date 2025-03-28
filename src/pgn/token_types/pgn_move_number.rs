@@ -1,8 +1,8 @@
+use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
-use crate::pgn::lexing_error::PgnLexingError;
 
 const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
 
@@ -11,7 +11,7 @@ static COMPILED_MOVE_NUMBER_REGEX: Regex = Regex::new(MOVE_NUMBER_REGEX).unwrap(
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PgnMoveNumber {
-    pub fullmove_number: u16
+    pub fullmove_number: u16,
 }
 
 impl PgnMoveNumber {
@@ -27,7 +27,7 @@ impl ParsablePgnToken for PgnMoveNumber {
         if let Some(captures) = COMPILED_MOVE_NUMBER_REGEX.captures(text) {
             let fullmove_number = match captures.get(1).unwrap().as_str().parse::<u16>() {
                 Ok(num) => num,
-                Err(_) => return Err(PgnLexingError::InvalidMoveNumber(text.to_string()))
+                Err(_) => return Err(PgnLexingError::InvalidMoveNumber(text.to_string())),
             };
             Ok(Self { fullmove_number })
         } else {
@@ -38,9 +38,9 @@ impl ParsablePgnToken for PgnMoveNumber {
 
 #[cfg(test)]
 mod tests {
-    use logos::Logos;
     use super::*;
     use crate::pgn::token::PgnToken;
+    use logos::Logos;
 
     #[test]
     fn test_parse_simple_move_number() {
@@ -85,7 +85,7 @@ mod tests {
 
         match result {
             Err(PgnLexingError::InvalidMoveNumber(_)) => (),
-            _ => panic!("Expected InvalidMoveNumber error")
+            _ => panic!("Expected InvalidMoveNumber error"),
         }
     }
 

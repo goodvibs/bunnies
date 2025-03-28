@@ -2,7 +2,11 @@ use bunnies::GameState;
 
 fn run_perft_test(state: GameState, depth: u8, expected_nodes: u64) {
     let nodes = state.perft(depth);
-    assert_eq!(nodes, expected_nodes, "Expected {} nodes at depth {}, but got {}", expected_nodes, depth, nodes);
+    assert_eq!(
+        nodes, expected_nodes,
+        "Expected {} nodes at depth {}, but got {}",
+        expected_nodes, depth, nodes
+    );
 }
 
 #[test]
@@ -18,7 +22,9 @@ fn test_initial_position() {
 
 #[test]
 fn test_kiwipete() {
-    let state = GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
+    let state =
+        GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+            .unwrap();
     // run_perft_test(state, 1, 48);
     // run_perft_test(state, 2, 2039);
     // run_perft_test(state, 3, 97862);
@@ -41,7 +47,9 @@ fn test_position_3() {
 
 #[test]
 fn test_position_4() {
-    let state = GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1").unwrap();
+    let state =
+        GameState::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1")
+            .unwrap();
     // run_perft_test(state, 1, 6);
     // run_perft_test(state, 2, 264);
     // run_perft_test(state, 3, 9467);
@@ -52,7 +60,8 @@ fn test_position_4() {
 
 #[test]
 fn test_position_5() {
-    let state = GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
+    let state =
+        GameState::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap();
     // run_perft_test(state, 1, 44);
     // run_perft_test(state, 2, 1486);
     // run_perft_test(state, 3, 62379);

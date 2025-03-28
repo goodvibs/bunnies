@@ -1,28 +1,35 @@
 //! Move generation functions for the state struct
 
-use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_rook_attacks};
-use crate::utils::{iter_set_bits, iter_squares_from_mask, MaskBitsIterator};
-use crate::{Bitboard, Color};
-use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::PieceType;
-use crate::r#move::{Move, MoveFlag};
 use crate::Square;
-use crate::state::{GameState};
+use crate::attacks::{
+    multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks,
+    single_knight_attacks, single_rook_attacks,
+};
+use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
+use crate::r#move::{Move, MoveFlag};
+use crate::state::GameState;
+use crate::utils::{MaskBitsIterator, iter_set_bits, iter_squares_from_mask};
+use crate::{Bitboard, Color};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
-    PieceType::PROMOTION_PIECES.map(|promotion_piece| {
-        Move::new_promotion(dst_square, src_square, promotion_piece)
-    })
+    PieceType::PROMOTION_PIECES
+        .map(|promotion_piece| Move::new_promotion(dst_square, src_square, promotion_piece))
 }
 
 impl GameState {
-    fn add_normal_pawn_captures_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator, attacks_mask: &mut Bitboard) {
+    fn add_normal_pawn_captures_pseudolegal(
+        &self,
+        moves: &mut Vec<Move>,
+        pawn_srcs: MaskBitsIterator,
+        attacks_mask: &mut Bitboard,
+    ) {
         let opposite_color = self.side_to_move.other();
         let opposite_color_bb = self.board.color_masks[opposite_color as usize];
 
         let promotion_rank = match self.side_to_move {
             Color::White => RANK_8,
-            Color::Black => RANK_1
+            Color::Black => RANK_1,
         };
 
         for src in pawn_srcs {
@@ -37,9 +44,12 @@ impl GameState {
                 let move_dst = unsafe { Square::from_bitboard(dst) };
                 if dst & promotion_rank != 0 {
                     moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
-                }
-                else {
-                    moves.push(Move::new_non_promotion(move_dst, move_src, MoveFlag::NormalMove));
+                } else {
+                    moves.push(Move::new_non_promotion(
+                        move_dst,
+                        move_src,
+                        MoveFlag::NormalMove,
+                    ));
                 }
             }
         }
@@ -55,24 +65,37 @@ impl GameState {
             Color::Black => (RANK_4, Square::A4, Square::A3),
         };
 
-        if context.double_pawn_push != -1 { // if en passant is possible
-            for direction in [-1, 1] { // left and right
+        if context.double_pawn_push != -1 {
+            // if en passant is possible
+            for direction in [-1, 1] {
+                // left and right
                 let double_pawn_push_file = context.double_pawn_push as i32 + direction;
 
-                if double_pawn_push_file >= 0 && double_pawn_push_file <= 7 { // if within bounds
+                if double_pawn_push_file >= 0 && double_pawn_push_file <= 7 {
+                    // if within bounds
                     let double_pawn_push_file_mask = FILE_A >> double_pawn_push_file;
 
                     if pawns_bb & double_pawn_push_file_mask & src_rank_bb != 0 {
-                        let move_src = unsafe { Square::from(src_rank_first_square as u8 + double_pawn_push_file as u8) };
-                        let move_dst = unsafe { Square::from(dst_rank_first_square as u8 + context.double_pawn_push as u8) };
+                        let move_src = unsafe {
+                            Square::from(src_rank_first_square as u8 + double_pawn_push_file as u8)
+                        };
+                        let move_dst = unsafe {
+                            Square::from(
+                                dst_rank_first_square as u8 + context.double_pawn_push as u8,
+                            )
+                        };
 
-                        moves.push(Move::new_non_promotion(move_dst, move_src, MoveFlag::EnPassant));
+                        moves.push(Move::new_non_promotion(
+                            move_dst,
+                            move_src,
+                            MoveFlag::EnPassant,
+                        ));
                     }
                 }
             }
         }
     }
-    
+
     fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator) {
         let all_occupancy_bb = self.board.piece_type_masks[PieceType::AllPieceTypes as usize];
 
@@ -81,14 +104,15 @@ impl GameState {
         // pawn pushes
         let single_push_rank = match self.side_to_move {
             Color::White => RANK_3,
-            Color::Black => RANK_6
+            Color::Black => RANK_6,
         };
         for src_bb in pawn_srcs {
             let src_square = unsafe { Square::from_bitboard(src_bb) };
 
             // single moves
             let single_move_dst = multi_pawn_moves(src_bb, self.side_to_move) & !all_occupancy_bb;
-            if single_move_dst == 0 { // if no single moves
+            if single_move_dst == 0 {
+                // if no single moves
                 continue;
             }
 
@@ -96,24 +120,36 @@ impl GameState {
 
             // double push
             if single_move_dst & single_push_rank != 0 {
-                let double_move_dst = multi_pawn_moves(single_move_dst, self.side_to_move) & !all_occupancy_bb;
+                let double_move_dst =
+                    multi_pawn_moves(single_move_dst, self.side_to_move) & !all_occupancy_bb;
                 if double_move_dst != 0 {
                     unsafe {
                         let double_move_dst_square = Square::from_bitboard(double_move_dst);
-                        moves.push(Move::new_non_promotion(double_move_dst_square, src_square, MoveFlag::NormalMove));
+                        moves.push(Move::new_non_promotion(
+                            double_move_dst_square,
+                            src_square,
+                            MoveFlag::NormalMove,
+                        ));
                     }
                 }
-            }
-            else if single_move_dst & promotion_rank != 0 { // promotion
-                moves.extend_from_slice(&generate_pawn_promotions(src_square, single_move_dst_square));
+            } else if single_move_dst & promotion_rank != 0 {
+                // promotion
+                moves.extend_from_slice(&generate_pawn_promotions(
+                    src_square,
+                    single_move_dst_square,
+                ));
                 continue;
             }
 
             // single push (non-promotion)
-            moves.push(Move::new_non_promotion(single_move_dst_square, src_square, MoveFlag::NormalMove));
+            moves.push(Move::new_non_promotion(
+                single_move_dst_square,
+                src_square,
+                MoveFlag::NormalMove,
+            ));
         }
     }
-    
+
     fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
@@ -135,7 +171,11 @@ impl GameState {
             let knight_moves = knight_attacks & !same_color_bb;
 
             for dst_square in iter_squares_from_mask(knight_moves) {
-                moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
+                moves.push(Move::new_non_promotion(
+                    dst_square,
+                    src_square,
+                    MoveFlag::NormalMove,
+                ));
             }
         }
     }
@@ -153,7 +193,11 @@ impl GameState {
             let bishop_moves = bishop_attacks & !same_color_bb;
 
             for dst_square in iter_squares_from_mask(bishop_moves) {
-                moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
+                moves.push(Move::new_non_promotion(
+                    dst_square,
+                    src_square,
+                    MoveFlag::NormalMove,
+                ));
             }
         }
     }
@@ -171,7 +215,11 @@ impl GameState {
             let rook_moves = rook_attacks & !same_color_bb;
 
             for dst_square in iter_squares_from_mask(rook_moves) {
-                moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
+                moves.push(Move::new_non_promotion(
+                    dst_square,
+                    src_square,
+                    MoveFlag::NormalMove,
+                ));
             }
         }
     }
@@ -183,13 +231,18 @@ impl GameState {
         let queens_bb = self.board.piece_type_masks[PieceType::Queen as usize] & same_color_bb;
 
         for src_square in iter_squares_from_mask(queens_bb) {
-            let queen_attacks = single_rook_attacks(src_square, all_occupancy_bb) | single_bishop_attacks(src_square, all_occupancy_bb);
+            let queen_attacks = single_rook_attacks(src_square, all_occupancy_bb)
+                | single_bishop_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= queen_attacks;
 
             let queen_moves = queen_attacks & !same_color_bb;
 
             for dst_square in iter_squares_from_mask(queen_moves) {
-                moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
+                moves.push(Move::new_non_promotion(
+                    dst_square,
+                    src_square,
+                    MoveFlag::NormalMove,
+                ));
             }
         }
     }
@@ -207,23 +260,35 @@ impl GameState {
         let king_moves = king_attacks & !same_color_bb;
 
         for dst_square in iter_squares_from_mask(king_moves) {
-            moves.push(Move::new_non_promotion(dst_square, king_src_square, MoveFlag::NormalMove));
+            moves.push(Move::new_non_promotion(
+                dst_square,
+                king_src_square,
+                MoveFlag::NormalMove,
+            ));
         }
     }
-    
+
     fn add_castling_pseudolegal(&self, moves: &mut Vec<Move>) {
         let king_src_square = match self.side_to_move {
             Color::White => Square::E1,
-            Color::Black => Square::E8
+            Color::Black => Square::E8,
         };
 
         if self.can_legally_castle_short() {
             let king_dst_square = unsafe { Square::from(king_src_square as u8 + 2) };
-            moves.push(Move::new_non_promotion(king_dst_square, king_src_square, MoveFlag::Castling));
+            moves.push(Move::new_non_promotion(
+                king_dst_square,
+                king_src_square,
+                MoveFlag::Castling,
+            ));
         }
         if self.can_legally_castle_long() {
             let king_dst_square = unsafe { Square::from(king_src_square as u8 - 2) };
-            moves.push(Move::new_non_promotion(king_dst_square, king_src_square, MoveFlag::Castling));
+            moves.push(Move::new_non_promotion(
+                king_dst_square,
+                king_src_square,
+                MoveFlag::Castling,
+            ));
         }
     }
 
@@ -248,12 +313,12 @@ impl GameState {
     /// The state then unmakes the move before moving on to the next move.
     pub fn calc_legal_moves(&self, attacks_mask: &mut Bitboard) -> Vec<Move> {
         assert!(self.result.is_none());
-        
+
         let pseudolegal_moves = self.calc_pseudolegal_moves(attacks_mask);
         let mut filtered_moves = Vec::new();
-        
+
         // let self_keepsake = self.clone();
-        
+
         let mut state = self.clone();
         for move_ in pseudolegal_moves {
             state.make_move(move_, *attacks_mask);

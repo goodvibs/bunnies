@@ -1,14 +1,14 @@
 //! This module provides functionality for calculating sliding piece attacks using magic bitboards.
 
-use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTACKS_LOOKUP};
 use crate::Bitboard;
 use crate::Square;
+use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTACKS_LOOKUP};
 
-mod lookup;
-mod random;
-mod magic_info;
-mod relevant_mask;
 mod initializer;
+mod lookup;
+mod magic_info;
+mod random;
+mod relevant_mask;
 
 pub use relevant_mask::*;
 
@@ -24,13 +24,13 @@ pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) 
 
 #[cfg(test)]
 mod tests {
-    use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
+    use crate::PieceType;
+    use crate::Square;
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
+    use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::utils::iter_bit_combinations;
     use crate::utils::print_bb_pretty;
-    use crate::PieceType;
-    use crate::Square;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {

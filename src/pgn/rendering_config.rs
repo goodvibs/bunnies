@@ -1,4 +1,3 @@
-
 /// Contains a configuration for rendering PGN (Portable Game Notation) data.
 #[derive(Debug, Clone, Copy)]
 pub struct PgnRenderingConfig {

@@ -1,6 +1,6 @@
 use crate::PieceType;
-use crate::r#move::MoveFlag;
 use crate::Square;
+use crate::r#move::MoveFlag;
 use crate::state::GameState;
 
 /// Represents a move in the game.
@@ -17,9 +17,15 @@ impl Move {
 
     /// Creates a new move.
     pub fn new(dst: Square, src: Square, promotion: PieceType, flag: MoveFlag) -> Move {
-        assert!(promotion != PieceType::King && promotion != PieceType::Pawn, "Invalid promotion piece type");
+        assert!(
+            promotion != PieceType::King && promotion != PieceType::Pawn,
+            "Invalid promotion piece type"
+        );
         Move {
-            value: ((dst as u16) << 10) | ((src as u16) << 4) | ((promotion as u16 - 2) << 2) | flag as u16
+            value: ((dst as u16) << 10)
+                | ((src as u16) << 4)
+                | ((promotion as u16 - 2) << 2)
+                | flag as u16,
         }
     }
 
@@ -58,22 +64,39 @@ impl Move {
 
     /// Unpacks the move into its components.
     pub const fn unpack(&self) -> (Square, Square, PieceType, MoveFlag) {
-        (self.get_destination(), self.get_source(), self.get_promotion(), self.get_flag())
+        (
+            self.get_destination(),
+            self.get_source(),
+            self.get_promotion(),
+            self.get_flag(),
+        )
     }
 
     pub fn is_capture(&self, initial_state: &GameState) -> bool {
         match self.get_flag() {
-            MoveFlag::NormalMove | MoveFlag::Promotion => initial_state.board.is_occupied_at(self.get_destination()),
+            MoveFlag::NormalMove | MoveFlag::Promotion => {
+                initial_state.board.is_occupied_at(self.get_destination())
+            }
             MoveFlag::EnPassant => true,
-            MoveFlag::Castling => false
+            MoveFlag::Castling => false,
         }
     }
 
     /// Returns a readable representation of the move.
     pub fn readable(&self) -> String {
         let (dst, src, promotion, flag) = self.unpack();
-        let (dst_str, src_str, promotion_char, flag_str) = (src.readable(), dst.readable(), promotion.uppercase_ascii(), flag.to_readable());
-        format!("{}{}{}", dst_str, src_str, flag_str.replace('?', &promotion_char.to_string()))
+        let (dst_str, src_str, promotion_char, flag_str) = (
+            src.readable(),
+            dst.readable(),
+            promotion.uppercase_ascii(),
+            flag.to_readable(),
+        );
+        format!(
+            "{}{}{}",
+            dst_str,
+            src_str,
+            flag_str.replace('?', &promotion_char.to_string())
+        )
     }
 
     /// Returns the UCI (Universal Chess Interface) representation of the move.
@@ -82,7 +105,7 @@ impl Move {
         let (dst_str, src_str) = (dst.readable(), src.readable());
         let promotion_str = match flag {
             MoveFlag::Promotion => promotion.uppercase_ascii().to_string(),
-            _ => "".to_string()
+            _ => "".to_string(),
         };
         format!("{}{}{}", src_str, dst_str, promotion_str)
     }
@@ -102,9 +125,9 @@ impl std::fmt::Debug for Move {
 
 #[cfg(test)]
 mod tests {
+    use super::{Move, MoveFlag};
     use crate::PieceType;
     use crate::Square;
-    use super::{Move, MoveFlag};
 
     #[test]
     fn test_move() {

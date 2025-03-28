@@ -1,25 +1,25 @@
-use logos::{Lexer, Logos};
 use crate::Color;
-use crate::pgn::token_types::PgnCastlingMove;
-use crate::pgn::parsing_error::PgnParsingError;
-use crate::pgn::token::{PgnToken};
-use crate::pgn::object::PgnObject;
-use crate::pgn::parsing_state::PgnParsingState;
 use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
 use crate::pgn::move_data::PgnMoveData;
+use crate::pgn::object::PgnObject;
+use crate::pgn::parsing_error::PgnParsingError;
+use crate::pgn::parsing_state::PgnParsingState;
+use crate::pgn::token::PgnToken;
+use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::token_types::PgnComment;
-use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
+use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
-use crate::state::{GameState};
+use crate::state::GameState;
+use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings.
 pub struct PgnParser<'a> {
     pub lexer: Lexer<'a, PgnToken>,
     pub parse_state: PgnParsingState,
     pub constructed_object: PgnObject,
-    buffered_position_manager: PgnBufferedPositionBrancher
+    buffered_position_manager: PgnBufferedPositionBrancher,
 }
 
 impl<'a> PgnParser<'a> {
@@ -27,7 +27,8 @@ impl<'a> PgnParser<'a> {
         let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
-        let buffered_position_manager = PgnBufferedPositionBrancher::new(&current_node, GameState::initial());
+        let buffered_position_manager =
+            PgnBufferedPositionBrancher::new(&current_node, GameState::initial());
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,
@@ -40,7 +41,12 @@ impl<'a> PgnParser<'a> {
         while let Some(token) = self.lexer.next() {
             let token = match token {
                 Ok(token) => token,
-                Err(e) => return Err(PgnParsingError::LexingError(format!("Error while lexing: {:?}", e))),
+                Err(e) => {
+                    return Err(PgnParsingError::LexingError(format!(
+                        "Error while lexing: {:?}",
+                        e
+                    )));
+                }
             };
             match token {
                 PgnToken::Tag(tag) => {
@@ -74,9 +80,16 @@ impl<'a> PgnParser<'a> {
         }
 
         if !self.buffered_position_manager.stack.is_empty() {
-            Err(PgnParsingError::UnexpectedEndOfInput("Unclosed variation".to_string()))
-        } else if let PgnParsingState::Moves { move_number_just_seen: true } = self.parse_state {
-            Err(PgnParsingError::UnexpectedEndOfInput("End of input after move number".to_string()))
+            Err(PgnParsingError::UnexpectedEndOfInput(
+                "Unclosed variation".to_string(),
+            ))
+        } else if let PgnParsingState::Moves {
+            move_number_just_seen: true,
+        } = self.parse_state
+        {
+            Err(PgnParsingError::UnexpectedEndOfInput(
+                "End of input after move number".to_string(),
+            ))
         } else {
             Ok(())
         }
@@ -84,44 +97,79 @@ impl<'a> PgnParser<'a> {
 
     fn process_tag(&mut self, tag: PgnTag) -> Result<(), PgnParsingError> {
         if self.parse_state != PgnParsingState::Tags {
-            return Err(PgnParsingError::UnexpectedToken(format!("Unexpected tag token: {:?}", tag)));
+            return Err(PgnParsingError::UnexpectedToken(format!(
+                "Unexpected tag token: {:?}",
+                tag
+            )));
         }
         self.constructed_object.add_tag(tag.name, tag.value);
         Ok(())
     }
 
-    fn process_move_number(&mut self, pgn_move_number: PgnMoveNumber) -> Result<(), PgnParsingError> {
+    fn process_move_number(
+        &mut self,
+        pgn_move_number: PgnMoveNumber,
+    ) -> Result<(), PgnParsingError> {
         match self.parse_state {
             PgnParsingState::Tags => {
-                self.parse_state = PgnParsingState::Moves { move_number_just_seen: false };
+                self.parse_state = PgnParsingState::Moves {
+                    move_number_just_seen: false,
+                };
                 self.process_move_number(pgn_move_number)
             }
-            PgnParsingState::Moves { move_number_just_seen } => {
+            PgnParsingState::Moves {
+                move_number_just_seen,
+            } => {
                 if move_number_just_seen {
-                    Err(PgnParsingError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
-                }
-                else {
-                    let expected_fullmove = self.buffered_position_manager.current_and_previous.current.state_after_move.get_fullmove();
+                    Err(PgnParsingError::UnexpectedToken(format!(
+                        "Unexpected move number token: {:?}",
+                        pgn_move_number
+                    )))
+                } else {
+                    let expected_fullmove = self
+                        .buffered_position_manager
+                        .current_and_previous
+                        .current
+                        .state_after_move
+                        .get_fullmove();
                     if pgn_move_number.fullmove_number == expected_fullmove {
-                        self.parse_state = PgnParsingState::Moves { move_number_just_seen: true };
+                        self.parse_state = PgnParsingState::Moves {
+                            move_number_just_seen: true,
+                        };
                         Ok(())
                     } else {
-                        Err(PgnParsingError::IncorrectMoveNumber(format!("{:?}", pgn_move_number)))
+                        Err(PgnParsingError::IncorrectMoveNumber(format!(
+                            "{:?}",
+                            pgn_move_number
+                        )))
                     }
                 }
             }
-            PgnParsingState::ResultFound => {
-                Err(PgnParsingError::UnexpectedToken(format!("Unexpected move number token: {:?}", pgn_move_number)))
-            }
+            PgnParsingState::ResultFound => Err(PgnParsingError::UnexpectedToken(format!(
+                "Unexpected move number token: {:?}",
+                pgn_move_number
+            ))),
         }
     }
 
-    fn process_move<PgnMoveType: PgnMove>(&mut self, pgn_move: PgnMoveType) -> Result<(), PgnParsingError> {
+    fn process_move<PgnMoveType: PgnMove>(
+        &mut self,
+        pgn_move: PgnMoveType,
+    ) -> Result<(), PgnParsingError> {
         match self.parse_state {
-            PgnParsingState::Moves { move_number_just_seen } => {
-                let current_state = &self.buffered_position_manager.current_and_previous.current.state_after_move;
+            PgnParsingState::Moves {
+                move_number_just_seen,
+            } => {
+                let current_state = &self
+                    .buffered_position_manager
+                    .current_and_previous
+                    .current
+                    .state_after_move;
                 if !move_number_just_seen && current_state.side_to_move == Color::White {
-                    return Err(PgnParsingError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)));
+                    return Err(PgnParsingError::UnexpectedToken(format!(
+                        "Unexpected move token: {:?}",
+                        pgn_move
+                    )));
                 }
                 let mut attacks_mask = 0;
                 let possible_moves = current_state.calc_legal_moves(&mut attacks_mask);
@@ -130,7 +178,10 @@ impl<'a> PgnParser<'a> {
                 for possible_move in possible_moves {
                     if pgn_move.matches_move(possible_move, current_state) {
                         if matched_move.is_some() {
-                            return Err(PgnParsingError::AmbiguousMove(format!("Ambiguous move: {:?}", pgn_move)));
+                            return Err(PgnParsingError::AmbiguousMove(format!(
+                                "Ambiguous move: {:?}",
+                                pgn_move
+                            )));
                         } else {
                             matched_move = Some(possible_move);
                         }
@@ -148,48 +199,69 @@ impl<'a> PgnParser<'a> {
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
-                    self.buffered_position_manager.current_and_previous.append_new_move(move_data, new_state);
-                    self.parse_state = PgnParsingState::Moves { move_number_just_seen: false };
+                    self.buffered_position_manager
+                        .current_and_previous
+                        .append_new_move(move_data, new_state);
+                    self.parse_state = PgnParsingState::Moves {
+                        move_number_just_seen: false,
+                    };
                     Ok(())
                 } else {
-                    Err(PgnParsingError::IllegalMove(format!("Illegal move: {:?}", pgn_move)))
+                    Err(PgnParsingError::IllegalMove(format!(
+                        "Illegal move: {:?}",
+                        pgn_move
+                    )))
                 }
             }
-            _ => {
-                Err(PgnParsingError::UnexpectedToken(format!("Unexpected move token: {:?}", pgn_move)))
-            }
+            _ => Err(PgnParsingError::UnexpectedToken(format!(
+                "Unexpected move token: {:?}",
+                pgn_move
+            ))),
         }
     }
 
     fn process_start_variation(&mut self) -> Result<(), PgnParsingError> {
         match self.parse_state {
-            PgnParsingState::Moves { move_number_just_seen: false } => {
-                if self.buffered_position_manager.current_and_previous.previous.is_none() {
-                    Err(PgnParsingError::UnexpectedToken("Unexpected start variation token".to_string()))
+            PgnParsingState::Moves {
+                move_number_just_seen: false,
+            } => {
+                if self
+                    .buffered_position_manager
+                    .current_and_previous
+                    .previous
+                    .is_none()
+                {
+                    Err(PgnParsingError::UnexpectedToken(
+                        "Unexpected start variation token".to_string(),
+                    ))
                 } else {
                     self.buffered_position_manager.create_branch_from_previous();
                     Ok(())
                 }
             }
-            _ => {
-                Err(PgnParsingError::UnexpectedToken("Unexpected start variation token".to_string()))
-            }
+            _ => Err(PgnParsingError::UnexpectedToken(
+                "Unexpected start variation token".to_string(),
+            )),
         }
     }
 
     fn process_end_variation(&mut self) -> Result<(), PgnParsingError> {
         match self.parse_state {
-            PgnParsingState::Moves { move_number_just_seen: false } => {
+            PgnParsingState::Moves {
+                move_number_just_seen: false,
+            } => {
                 if self.buffered_position_manager.stack.is_empty() {
-                    Err(PgnParsingError::UnexpectedToken("Unexpected end variation token".to_string()))
+                    Err(PgnParsingError::UnexpectedToken(
+                        "Unexpected end variation token".to_string(),
+                    ))
                 } else {
                     self.buffered_position_manager.end_branch();
                     Ok(())
                 }
             }
-            _ => {
-                Err(PgnParsingError::UnexpectedToken("Unexpected end variation token".to_string()))
-            }
+            _ => Err(PgnParsingError::UnexpectedToken(
+                "Unexpected end variation token".to_string(),
+            )),
         }
     }
 
@@ -199,25 +271,29 @@ impl<'a> PgnParser<'a> {
 
     fn process_result(&mut self, result: Option<Color>) -> Result<(), PgnParsingError> {
         match self.parse_state {
-            PgnParsingState::Moves { move_number_just_seen: false } => {
+            PgnParsingState::Moves {
+                move_number_just_seen: false,
+            } => {
                 self.parse_state = PgnParsingState::ResultFound;
                 Ok(())
             }
-            _ => {
-                Err(PgnParsingError::UnexpectedToken("Unexpected result token".to_string()))
-            }
+            _ => Err(PgnParsingError::UnexpectedToken(
+                "Unexpected result token".to_string(),
+            )),
         }
     }
 
     fn process_incomplete(&mut self) -> Result<(), PgnParsingError> {
         match self.parse_state {
-            PgnParsingState::Moves { move_number_just_seen: false } => {
+            PgnParsingState::Moves {
+                move_number_just_seen: false,
+            } => {
                 self.parse_state = PgnParsingState::ResultFound;
                 Ok(())
             }
-            _ => {
-                Err(PgnParsingError::UnexpectedToken("Unexpected incomplete token".to_string()))
-            }
+            _ => Err(PgnParsingError::UnexpectedToken(
+                "Unexpected incomplete token".to_string(),
+            )),
         }
     }
 }

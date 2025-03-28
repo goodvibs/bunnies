@@ -43,8 +43,7 @@ pub fn cb_to_string(cb: &Charboard) -> String {
         for j in 0..8u8 {
             if cb[i as usize][j as usize] == ' ' {
                 res.push('.');
-            }
-            else {
+            } else {
                 res.push(cb[i as usize][j as usize])
             }
             res.push(' ');
