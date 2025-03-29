@@ -29,7 +29,7 @@ fn test_kiwipete() {
     // run_perft_test(state, 2, 2039);
     // run_perft_test(state, 3, 97862);
     // run_perft_test(state, 4, 4085603);
-    run_perft_test(state, 5, 193690690); // ~ 13 seconds on M1 Pro
+    run_perft_test(state, 5, 193690690); // ~ 12 seconds on M1 Pro
     // run_perft_test(state, 6, 8031647685);
 }
 
@@ -42,7 +42,7 @@ fn test_position_3() {
     // run_perft_test(state, 4, 43238);
     // run_perft_test(state, 5, 674624);
     // run_perft_test(state, 6, 11030083);
-    run_perft_test(state, 7, 178633661); // ~ 14 seconds on M1 Pro
+    run_perft_test(state, 7, 178633661); // ~ 11 seconds on M1 Pro
 }
 
 #[test]
@@ -66,5 +66,5 @@ fn test_position_5() {
     // run_perft_test(state, 2, 1486);
     // run_perft_test(state, 3, 62379);
     // run_perft_test(state, 4, 2103487);
-    run_perft_test(state, 5, 89941194); // ~ 7 seconds on M1 Pro
+    run_perft_test(state, 5, 89941194); // ~ 6 seconds on M1 Pro
 }
