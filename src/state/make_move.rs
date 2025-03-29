@@ -10,7 +10,7 @@ use crate::masks::{
 };
 use crate::r#move::{Move, MoveFlag};
 use crate::state::GameState;
-use crate::state::context::GameContext;
+use crate::state::game_context::GameContext;
 
 impl GameState {
     fn process_promotion(

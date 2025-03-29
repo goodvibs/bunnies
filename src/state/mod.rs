@@ -2,7 +2,7 @@
 
 mod board;
 mod castling;
-mod context;
+mod game_context;
 mod fen;
 mod game_state;
 mod insufficient_material;
@@ -15,7 +15,7 @@ mod validation;
 mod zobrist;
 
 pub use board::*;
-pub use context::*;
+pub use game_context::*;
 pub use fen::*;
 pub use game_state::*;
 pub use termination::*;
