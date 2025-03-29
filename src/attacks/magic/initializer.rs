@@ -63,8 +63,8 @@ impl MagicAttacksInitializer {
         relevant_mask: Bitboard,
         calc_attack_mask: impl Fn(Bitboard) -> Bitboard,
     ) -> MagicInfo {
-        let num_relevant_bits = relevant_mask.count_ones() as usize;
-        let right_shift_amount = 64 - num_relevant_bits as u8;
+        let num_relevant_bits = relevant_mask.count_ones() as u8;
+        let right_shift_amount = 64 - num_relevant_bits;
 
         let occupancy_patterns: Vec<Bitboard> = iter_bit_combinations(relevant_mask).collect();
         let attack_masks: Vec<Bitboard> = occupancy_patterns
