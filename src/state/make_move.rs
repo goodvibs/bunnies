@@ -1,16 +1,16 @@
 //! Contains the implementation of the `State::make_move` method.
 
-use crate::Bitboard;
-use crate::Color;
-use crate::ColoredPieceType;
-use crate::PieceType;
-use crate::Square;
 use crate::masks::{
     STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
 };
 use crate::r#move::{Move, MoveFlag};
-use crate::state::GameState;
 use crate::state::game_context::GameContext;
+use crate::state::GameState;
+use crate::Color;
+use crate::ColoredPieceType;
+use crate::PieceType;
+use crate::Square;
+use crate::{Bitboard, Board};
 
 impl GameState {
     fn process_promotion(
@@ -121,16 +121,12 @@ impl GameState {
     /// Applies a move without checking if it is valid or legal.
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
-    pub fn make_move(&mut self, mv: Move, mut attacks_mask: Bitboard) {
-        if attacks_mask == 0 {
-            attacks_mask = self.current_side_attacks();
-        }
-
-        unsafe { (*self.context).initialize_current_side_attacks(attacks_mask) };
-
+    pub fn make_move(&mut self, mv: Move) {
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = unsafe { GameContext::new_with_previous(self.context, 0, 0) };
+        let mut new_context = unsafe { GameContext::new_with_previous(self.context) };
+        
+        let original_occupied_mask = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
@@ -147,6 +143,16 @@ impl GameState {
         }
 
         new_context.zobrist_hash = self.board.zobrist_hash;
+        
+        if flag != MoveFlag::Promotion {
+            let new_occupied_mask = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+            let net_change_in_occupied_mask = new_occupied_mask ^ original_occupied_mask;
+            new_context.update_attacks_efficiently(net_change_in_occupied_mask, self.context &self.board);
+            // new_context.update_attacks(&self.board);
+        }
+        else {
+            new_context.update_attacks(&self.board);
+        }
 
         // update data members
         self.halfmove += 1;
@@ -243,6 +249,16 @@ impl GameContext {
                 self.castling_rights &= !(0b00000100 >> right_shift);
             }
         }
+    }
+    
+    fn update_attacks_efficiently(&mut self, net_change_in_occupied_mask: Bitboard, board: &Board) {
+        self.current_side_attacks.update_efficiently(net_change_in_occupied_mask, board);
+        self.opposite_side_attacks.update_efficiently(net_change_in_occupied_mask, board);
+    }
+    
+    fn update_attacks(&mut self, board: &Board) {
+        self.current_side_attacks.update(board);
+        self.opposite_side_attacks.update(board);
     }
 }
 

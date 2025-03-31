@@ -1,4 +1,3 @@
-use crate::Color;
 use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::object::PgnObject;
@@ -12,6 +11,7 @@ use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
 use crate::state::GameState;
+use crate::Color;
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings.
@@ -171,8 +171,7 @@ impl<'a> PgnParser<'a> {
                         pgn_move
                     )));
                 }
-                let mut attacks_mask = 0;
-                let possible_moves = current_state.calc_legal_moves(&mut attacks_mask);
+                let possible_moves = current_state.calc_legal_moves();
 
                 let mut matched_move = None;
                 for possible_move in possible_moves {
@@ -191,7 +190,7 @@ impl<'a> PgnParser<'a> {
                 if let Some(matched_move) = matched_move {
                     let new_state = {
                         let mut state = current_state.clone();
-                        state.make_move(matched_move, attacks_mask);
+                        state.make_move(matched_move);
                         state
                     };
                     let move_data = PgnMoveData {

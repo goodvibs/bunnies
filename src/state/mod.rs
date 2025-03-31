@@ -13,6 +13,7 @@ mod termination;
 mod unmake_move;
 mod validation;
 mod zobrist;
+mod attacks_by_color;
 
 pub use board::*;
 pub use game_context::*;
@@ -20,3 +21,4 @@ pub use fen::*;
 pub use game_state::*;
 pub use termination::*;
 pub use zobrist::*;
+pub use attacks_by_color::*;

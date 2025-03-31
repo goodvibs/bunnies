@@ -9,6 +9,7 @@ use crate::utilities::iter_squares_from_mask;
 use crate::utilities::{Charboard, cb_to_string};
 use crate::{Bitboard, Color};
 use std::fmt::Display;
+use crate::state::attacks_by_color::AttacksByColor;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
 /// and the zobrist hash of the position.
@@ -49,22 +50,56 @@ impl Board {
     }
 
     pub fn calc_attacks_mask(&self, by_color: Color) -> Bitboard {
+        self.calc_non_sliding_piece_attacks_mask(by_color) | self.calc_sliding_piece_attacks_mask(by_color)
+    }
+    
+    pub fn calc_attacks(&self, by_color: Color) -> AttacksByColor {
+        let bishop_attacks = self.calc_bishop_attacks_mask(by_color);
+        let rook_attacks = self.calc_rook_attacks_mask(by_color);
+        let queen_attacks = self.calc_queen_attacks_mask(by_color);
+        
+        let non_sliding_piece_attacks = self.calc_non_sliding_piece_attacks_mask(by_color);
+        let sliding_piece_attacks = bishop_attacks | rook_attacks | queen_attacks;
+        
+        let attacks = sliding_piece_attacks | non_sliding_piece_attacks;
+        
+        AttacksByColor {
+            all: attacks,
+            non_sliding: non_sliding_piece_attacks,
+            bishops: bishop_attacks,
+            rooks: rook_attacks,
+            queens: queen_attacks,
+            side: by_color
+        }
+    }
+    
+    pub fn calc_non_sliding_piece_attacks_mask(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_masks[by_color as usize];
-        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let pawns_mask = self.piece_type_masks[PieceType::Pawn as usize];
         let knights_mask = self.piece_type_masks[PieceType::Knight as usize];
-        let bishops_mask = self.piece_type_masks[PieceType::Bishop as usize];
-        let rooks_mask = self.piece_type_masks[PieceType::Rook as usize];
-        let queens_mask = self.piece_type_masks[PieceType::Queen as usize];
         let kings_mask = self.piece_type_masks[PieceType::King as usize];
 
         let mut attacks = multi_pawn_attacks(pawns_mask & attacking_color_mask, by_color);
 
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
 
-        for src_square in
-            iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask)
+        attacks |= multi_king_attacks(kings_mask & attacking_color_mask);
+
+        attacks
+    }
+    
+    pub fn calc_sliding_piece_attacks_mask(&self, by_color: Color) -> Bitboard {
+        let attacking_color_mask = self.color_masks[by_color as usize];
+        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+
+        let bishops_mask = self.piece_type_masks[PieceType::Bishop as usize];
+        let rooks_mask = self.piece_type_masks[PieceType::Rook as usize];
+        let queens_mask = self.piece_type_masks[PieceType::Queen as usize];
+
+        let mut attacks = 0;
+
+        for src_square in iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask)
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
@@ -74,7 +109,54 @@ impl Board {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
 
-        attacks |= multi_king_attacks(kings_mask & attacking_color_mask);
+        attacks
+    }
+    
+    pub fn calc_bishop_attacks_mask(&self, by_color: Color) -> Bitboard {
+        let attacking_color_mask = self.color_masks[by_color as usize];
+        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+
+        let bishops_mask = self.piece_type_masks[PieceType::Bishop as usize];
+
+        let mut attacks = 0;
+
+        for src_square in iter_squares_from_mask((bishops_mask) & attacking_color_mask)
+        {
+            attacks |= single_bishop_attacks(src_square, occupied_mask);
+        }
+
+        attacks
+    }
+    
+    pub fn calc_rook_attacks_mask(&self, by_color: Color) -> Bitboard {
+        let attacking_color_mask = self.color_masks[by_color as usize];
+        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+
+        let rooks_mask = self.piece_type_masks[PieceType::Rook as usize];
+
+        let mut attacks = 0;
+
+        for src_square in iter_squares_from_mask((rooks_mask) & attacking_color_mask)
+        {
+            attacks |= single_rook_attacks(src_square, occupied_mask);
+        }
+
+        attacks
+    }
+    
+    pub fn calc_queen_attacks_mask(&self, by_color: Color) -> Bitboard {
+        let attacking_color_mask = self.color_masks[by_color as usize];
+        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+
+        let queens_mask = self.piece_type_masks[PieceType::Queen as usize];
+
+        let mut attacks = 0;
+
+        for src_square in iter_squares_from_mask((queens_mask) & attacking_color_mask)
+        {
+            attacks |= single_rook_attacks(src_square, occupied_mask);
+            attacks |= single_bishop_attacks(src_square, occupied_mask);
+        }
 
         attacks
     }

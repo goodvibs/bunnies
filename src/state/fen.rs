@@ -170,11 +170,12 @@ impl GameState {
                 let zobrist_hash = board.zobrist_hash;
                 let halfmove =
                     (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = GameContext::new_without_previous(
-                    castling_rights,
-                    zobrist_hash,
-                    board.calc_attacks_mask(side_to_move),
-                );
+                
+                let mut context = GameContext::new_without_previous(side_to_move);
+                context.castling_rights = castling_rights;
+                context.zobrist_hash = zobrist_hash;
+                context.current_side_attacks.update(&board);
+                context.opposite_side_attacks.update(&board);
                 context.double_pawn_push = double_pawn_push;
                 context.halfmove_clock = halfmove_clock;
 

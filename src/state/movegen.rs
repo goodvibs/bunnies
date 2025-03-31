@@ -293,16 +293,31 @@ impl GameState {
     }
 
     /// Returns a vector of pseudolegal moves.
-    pub fn calc_pseudolegal_moves(&self, attacks_mask: &mut Bitboard) -> Vec<Move> {
+    pub fn calc_pseudolegal_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
+        
+        let mut non_sliding_piece_attacks = 0;
+        let mut bishop_attacks = 0;
+        let mut rook_attacks = 0;
+        let mut queen_attacks = 0;
 
-        self.add_all_pawn_pseudolegal(&mut moves, attacks_mask);
-        self.add_knight_pseudolegal(&mut moves, attacks_mask);
-        self.add_bishop_pseudolegal(&mut moves, attacks_mask);
-        self.add_rook_pseudolegal(&mut moves, attacks_mask);
-        self.add_queen_pseudolegal(&mut moves, attacks_mask);
-        self.add_king_pseudolegal(&mut moves, attacks_mask);
+        self.add_all_pawn_pseudolegal(&mut moves, &mut non_sliding_piece_attacks);
+        self.add_knight_pseudolegal(&mut moves, &mut non_sliding_piece_attacks);
+        self.add_bishop_pseudolegal(&mut moves, &mut bishop_attacks);
+        self.add_rook_pseudolegal(&mut moves, &mut rook_attacks);
+        self.add_queen_pseudolegal(&mut moves, &mut queen_attacks);
+        self.add_king_pseudolegal(&mut moves, &mut non_sliding_piece_attacks);
         self.add_castling_pseudolegal(&mut moves);
+        
+        let attacks = unsafe {
+            &mut (*self.context).current_side_attacks
+        };
+        
+        attacks.non_sliding = non_sliding_piece_attacks;
+        attacks.bishops = bishop_attacks;
+        attacks.rooks = rook_attacks;
+        attacks.queens = queen_attacks;
+        attacks.all = non_sliding_piece_attacks | bishop_attacks | rook_attacks | queen_attacks;
 
         moves
     }
@@ -311,17 +326,17 @@ impl GameState {
     /// For each pseudolegal move, it makes the move, checks if the state is probably valid,
     /// and if so, adds the move to the vector.
     /// The state then unmakes the move before moving on to the next move.
-    pub fn calc_legal_moves(&self, attacks_mask: &mut Bitboard) -> Vec<Move> {
+    pub fn calc_legal_moves(&self) -> Vec<Move> {
         assert!(self.result.is_none());
 
-        let pseudolegal_moves = self.calc_pseudolegal_moves(attacks_mask);
+        let pseudolegal_moves = self.calc_pseudolegal_moves();
         let mut filtered_moves = Vec::new();
 
         // let self_keepsake = self.clone();
 
         let mut state = self.clone();
         for move_ in pseudolegal_moves {
-            state.make_move(move_, *attacks_mask);
+            state.make_move(move_);
             if state.is_probably_valid() {
                 filtered_moves.push(move_);
             }

@@ -1,7 +1,8 @@
 //! Context struct and methods
 
-use crate::Bitboard;
+use crate::{Bitboard, Color};
 use crate::PieceType;
+use crate::state::attacks_by_color::AttacksByColor;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -15,73 +16,82 @@ pub struct GameContext {
     pub captured_piece: PieceType,
     pub previous: Option<*mut GameContext>,
     pub zobrist_hash: Bitboard,
-    pub current_side_attacks: Bitboard,
+    pub current_side_attacks: AttacksByColor,
+    pub opposite_side_attacks: AttacksByColor
 }
 
 impl GameContext {
-    /// Creates a new context linking to the previous context
-    pub unsafe fn new_with_previous(
-        previous_context: *mut GameContext,
-        zobrist_hash: Bitboard,
-        current_side_attacks: Bitboard,
-    ) -> GameContext {
-        let (previous_halfmove_clock, previous_castling_rights) = unsafe {
+    /// Creates a new context linking to the previous context.
+    /// The created context must be updated further to be valid.
+    pub unsafe fn new_with_previous(previous_context: *mut GameContext) -> GameContext {
+        let (previous_halfmove_clock, previous_castling_rights, current_side_attacks_prediction, opposite_side_attacks_prediction) = {
+            let previous_context = unsafe { &*previous_context };
+
             assert_ne!(
-                (*previous_context).current_side_attacks,
+                previous_context.current_side_attacks.all, 
                 0,
-                "Previous context must have an updated attacks_mask"
+                "Previous context must have updated current_side_attacks"
             );
+            
             assert_ne!(
-                (*previous_context).zobrist_hash,
+                previous_context.opposite_side_attacks.all, 
+                0,
+                "Previous context must have updated opposite_side_attacks"
+            );
+            
+            assert_ne!(
+                previous_context.zobrist_hash,
                 0,
                 "Previous context must have an updated zobrist_hash"
             );
-
+            
             (
-                (*previous_context).halfmove_clock,
-                (*previous_context).castling_rights,
+                previous_context.halfmove_clock,
+                previous_context.castling_rights,
+                previous_context.opposite_side_attacks.clone(),
+                previous_context.current_side_attacks.clone()
             )
         };
+        
         GameContext {
             halfmove_clock: previous_halfmove_clock + 1,
             double_pawn_push: -1,
             castling_rights: previous_castling_rights,
             captured_piece: PieceType::NoPieceType,
             previous: Some(previous_context),
-            zobrist_hash,
-            current_side_attacks,
+            zobrist_hash: 0,
+            current_side_attacks: current_side_attacks_prediction,
+            opposite_side_attacks: opposite_side_attacks_prediction
         }
     }
 
     /// Creates a new context with no previous context.
     /// This is used for the initial position.
-    pub const fn initial(zobrist_hash: Bitboard) -> GameContext {
-        Self::new_without_previous(0b00001111, zobrist_hash, 0xFFFF7E)
-    }
-
-    /// Creates a new context with no previous context.
-    pub const fn new_without_previous(
-        castling_rights: u8,
-        zobrist_hash: Bitboard,
-        current_side_attacks: Bitboard,
-    ) -> GameContext {
-        GameContext {
+    pub const fn initial() -> GameContext {
+        Self {
             halfmove_clock: 0,
             double_pawn_push: -1,
-            castling_rights,
+            castling_rights: 0b00001111,
             captured_piece: PieceType::NoPieceType,
             previous: None,
-            zobrist_hash,
-            current_side_attacks,
+            zobrist_hash: 0,
+            current_side_attacks: AttacksByColor::initial_white(),
+            opposite_side_attacks: AttacksByColor::initial_black()
         }
     }
 
-    pub const fn initialize_current_side_attacks(&mut self, attacks_mask: Bitboard) {
-        self.current_side_attacks = attacks_mask;
-    }
-
-    pub const fn initialize_zobrist_hash(&mut self, zobrist_hash: Bitboard) {
-        self.zobrist_hash = zobrist_hash;
+    /// Creates a new context with no previous context.
+    pub const fn new_without_previous(side_to_move: Color) -> GameContext {
+        GameContext {
+            halfmove_clock: 0,
+            double_pawn_push: -1,
+            castling_rights: 0,
+            captured_piece: PieceType::NoPieceType,
+            previous: None,
+            zobrist_hash: 0,
+            current_side_attacks: AttacksByColor::new(side_to_move),
+            opposite_side_attacks: AttacksByColor::new(side_to_move.other())
+        }
     }
 
     /// Checks if the halfmove clock is valid (less than or equal to 100).
@@ -100,10 +110,7 @@ impl GameContext {
                 if (*previous).halfmove_clock == 0 {
                     return None;
                 }
-                match (*previous).previous {
-                    Some(previous_previous) => Some(previous_previous.clone()),
-                    None => None,
-                }
+                (*previous).previous
             },
             None => None,
         }
@@ -146,55 +153,56 @@ impl GameContext {
 }
 
 #[cfg(test)]
-mod game_context_tests {
-    use crate::Bitboard;
+mod tests {
+    use crate::{AttacksByColor, Color};
     use crate::PieceType;
     use crate::state::GameContext;
 
     #[test]
     fn test_initial_context() {
-        let zobrist_hash: Bitboard = 0x123456789ABCDEF0;
-        let context = GameContext::initial(zobrist_hash);
+        let context = { 
+            let mut context = GameContext::initial();
+            context.zobrist_hash = 0x123456789ABCDEF0;
+            context
+        };
 
         assert_eq!(context.halfmove_clock, 0);
         assert_eq!(context.double_pawn_push, -1);
         assert_eq!(context.castling_rights, 0b00001111);
         assert_eq!(context.captured_piece, PieceType::NoPieceType);
         assert!(context.previous.is_none());
-        assert_eq!(context.zobrist_hash, zobrist_hash);
     }
 
     #[test]
     fn test_new_without_previous() {
-        let zobrist_hash: Bitboard = 0x123456789ABCDEF0;
-        let attacks_mask: Bitboard = 0xFEDCBA9876543210;
-        let castling_rights: u8 = 0b00001010;
-
-        let context =
-            GameContext::new_without_previous(castling_rights, zobrist_hash, attacks_mask);
+        let context = GameContext::new_without_previous(Color::Black);
 
         assert_eq!(context.halfmove_clock, 0);
         assert_eq!(context.double_pawn_push, -1);
-        assert_eq!(context.castling_rights, castling_rights);
         assert_eq!(context.captured_piece, PieceType::NoPieceType);
         assert!(context.previous.is_none());
-        assert_eq!(context.zobrist_hash, zobrist_hash);
-        assert_eq!(context.current_side_attacks, attacks_mask);
+        assert_eq!(context.current_side_attacks, AttacksByColor::new(Color::Black));
+        assert_eq!(context.opposite_side_attacks, AttacksByColor::new(Color::White));
     }
 
     #[test]
     fn test_new_with_previous() {
-        let prev_zobrist: Bitboard = 0x123456789ABCDEF0;
-        let prev_attacks: Bitboard = 0xFEDCBA9876543210;
-        let mut prev_context =
-            GameContext::new_without_previous(0b00001111, prev_zobrist, prev_attacks);
-        prev_context.halfmove_clock = 1; // Simulate a previous context with a halfmove clock of 1
-        prev_context.castling_rights = 0b00001011; // Simulate castling rights
-        prev_context.captured_piece = PieceType::Pawn; // Simulate a captured piece
-        prev_context.double_pawn_push = 4; // Simulate a double pawn push
+        let prev_context_current_side_attacks = AttacksByColor::initial_white();
+        let prev_context_opposite_side_attacks = AttacksByColor::initial_black();
+        let prev_context = {
+            let mut context = GameContext::new_without_previous(Color::White);
+            context.zobrist_hash = 0x123456789ABCDEF0;
+            context.halfmove_clock = 1; // Simulate a previous context with a halfmove clock of 1
+            context.castling_rights = 0b00001011; // Simulate castling rights
+            context.captured_piece = PieceType::Pawn; // Simulate a captured piece
+            context.double_pawn_push = 4; // Simulate a double pawn push
+            context.current_side_attacks = prev_context_current_side_attacks.clone();
+            context.opposite_side_attacks = prev_context_opposite_side_attacks.clone();
+            context
+        };
 
         let new_context =
-            unsafe { GameContext::new_with_previous(Box::into_raw(Box::new(prev_context)), 0, 0) };
+            unsafe { GameContext::new_with_previous(Box::into_raw(Box::new(prev_context))) };
 
         assert_eq!(new_context.halfmove_clock, 2); // Incremented from previous
         assert_eq!(new_context.double_pawn_push, -1);
@@ -202,40 +210,14 @@ mod game_context_tests {
         assert_eq!(new_context.captured_piece, PieceType::NoPieceType);
         assert!(new_context.previous.is_some());
         assert_eq!(new_context.zobrist_hash, 0);
-        assert_eq!(new_context.current_side_attacks, 0);
-    }
-
-    #[test]
-    fn test_initialize_current_side_attacks() {
-        let zobrist_hash: Bitboard = 0x123456789ABCDEF0;
-        let initial_attacks: Bitboard = 0xFEDCBA9876543210;
-        let mut context = GameContext::new_without_previous(0b1111, zobrist_hash, initial_attacks);
-
-        let new_attacks: Bitboard = 0x0246813579BDFECA;
-        context.initialize_current_side_attacks(new_attacks);
-
-        assert_eq!(context.current_side_attacks, new_attacks);
-    }
-
-    #[test]
-    fn test_initialize_zobrist_hash() {
-        let initial_zobrist: Bitboard = 0x123456789ABCDEF0;
-        let attacks: Bitboard = 0xFEDCBA9876543210;
-        let mut context = GameContext::new_without_previous(0b1111, initial_zobrist, attacks);
-
-        let new_zobrist: Bitboard = 0x0246813579BDFECA;
-        context.initialize_zobrist_hash(new_zobrist);
-
-        assert_eq!(context.zobrist_hash, new_zobrist);
+        assert_eq!(new_context.current_side_attacks, prev_context_opposite_side_attacks);
+        assert_eq!(new_context.opposite_side_attacks, prev_context_current_side_attacks);
     }
 
     #[test]
     fn test_has_valid_halfmove_clock() {
-        let zobrist_hash: Bitboard = 0x123456789ABCDEF0;
-        let attacks: Bitboard = 0xFEDCBA9876543210;
-
         // Test valid halfmove clock (0)
-        let mut context = GameContext::new_without_previous(0b1111, zobrist_hash, attacks);
+        let mut context = GameContext::new_without_previous(Color::Black);
         assert!(context.has_valid_halfmove_clock());
 
         // Test valid halfmove clock (100)
@@ -245,20 +227,5 @@ mod game_context_tests {
         // Test invalid halfmove clock (101)
         context.halfmove_clock = 101;
         assert!(!context.has_valid_halfmove_clock());
-    }
-
-    #[test]
-    fn test_context_equality() {
-        let zobrist1: Bitboard = 0x123456789ABCDEF0;
-        let attacks1: Bitboard = 0xFEDCBA9876543210;
-        let context1 = GameContext::new_without_previous(0b1111, zobrist1, attacks1);
-
-        let context2 = GameContext::new_without_previous(0b1111, zobrist1, attacks1);
-
-        assert_eq!(context1, context2);
-
-        let mut context3 = context1.clone();
-        context3.zobrist_hash = 0x02468ACE13579BDF;
-        assert_ne!(context1, context3);
     }
 }

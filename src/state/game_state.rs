@@ -18,12 +18,16 @@ impl GameState {
     pub fn initial() -> GameState {
         let board = Board::initial();
         let zobrist_hash = board.zobrist_hash;
+        
+        let mut context = GameContext::initial();
+        context.zobrist_hash = zobrist_hash;
+        
         GameState {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Box::into_raw(Box::new(GameContext::initial(zobrist_hash))),
+            context: Box::into_raw(Box::new(context)),
         }
     }
 
@@ -33,17 +37,25 @@ impl GameState {
     }
 
     pub fn current_side_attacks(&self) -> Bitboard {
-        match unsafe { (*self.context).current_side_attacks } {
-            0 => self.board.calc_attacks_mask(self.side_to_move),
-            attacks => attacks,
-        }
+        // println!("Current side: {:?}", self.side_to_move);
+        // println!("Current side according to context: {:?}", unsafe { (*self.context).current_side_attacks.side });
+        // print_bb(unsafe { (*self.context).current_side_attacks.all });
+        // println!();
+        // print_bb(unsafe { (*self.context).current_side_attacks.non_sliding });
+        // println!();
+        // print_bb(unsafe { (*self.context).current_side_attacks.bishops });
+        // println!();
+        // print_bb(unsafe { (*self.context).current_side_attacks.rooks });
+        // println!();
+        // print_bb(unsafe { (*self.context).current_side_attacks.queens });
+        // println!();
+        // println!();
+        assert_eq!(unsafe { (*self.context).current_side_attacks.clone() }, self.board.calc_attacks(self.side_to_move));
+        unsafe { (*self.context).current_side_attacks.all }
     }
 
     pub fn opposite_side_attacks(&self) -> Bitboard {
-        match unsafe { &(*self.context).previous } {
-            // Some(previous) => previous.borrow().current_side_attacks,
-            _ => self.board.calc_attacks_mask(self.side_to_move.other()),
-        }
+        unsafe { (*self.context).opposite_side_attacks.all }
     }
 
     pub fn is_current_side_in_check(&self) -> bool {
@@ -94,10 +106,10 @@ impl GameState {
 // }
 
 #[cfg(test)]
-mod state_tests {
-    use crate::state::{GameContext, GameResult, GameState};
+mod tests {
+    use crate::state::{GameResult, GameState};
     use crate::utilities::print_bb;
-    use crate::{Color, ColoredPieceType, PieceType, Square};
+    use crate::{Color, ColoredPieceType, GameContext, Move, MoveFlag, PieceType, Square};
 
     #[test]
     fn test_initial_state() {
@@ -128,44 +140,33 @@ mod state_tests {
     }
 
     #[test]
-    fn test_current_side_attacks() {
+    fn test_attacks() {
         let state = GameState::initial();
-        let expected_attacks = state.board.calc_attacks_mask(state.side_to_move);
-        print_bb(expected_attacks);
-        assert_eq!(state.current_side_attacks(), expected_attacks);
+        assert_eq!(unsafe { (*state.context).current_side_attacks.clone() },
+                   state.board.calc_attacks(Color::White));
+        assert_eq!(unsafe { (*state.context).opposite_side_attacks.clone() },
+                   state.board.calc_attacks(Color::Black));
+        
+        assert_eq!(state.current_side_attacks(), state.board.calc_attacks_mask(Color::White));
+        assert_eq!(state.opposite_side_attacks(), state.board.calc_attacks_mask(Color::Black));
     }
 
     #[test]
-    fn test_opposite_side_attacks() {
+    fn test_attacks_after_move() {
         let initial_state = GameState::initial();
-        let initial_black_attacks = initial_state
-            .board
-            .calc_attacks_mask(initial_state.side_to_move.other());
-        assert_eq!(initial_state.opposite_side_attacks(), initial_black_attacks);
-        unsafe { (*initial_state.context).initialize_current_side_attacks(initial_black_attacks) };
-
-        let mut next_state_board = initial_state.board.clone();
-        next_state_board.move_colored_piece(
-            ColoredPieceType::new(Color::White, PieceType::Pawn),
-            Square::E4,
-            Square::E2,
-        );
-        let next_state_zobrist = next_state_board.zobrist_hash;
-
-        let next_state_context =
-            unsafe { GameContext::new_with_previous(initial_state.context, next_state_zobrist, 0) };
-
-        let next_state = GameState {
-            board: next_state_board,
-            side_to_move: Color::Black,
-            halfmove: 1,
-            result: GameResult::None,
-            context: Box::into_raw(Box::new(next_state_context)),
+        let next_state = {
+            let mut state = initial_state.clone();
+            let mv = Move::new_non_promotion(Square::E4, Square::E2, MoveFlag::NormalMove);
+            state.make_move(mv);
+            state
         };
 
-        let next_state_white_attacks = next_state
-            .board
-            .calc_attacks_mask(next_state.side_to_move.other());
-        assert_eq!(next_state.opposite_side_attacks(), next_state_white_attacks);
+        assert_eq!(unsafe { (*next_state.context).current_side_attacks.clone() },
+                   next_state.board.calc_attacks(Color::Black));
+        assert_eq!(unsafe { (*next_state.context).opposite_side_attacks.clone() },
+                   next_state.board.calc_attacks(Color::White));
+        
+        assert_eq!(next_state.current_side_attacks(), next_state.board.calc_attacks_mask(Color::Black));
+        assert_eq!(next_state.opposite_side_attacks(), next_state.board.calc_attacks_mask(Color::White));
     }
 }
