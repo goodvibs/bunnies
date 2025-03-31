@@ -1,10 +1,10 @@
 use crate::r#move::Move;
-use crate::state::GameState;
+use crate::position::Position;
 use regex::Match;
 use std::fmt::Debug;
 
 pub trait PgnMove: Debug {
-    fn matches_move(&self, mv: Move, from_state: &GameState) -> bool;
+    fn matches_move(&self, mv: Move, from_state: &Position) -> bool;
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 

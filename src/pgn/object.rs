@@ -1,6 +1,6 @@
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::state::GameState;
+use crate::position::Position;
 use indexmap::IndexMap;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
@@ -39,7 +39,7 @@ impl PgnObject {
             result.push_str(&format!("[{} \"{}\"]\n", key, value));
         }
         result.push_str(&self.tree_root.borrow().render(
-            GameState::initial(),
+            Position::initial(),
             &[],
             include_variations,
             config,

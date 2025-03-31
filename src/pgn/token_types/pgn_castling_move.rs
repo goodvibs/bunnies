@@ -2,7 +2,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::state::GameState;
+use crate::position::Position;
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
@@ -27,7 +27,7 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move(&self, mv: Move, _initial_state: &GameState) -> bool {
+    fn matches_move(&self, mv: Move, _initial_state: &Position) -> bool {
         let flag = mv.get_flag();
         if flag != MoveFlag::Castling || self.is_kingside != (mv.get_destination().file() == 6) {
             return false;
@@ -82,7 +82,7 @@ mod tests {
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::state::GameState;
+    use crate::position::Position;
     use logos::Logos;
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
                 nag: None,
             },
         };
-        let state = GameState::initial();
+        let state = Position::initial();
         let kingside_castling_move =
             Move::new_non_promotion(Square::G8, Square::E8, MoveFlag::Castling);
         let queenside_castling_move =

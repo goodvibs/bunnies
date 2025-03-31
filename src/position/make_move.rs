@@ -9,16 +9,16 @@ use crate::masks::{
     STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
 };
 use crate::r#move::{Move, MoveFlag};
-use crate::state::GameState;
-use crate::state::game_context::GameContext;
+use crate::position::Position;
+use crate::position::context::PositionContext;
 
-impl GameState {
+impl Position {
     fn process_promotion(
         &mut self,
         dst_square: Square,
         src_square: Square,
         promotion: PieceType,
-        new_context: &mut GameContext,
+        new_context: &mut PositionContext,
     ) {
         self.process_possible_capture(dst_square, new_context);
 
@@ -32,7 +32,7 @@ impl GameState {
         &mut self,
         dst_square: Square,
         src_square: Square,
-        new_context: &mut GameContext,
+        new_context: &mut PositionContext,
     ) {
         self.process_possible_capture(dst_square, new_context);
 
@@ -47,7 +47,7 @@ impl GameState {
         );
     }
 
-    fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut GameContext) {
+    fn process_possible_capture(&mut self, dst_square: Square, new_context: &mut PositionContext) {
         let dst_mask = dst_square.mask();
         let opposite_color = self.side_to_move.other();
 
@@ -68,7 +68,7 @@ impl GameState {
         &mut self,
         dst_square: Square,
         src_square: Square,
-        new_context: &mut GameContext,
+        new_context: &mut PositionContext,
     ) {
         let opposite_color = self.side_to_move.other();
 
@@ -91,7 +91,7 @@ impl GameState {
         &mut self,
         dst_square: Square,
         src_square: Square,
-        new_context: &mut GameContext,
+        new_context: &mut PositionContext,
     ) {
         let dst_mask = dst_square.mask();
 
@@ -130,7 +130,7 @@ impl GameState {
 
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = unsafe { GameContext::new_with_previous(self.context, 0, 0) };
+        let mut new_context = unsafe { PositionContext::new_with_previous(self.context, 0, 0) };
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
@@ -155,7 +155,7 @@ impl GameState {
     }
 }
 
-impl GameContext {
+impl PositionContext {
     fn process_promotion_disregarding_capture(&mut self) {
         self.halfmove_clock = 0;
     }

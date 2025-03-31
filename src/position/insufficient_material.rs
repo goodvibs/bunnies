@@ -1,4 +1,4 @@
-use crate::state::Board;
+use crate::position::Board;
 use crate::{Color, PieceType};
 
 impl Board {

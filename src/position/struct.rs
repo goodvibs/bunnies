@@ -1,29 +1,29 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use crate::state::{Board, GameContext, GameResult};
+use crate::position::{Board, PositionContext, GameResult};
 use crate::{Bitboard, Color, PieceType};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct GameState {
+pub struct Position {
     pub board: Board,
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context: *mut GameContext,
+    pub context: *mut PositionContext,
 }
 
-impl GameState {
+impl Position {
     /// Creates an initial state with the standard starting position.
-    pub fn initial() -> GameState {
+    pub fn initial() -> Position {
         let board = Board::initial();
         let zobrist_hash = board.zobrist_hash;
-        GameState {
+        Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Box::into_raw(Box::new(GameContext::initial(zobrist_hash))),
+            context: Box::into_raw(Box::new(PositionContext::initial(zobrist_hash))),
         }
     }
 
@@ -95,13 +95,13 @@ impl GameState {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::state::{GameContext, GameResult, GameState};
+    use crate::position::{PositionContext, GameResult, Position};
     use crate::utilities::print_bb;
     use crate::{Color, ColoredPieceType, PieceType, Square};
 
     #[test]
     fn test_initial_state() {
-        let state = GameState::initial();
+        let state = Position::initial();
         assert_eq!(state.side_to_move, Color::White);
         assert_eq!(state.halfmove, 0);
         assert_eq!(state.result, GameResult::None);
@@ -110,7 +110,7 @@ mod state_tests {
 
     #[test]
     fn test_get_fullmove() {
-        let mut state = GameState::initial();
+        let mut state = Position::initial();
 
         assert_eq!(state.get_fullmove(), 1); // Initial position
 
@@ -129,7 +129,7 @@ mod state_tests {
 
     #[test]
     fn test_current_side_attacks() {
-        let state = GameState::initial();
+        let state = Position::initial();
         let expected_attacks = state.board.calc_attacks_mask(state.side_to_move);
         print_bb(expected_attacks);
         assert_eq!(state.current_side_attacks(), expected_attacks);
@@ -137,7 +137,7 @@ mod state_tests {
 
     #[test]
     fn test_opposite_side_attacks() {
-        let initial_state = GameState::initial();
+        let initial_state = Position::initial();
         let initial_black_attacks = initial_state
             .board
             .calc_attacks_mask(initial_state.side_to_move.other());
@@ -153,9 +153,9 @@ mod state_tests {
         let next_state_zobrist = next_state_board.zobrist_hash;
 
         let next_state_context =
-            unsafe { GameContext::new_with_previous(initial_state.context, next_state_zobrist, 0) };
+            unsafe { PositionContext::new_with_previous(initial_state.context, next_state_zobrist, 0) };
 
-        let next_state = GameState {
+        let next_state = Position {
             board: next_state_board,
             side_to_move: Color::Black,
             halfmove: 1,

@@ -4,7 +4,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::state::GameState;
+use crate::position::Position;
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
@@ -40,7 +40,7 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move(&self, mv: Move, initial_state: &GameState) -> bool {
+    fn matches_move(&self, mv: Move, initial_state: &Position) -> bool {
         let dst = mv.get_destination();
         let src = mv.get_source();
         let flag = mv.get_flag();
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = GameState::from_fen(
+        let state = Position::from_fen(
             "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
         )
         .unwrap();

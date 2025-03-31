@@ -6,9 +6,9 @@ use crate::PieceType;
 use crate::Square;
 use crate::masks::STARTING_KING_ROOK_GAP_SHORT;
 use crate::r#move::{Move, MoveFlag};
-use crate::state::{GameResult, GameState};
+use crate::position::{GameResult, Position};
 
-impl GameState {
+impl Position {
     fn unprocess_promotion(
         &mut self,
         dst_square: Square,

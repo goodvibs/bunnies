@@ -1,6 +1,6 @@
-use crate::state::GameState;
+use crate::position::Position;
 
-fn count_nodes(state: &mut GameState, depth: u8) -> u64 {
+fn count_nodes(state: &mut Position, depth: u8) -> u64 {
     if !state.is_probably_valid() {
         0
     } else if depth == 0 {
@@ -21,7 +21,7 @@ fn count_nodes(state: &mut GameState, depth: u8) -> u64 {
     }
 }
 
-impl GameState {
+impl Position {
     pub fn perft(&self, depth: u8) -> u64 {
         count_nodes(&mut self.clone(), depth)
     }

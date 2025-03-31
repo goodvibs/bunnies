@@ -11,7 +11,7 @@ use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
-use crate::state::GameState;
+use crate::position::Position;
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings.
@@ -28,7 +28,7 @@ impl<'a> PgnParser<'a> {
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager =
-            PgnBufferedPositionBrancher::new(&current_node, GameState::initial());
+            PgnBufferedPositionBrancher::new(&current_node, Position::initial());
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,

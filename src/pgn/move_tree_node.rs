@@ -3,7 +3,7 @@ use crate::PieceType;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::state::{GameResult, GameState};
+use crate::position::{GameResult, Position};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -55,7 +55,7 @@ impl MoveTreeNode {
 
     pub(crate) fn render(
         &self,
-        mut state: GameState,
+        mut state: Position,
         last_continuations: &[Rc<RefCell<MoveTreeNode>>],
         include_variations: bool,
         config: PgnRenderingConfig,

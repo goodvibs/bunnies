@@ -1,7 +1,7 @@
 use crate::Color;
 use crate::ColoredPieceType;
 use crate::Square;
-use crate::state::{Board, GameContext, GameResult, GameState};
+use crate::position::{Board, PositionContext, GameResult, Position};
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -144,8 +144,8 @@ fn parse_fen_board(fen_board: &str) -> Result<Board, FenParseError> {
     Ok(board)
 }
 
-impl GameState {
-    pub fn from_fen(fen: &str) -> Result<GameState, FenParseError> {
+impl Position {
+    pub fn from_fen(fen: &str) -> Result<Position, FenParseError> {
         let fen_parts: Vec<&str> = fen.split_ascii_whitespace().collect();
         if fen_parts.len() != 6 {
             return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
@@ -170,7 +170,7 @@ impl GameState {
                 let zobrist_hash = board.zobrist_hash;
                 let halfmove =
                     (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = GameContext::new_without_previous(
+                let mut context = PositionContext::new_without_previous(
                     castling_rights,
                     zobrist_hash,
                     board.calc_attacks_mask(side_to_move),
@@ -178,7 +178,7 @@ impl GameState {
                 context.double_pawn_push = double_pawn_push;
                 context.halfmove_clock = halfmove_clock;
 
-                let state = GameState {
+                let state = Position {
                     board,
                     side_to_move,
                     halfmove,
@@ -200,17 +200,17 @@ impl GameState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::state::GameState;
+    use crate::position::Position;
 
     #[test]
     fn test_from_fen() {
         let fen = "8/1P1n1B2/5P2/4pkNp/1PQ4K/p2p2P1/8/3R1N2 w - - 0 1";
-        let state_result = GameState::from_fen(fen);
+        let state_result = Position::from_fen(fen);
         assert!(state_result.is_ok());
         // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 36 18";
-        let state_result = GameState::from_fen(fen);
+        let state_result = Position::from_fen(fen);
         assert!(state_result.is_err());
         assert_eq!(
             state_result.err().unwrap(),
@@ -218,17 +218,17 @@ mod tests {
         );
 
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 35 18";
-        let state_result = GameState::from_fen(fen);
+        let state_result = Position::from_fen(fen);
         assert!(state_result.is_ok(), "{:?}", state_result);
         // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "r3k3/P3P3/1B3q2/N3P2P/R6N/8/np2b2p/1K3n2 w q - 100 96";
-        let state_result = GameState::from_fen(fen);
+        let state_result = Position::from_fen(fen);
         assert!(state_result.is_ok());
         // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "nb4K1/2N4p/8/3P1rk1/1r2P3/5p2/3P1Q2/B2R1b2 b - - 0 1";
-        let state_result = GameState::from_fen(fen);
+        let state_result = Position::from_fen(fen);
         assert!(state_result.is_ok());
         // assert_eq!(state_result.unwrap().to_fen(), fen);
     }

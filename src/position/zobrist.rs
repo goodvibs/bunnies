@@ -1,7 +1,7 @@
 //! All Zobrist hashing-related code.
 
 use crate::Square;
-use crate::state::board::Board;
+use crate::position::board::Board;
 use crate::utilities::iter_squares_from_mask;
 use crate::{Bitboard, PieceType};
 use rand::Rng;

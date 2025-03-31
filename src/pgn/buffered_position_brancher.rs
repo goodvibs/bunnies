@@ -1,7 +1,7 @@
 use crate::pgn::buffered_position_context::PgnBufferedPositionContext;
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::position_context::PgnPositionContext;
-use crate::state::GameState;
+use crate::position::Position;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -13,7 +13,7 @@ pub struct PgnBufferedPositionBrancher {
 impl PgnBufferedPositionBrancher {
     pub fn new(
         root_node: &Rc<RefCell<MoveTreeNode>>,
-        initial_state: GameState,
+        initial_state: Position,
     ) -> PgnBufferedPositionBrancher {
         PgnBufferedPositionBrancher {
             current_and_previous: PgnBufferedPositionContext {

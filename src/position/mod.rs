@@ -2,9 +2,9 @@
 
 mod board;
 mod castling;
-mod game_context;
+mod context;
 mod fen;
-mod game_state;
+mod r#struct;
 mod insufficient_material;
 mod make_move;
 mod movegen;
@@ -15,8 +15,8 @@ mod validation;
 mod zobrist;
 
 pub use board::*;
-pub use game_context::*;
+pub use context::*;
 pub use fen::*;
-pub use game_state::*;
+pub use r#struct::*;
 pub use termination::*;
 pub use zobrist::*;

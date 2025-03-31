@@ -3,9 +3,9 @@ use crate::masks::{
     CASTLING_CHECK_MASK_LONG, CASTLING_CHECK_MASK_SHORT, STARTING_KING_ROOK_GAP_LONG,
     STARTING_KING_ROOK_GAP_SHORT,
 };
-use crate::state::GameState;
+use crate::position::Position;
 
-impl GameState {
+impl Position {
     /// Returns true if the current side to move can legally castle short.
     /// Else, returns false.
     pub fn can_legally_castle_short(&self) -> bool {
