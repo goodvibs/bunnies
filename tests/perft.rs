@@ -26,10 +26,10 @@ fn test_kiwipete() {
         GameState::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
             .unwrap();
     // run_perft_test(state, 1, 48);
-    run_perft_test(state, 2, 2039);
+    // run_perft_test(state, 2, 2039);
     // run_perft_test(state, 3, 97862);
     // run_perft_test(state, 4, 4085603);
-    // run_perft_test(state, 5, 193690690); // ~ 12 seconds on M1 Pro
+    run_perft_test(state, 5, 193690690); // ~ 12 seconds on M1 Pro
     // run_perft_test(state, 6, 8031647685);
 }
 

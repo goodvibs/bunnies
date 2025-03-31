@@ -37,25 +37,23 @@ impl GameState {
     }
 
     pub fn current_side_attacks(&self) -> Bitboard {
-        // println!("Current side: {:?}", self.side_to_move);
-        // println!("Current side according to context: {:?}", unsafe { (*self.context).current_side_attacks.side });
-        // print_bb(unsafe { (*self.context).current_side_attacks.all });
-        // println!();
-        // print_bb(unsafe { (*self.context).current_side_attacks.non_sliding });
-        // println!();
-        // print_bb(unsafe { (*self.context).current_side_attacks.bishops });
-        // println!();
-        // print_bb(unsafe { (*self.context).current_side_attacks.rooks });
-        // println!();
-        // print_bb(unsafe { (*self.context).current_side_attacks.queens });
-        // println!();
-        // println!();
-        assert_eq!(unsafe { (*self.context).current_side_attacks.clone() }, self.board.calc_attacks(self.side_to_move));
-        unsafe { (*self.context).current_side_attacks.all }
+        match unsafe { (*self.context).current_side_attacks.all } {
+            0 => unsafe {
+                (*self.context).current_side_attacks.update(&self.board);
+                (*self.context).current_side_attacks.all
+            }
+            mask => mask
+        }
     }
 
     pub fn opposite_side_attacks(&self) -> Bitboard {
-        unsafe { (*self.context).opposite_side_attacks.all }
+        match unsafe { (*self.context).opposite_side_attacks.all } {
+            0 => unsafe {
+                (*self.context).opposite_side_attacks.update(&self.board);
+                (*self.context).opposite_side_attacks.all
+            }
+            mask => mask
+        }
     }
 
     pub fn is_current_side_in_check(&self) -> bool {

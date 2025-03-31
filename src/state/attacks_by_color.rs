@@ -13,11 +13,11 @@ pub struct AttacksByColor {
 impl AttacksByColor {
     pub const fn new(side: Color) -> Self {
         Self {
-            all: 0xFF_FF_FF_FF_FF_FF_FF_FF,
-            non_sliding: 0xFF_FF_FF_FF_FF_FF_FF_FF,
-            bishops: 0xFF_FF_FF_FF_FF_FF_FF_FF,
-            rooks: 0xFF_FF_FF_FF_FF_FF_FF_FF,
-            queens: 0xFF_FF_FF_FF_FF_FF_FF_FF,
+            all: 0,
+            non_sliding: 0,
+            bishops: 0,
+            rooks: 0,
+            queens: 0,
             side,
         }
     }
@@ -42,21 +42,6 @@ impl AttacksByColor {
             queens: 0x28_38_00_00_00_00_00_00,
             side: Color::Black,
         }
-    }
-    
-    pub fn update_efficiently(&mut self, net_change_in_occupied_mask: Bitboard, board: &Board) {
-        self.non_sliding = board.calc_non_sliding_piece_attacks_mask(self.side);
-        if net_change_in_occupied_mask & self.bishops != 0 {
-            self.bishops = board.calc_bishop_attacks_mask(self.side);
-        }
-        if net_change_in_occupied_mask & self.rooks != 0 {
-            self.rooks = board.calc_rook_attacks_mask(self.side);
-        }
-        if net_change_in_occupied_mask & self.queens != 0 {
-            self.queens = board.calc_queen_attacks_mask(self.side);
-        }
-        
-        self.all = self.non_sliding | self.bishops | self.rooks | self.queens;
     }
     
     pub fn update(&mut self, board: &Board) {

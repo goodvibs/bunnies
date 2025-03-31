@@ -122,12 +122,20 @@ impl GameState {
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
     pub fn make_move(&mut self, mv: Move) {
+        let context = unsafe { &mut *self.context };
+        
+        if context.current_side_attacks.all == 0  {
+            context.current_side_attacks.update(&self.board);
+        }
+        
+        if context.opposite_side_attacks.all == 0 {
+            context.opposite_side_attacks.update(&self.board);
+        }
+        
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
         let mut new_context = unsafe { GameContext::new_with_previous(self.context) };
         
-        let original_occupied_mask = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
-
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
 
@@ -143,16 +151,6 @@ impl GameState {
         }
 
         new_context.zobrist_hash = self.board.zobrist_hash;
-        
-        if flag != MoveFlag::Promotion {
-            let new_occupied_mask = self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
-            let net_change_in_occupied_mask = new_occupied_mask ^ original_occupied_mask;
-            new_context.update_attacks_efficiently(net_change_in_occupied_mask, self.context &self.board);
-            // new_context.update_attacks(&self.board);
-        }
-        else {
-            new_context.update_attacks(&self.board);
-        }
 
         // update data members
         self.halfmove += 1;
@@ -249,11 +247,6 @@ impl GameContext {
                 self.castling_rights &= !(0b00000100 >> right_shift);
             }
         }
-    }
-    
-    fn update_attacks_efficiently(&mut self, net_change_in_occupied_mask: Bitboard, board: &Board) {
-        self.current_side_attacks.update_efficiently(net_change_in_occupied_mask, board);
-        self.opposite_side_attacks.update_efficiently(net_change_in_occupied_mask, board);
     }
     
     fn update_attacks(&mut self, board: &Board) {

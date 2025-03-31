@@ -48,8 +48,10 @@ impl GameContext {
             (
                 previous_context.halfmove_clock,
                 previous_context.castling_rights,
-                previous_context.opposite_side_attacks.clone(),
-                previous_context.current_side_attacks.clone()
+                // previous_context.opposite_side_attacks.clone(),
+                // previous_context.current_side_attacks.clone()
+                AttacksByColor::new(previous_context.opposite_side_attacks.side),
+                AttacksByColor::new(previous_context.current_side_attacks.side)
             )
         };
         
