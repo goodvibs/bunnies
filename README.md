@@ -30,7 +30,9 @@ which is not nearly as fast as programs like `Stockfish` (which is able to gener
 
 ## Contribution
 `bunnies` needs the following to make 1.0.0 happen:
-- Identify and remove bottlenecks
+- Further performance improvement
+  - Reuse calculated attacks for sliding pieces
+  - Maybe keep track of pinners and checkers to reduce legality checking
 - Some more benchmarks
 - Some more integration tests
 - Support for PGN comments
