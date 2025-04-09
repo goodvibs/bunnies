@@ -23,12 +23,18 @@ criterion = "0.5.1"
 
 [profile.release]
 opt-level = 3
+debug = false
+debug-assertions = false
+lto = true
 
 [profile.test]
 opt-level = 3
 
 [profile.bench]
 opt-level = 3
+debug = false
+debug-assertions = false
+lto = true
 
 [[test]]
 name = "perft"

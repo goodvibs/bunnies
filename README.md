@@ -24,7 +24,7 @@ A fast chess library for chess engines. **Currently in alpha**.
 - Precomputed attacks for knights and kings
 - Zobrist hashing for board state hashing
 
-`bunnies` is currently able to generate ~15M moves/thread/second (as measured on an M1 Macbook Pro),
+`bunnies` is currently able to generate ~19M moves/thread/second (as measured on an M1 Macbook Pro),
 which is not nearly as fast as programs like `Stockfish` (which is able to generate
 ~120M moves/thread/sec under the same conditions).
 
