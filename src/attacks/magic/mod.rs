@@ -30,7 +30,6 @@ mod tests {
     use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::utilities::iter_bit_combinations;
-    use crate::utilities::print_bb_pretty;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {
@@ -50,16 +49,6 @@ mod tests {
                         PieceType::Rook => manual_single_rook_attacks(src_square, occupied_mask),
                         _ => manual_single_bishop_attacks(src_square, occupied_mask),
                     };
-                    if magic_attacks != manual_attacks {
-                        println!("Square mask:");
-                        print_bb_pretty(src_square.mask());
-                        println!("\nOccupied mask:");
-                        print_bb_pretty(occupied_mask);
-                        println!("\nMagic attacks:");
-                        print_bb_pretty(magic_attacks);
-                        println!("\nManual attacks:");
-                        print_bb_pretty(manual_attacks);
-                    }
                     assert_eq!(magic_attacks, manual_attacks);
                 }
             }

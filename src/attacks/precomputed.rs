@@ -9,12 +9,12 @@ use static_init::dynamic;
 /// Precomputed attacks table for kings.
 #[dynamic]
 pub static SINGLE_KING_ATTACKS: SquareMasks =
-    SquareMasks::init(&|square| manual::multi_king_attacks(square.mask()));
+    SquareMasks::init(|square| manual::multi_king_attacks(square.mask()));
 
 /// Precomputed attacks table for knights.
 #[dynamic]
 pub static SINGLE_KNIGHT_ATTACKS: SquareMasks =
-    SquareMasks::init(&|square| manual::multi_knight_attacks(square.mask()));
+    SquareMasks::init(|square| manual::multi_knight_attacks(square.mask()));
 
 /// Returns a precomputed bitboard with all squares attacked by a knight on `src_square`
 pub fn precomputed_single_king_attacks(src_square: Square) -> Bitboard {

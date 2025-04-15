@@ -5,8 +5,7 @@ use crate::PieceType;
 use crate::Square;
 use crate::attacks::*;
 use crate::masks::*;
-use crate::utilities::iter_squares_from_mask;
-use crate::utilities::{Charboard, cb_to_string};
+use crate::utilities::{iter_squares_from_mask, Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
 use std::fmt::Display;
 
@@ -286,6 +285,6 @@ impl Board {
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", cb_to_string(&self.to_cb_pretty()).as_str())
+        write!(f, "{}", &self.to_cb_pretty().to_string())
     }
 }

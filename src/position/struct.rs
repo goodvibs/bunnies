@@ -96,7 +96,6 @@ impl Position {
 #[cfg(test)]
 mod state_tests {
     use crate::position::{PositionContext, GameResult, Position};
-    use crate::utilities::print_bb;
     use crate::{Color, ColoredPieceType, PieceType, Square};
 
     #[test]
@@ -131,7 +130,6 @@ mod state_tests {
     fn test_current_side_attacks() {
         let state = Position::initial();
         let expected_attacks = state.board.calc_attacks_mask(state.side_to_move);
-        print_bb(expected_attacks);
         assert_eq!(state.current_side_attacks(), expected_attacks);
     }
 
