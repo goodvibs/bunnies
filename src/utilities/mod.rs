@@ -4,9 +4,9 @@
 mod display;
 mod mask_iterators;
 mod move_direction;
-mod square_masks;
+mod squares_mapping;
 
 pub use display::*;
 pub use mask_iterators::*;
 pub use move_direction::*;
-pub use square_masks::*;
+pub use squares_mapping::*;

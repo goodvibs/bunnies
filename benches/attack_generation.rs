@@ -1,18 +1,18 @@
-use bunnies::Bitboard;
+use bunnies::{Bitboard, BitboardUtils};
 use bunnies::Color;
 use bunnies::Square;
 use bunnies::attacks::magic::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use bunnies::attacks::{magic, manual, precomputed};
-use bunnies::utilities::{SquareMasks, iter_bit_combinations};
+use bunnies::utilities::{SquaresToMasks};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn sliding_piece_attacks_test(
-    relevant_masks: &SquareMasks,
+    relevant_masks: &SquaresToMasks,
     get_attacks: impl Fn(Square, Bitboard) -> Bitboard,
 ) {
     for square in Square::ALL {
         let relevant_mask = relevant_masks.get(square);
-        let occupied_masks_iter = iter_bit_combinations(relevant_mask);
+        let occupied_masks_iter = relevant_mask.iter_bit_combinations();
         for occupied in occupied_masks_iter {
             let _ = get_attacks(square, occupied);
         }

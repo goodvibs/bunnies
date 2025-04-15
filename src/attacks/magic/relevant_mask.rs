@@ -1,16 +1,16 @@
 use crate::Bitboard;
 use crate::Square;
 use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
-use crate::utilities::SquareMasks;
+use crate::utilities::SquaresToMasks;
 use static_init::dynamic;
 
 /// Precomputed masks for rook relevant squares
 #[dynamic]
-pub static ROOK_RELEVANT_MASKS: SquareMasks = SquareMasks::init(&calc_rook_relevant_mask);
+pub static ROOK_RELEVANT_MASKS: SquaresToMasks = SquaresToMasks::init(&calc_rook_relevant_mask);
 
 /// Precomputed masks for bishop relevant squares
 #[dynamic]
-pub static BISHOP_RELEVANT_MASKS: SquareMasks = SquareMasks::init(&calc_bishop_relevant_mask);
+pub static BISHOP_RELEVANT_MASKS: SquaresToMasks = SquaresToMasks::init(&calc_bishop_relevant_mask);
 
 /// Calculate the relevant mask for a rook on a given square
 fn calc_rook_relevant_mask(square: Square) -> Bitboard {

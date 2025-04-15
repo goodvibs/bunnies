@@ -1,7 +1,7 @@
 use crate::attacks::magic::lookup::MagicAttacksLookup;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::random::gen_random_magic_number;
-use crate::utilities::SquareMasks;
+use crate::utilities::SquaresToMasks;
 use crate::{Bitboard, BitboardUtils, Square};
 
 /// Struct responsible for initializing the MagicAttacksLookup
@@ -35,7 +35,7 @@ impl MagicAttacksInitializer {
     /// Initialize the magic attacks lookup object for a sliding piece
     pub(crate) fn init_for_piece(
         &mut self,
-        relevant_mask_lookup: &SquareMasks,
+        relevant_mask_lookup: &SquaresToMasks,
         calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard,
         table_size: usize,
     ) -> MagicAttacksLookup {
