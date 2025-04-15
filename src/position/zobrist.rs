@@ -34,7 +34,7 @@ impl Board {
         for piece_type in PieceType::PIECES {
             // skip PieceType::NoPieceType
             let pieces_mask = self.piece_type_masks[piece_type as usize];
-            for square in pieces_mask.iter_squares_from_mask() {
+            for square in pieces_mask.iter_set_bits_as_squares() {
                 hash ^= get_piece_zobrist_hash(square, piece_type);
             }
         }

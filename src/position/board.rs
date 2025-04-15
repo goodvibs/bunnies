@@ -63,12 +63,12 @@ impl Board {
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
 
         for src_square in
-            ((bishops_mask | queens_mask) & attacking_color_mask).iter_squares_from_mask()
+            ((bishops_mask | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in ((rooks_mask | queens_mask) & attacking_color_mask).iter_squares_from_mask()
+        for src_square in ((rooks_mask | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }

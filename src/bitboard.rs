@@ -10,10 +10,10 @@ pub trait BitboardUtils {
     fn between_squares(&self, sq1: Square, sq2: Square) -> Bitboard;
 
     /// Returns an iterator that generates the set bits of the bitboard.
-    fn iter_set_bits(self) -> MaskBitsIterator;
+    fn iter_set_bits_as_masks(self) -> MaskBitsIterator;
 
     /// Returns an iterator that generates the squares of the bitboard.
-    fn iter_squares_from_mask(self) -> MaskSquaresIterator;
+    fn iter_set_bits_as_squares(self) -> MaskSquaresIterator;
 
     /// Returns an iterator that generates all possible set bit combinations of the bitboard.
     fn iter_bit_combinations(self) -> BitCombinationsIterator;
@@ -24,11 +24,11 @@ impl BitboardUtils for Bitboard {
         todo!()
     }
     
-    fn iter_set_bits(self) -> MaskBitsIterator {
+    fn iter_set_bits_as_masks(self) -> MaskBitsIterator {
         self.into()
     }
 
-    fn iter_squares_from_mask(self) -> MaskSquaresIterator {
+    fn iter_set_bits_as_squares(self) -> MaskSquaresIterator {
         self.into()
     }
 
