@@ -1,11 +1,11 @@
 //! Board struct and methods
 
-use crate::ColoredPieceType;
+use crate::{BitboardUtils, ColoredPieceType};
 use crate::PieceType;
 use crate::Square;
 use crate::attacks::*;
 use crate::masks::*;
-use crate::utilities::{iter_squares_from_mask, Charboard, CharboardDisplay};
+use crate::utilities::{Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
 use std::fmt::Display;
 
@@ -63,12 +63,12 @@ impl Board {
         attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
 
         for src_square in
-            iter_squares_from_mask((bishops_mask | queens_mask) & attacking_color_mask)
+            ((bishops_mask | queens_mask) & attacking_color_mask).iter_squares_from_mask()
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in iter_squares_from_mask((rooks_mask | queens_mask) & attacking_color_mask)
+        for src_square in ((rooks_mask | queens_mask) & attacking_color_mask).iter_squares_from_mask()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }

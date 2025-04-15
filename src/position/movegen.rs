@@ -1,6 +1,6 @@
 //! Move generation functions for the state struct
 
-use crate::PieceType;
+use crate::{BitboardUtils, PieceType};
 use crate::Square;
 use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks,
@@ -9,7 +9,7 @@ use crate::attacks::{
 use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
-use crate::utilities::{MaskBitsIterator, iter_set_bits, iter_squares_from_mask};
+use crate::utilities::{MaskBitsIterator};
 use crate::{Bitboard, Color};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
@@ -40,7 +40,7 @@ impl Position {
 
             let pawn_captures = pawn_attacks & opposite_color_bb;
 
-            for dst in iter_set_bits(pawn_captures) {
+            for dst in pawn_captures.iter_set_bits() {
                 let move_dst = unsafe { Square::from_bitboard(dst) };
                 if dst & promotion_rank != 0 {
                     moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
@@ -153,7 +153,7 @@ impl Position {
     fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>, attacks_mask: &mut Bitboard) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize] & same_color_bb;
-        let pawn_srcs = iter_set_bits(pawns_bb);
+        let pawn_srcs = pawns_bb.iter_set_bits();
 
         self.add_normal_pawn_captures_pseudolegal(moves, pawn_srcs.clone(), attacks_mask);
         self.add_en_passant_pseudolegal(moves);
@@ -164,13 +164,13 @@ impl Position {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
         let knights_bb = self.board.piece_type_masks[PieceType::Knight as usize] & same_color_bb;
 
-        for src_square in iter_squares_from_mask(knights_bb) {
+        for src_square in knights_bb.iter_squares_from_mask() {
             let knight_attacks = single_knight_attacks(src_square);
             *attacks_mask |= knight_attacks;
 
             let knight_moves = knight_attacks & !same_color_bb;
 
-            for dst_square in iter_squares_from_mask(knight_moves) {
+            for dst_square in knight_moves.iter_squares_from_mask() {
                 moves.push(Move::new_non_promotion(
                     dst_square,
                     src_square,
@@ -186,13 +186,13 @@ impl Position {
 
         let bishops_bb = self.board.piece_type_masks[PieceType::Bishop as usize] & same_color_bb;
 
-        for src_square in iter_squares_from_mask(bishops_bb) {
+        for src_square in bishops_bb.iter_squares_from_mask() {
             let bishop_attacks = single_bishop_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= bishop_attacks;
 
             let bishop_moves = bishop_attacks & !same_color_bb;
 
-            for dst_square in iter_squares_from_mask(bishop_moves) {
+            for dst_square in bishop_moves.iter_squares_from_mask() {
                 moves.push(Move::new_non_promotion(
                     dst_square,
                     src_square,
@@ -208,13 +208,13 @@ impl Position {
 
         let rooks_bb = self.board.piece_type_masks[PieceType::Rook as usize] & same_color_bb;
 
-        for src_square in iter_squares_from_mask(rooks_bb) {
+        for src_square in rooks_bb.iter_squares_from_mask() {
             let rook_attacks = single_rook_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= rook_attacks;
 
             let rook_moves = rook_attacks & !same_color_bb;
 
-            for dst_square in iter_squares_from_mask(rook_moves) {
+            for dst_square in rook_moves.iter_squares_from_mask() {
                 moves.push(Move::new_non_promotion(
                     dst_square,
                     src_square,
@@ -230,14 +230,14 @@ impl Position {
 
         let queens_bb = self.board.piece_type_masks[PieceType::Queen as usize] & same_color_bb;
 
-        for src_square in iter_squares_from_mask(queens_bb) {
+        for src_square in queens_bb.iter_squares_from_mask() {
             let queen_attacks = single_rook_attacks(src_square, all_occupancy_bb)
                 | single_bishop_attacks(src_square, all_occupancy_bb);
             *attacks_mask |= queen_attacks;
 
             let queen_moves = queen_attacks & !same_color_bb;
 
-            for dst_square in iter_squares_from_mask(queen_moves) {
+            for dst_square in queen_moves.iter_squares_from_mask() {
                 moves.push(Move::new_non_promotion(
                     dst_square,
                     src_square,
@@ -259,7 +259,7 @@ impl Position {
 
         let king_moves = king_attacks & !same_color_bb;
 
-        for dst_square in iter_squares_from_mask(king_moves) {
+        for dst_square in king_moves.iter_squares_from_mask() {
             moves.push(Move::new_non_promotion(
                 dst_square,
                 king_src_square,

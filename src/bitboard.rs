@@ -1,13 +1,38 @@
+use crate::Square;
+use crate::utilities::{BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator};
+
 /// A type alias for a bitboard. A bitboard is a 64-bit unsigned integer that represents an aspect of board state.
 /// Each bit represents a square on the board, with the most significant bit representing A8 and the least significant bit representing H1.
 pub type Bitboard = u64;
 
-pub fn bb_between(sq1: u64, sq2: u64) -> Bitboard {
-    let mut bb = 0;
-    let mut sq = sq1;
-    while sq != sq2 {
-        bb |= sq;
-        sq = (sq + 1) & !sq1;
+pub trait BitboardUtils {
+    /// Returns the mask of squares between two squares, inclusive/exclusive??.
+    fn between_squares(&self, sq1: Square, sq2: Square) -> Bitboard;
+
+    /// Returns an iterator that generates the set bits of the bitboard.
+    fn iter_set_bits(self) -> MaskBitsIterator;
+
+    /// Returns an iterator that generates the squares of the bitboard.
+    fn iter_squares_from_mask(self) -> MaskSquaresIterator;
+
+    /// Returns an iterator that generates all possible set bit combinations of the bitboard.
+    fn iter_bit_combinations(self) -> BitCombinationsIterator;
+}
+
+impl BitboardUtils for Bitboard {
+    fn between_squares(&self, sq1: Square, sq2: Square) -> Bitboard {
+        todo!()
     }
-    bb
+    
+    fn iter_set_bits(self) -> MaskBitsIterator {
+        self.into()
+    }
+
+    fn iter_squares_from_mask(self) -> MaskSquaresIterator {
+        self.into()
+    }
+
+    fn iter_bit_combinations(self) -> BitCombinationsIterator {
+        self.into()
+    }
 }

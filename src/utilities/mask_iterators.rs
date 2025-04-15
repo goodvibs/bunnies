@@ -27,11 +27,6 @@ impl Iterator for MaskBitsIterator {
     }
 }
 
-/// Returns an iterator that generates the set bits of a bitboard.
-pub fn iter_set_bits(mask: Bitboard) -> MaskBitsIterator {
-    mask.into()
-}
-
 #[derive(Debug, Clone)]
 /// An iterator that generates the squares of a bitboard.
 pub struct MaskSquaresIterator {
@@ -57,11 +52,6 @@ impl Iterator for MaskSquaresIterator {
 
         unsafe { Some(Square::from_bitboard(ls1b_mask)) }
     }
-}
-
-/// Returns an iterator that generates the squares of a bitboard.
-pub fn iter_squares_from_mask(mask: Bitboard) -> MaskSquaresIterator {
-    mask.into()
 }
 
 #[derive(Debug, Clone)]
@@ -102,13 +92,9 @@ impl Iterator for BitCombinationsIterator {
     }
 }
 
-/// Returns an iterator that generates all possible set bit combinations of a bitboard.
-pub fn iter_bit_combinations(mask: Bitboard) -> BitCombinationsIterator {
-    mask.into()
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::BitboardUtils;
     use super::*;
 
     #[test]
@@ -116,19 +102,19 @@ mod tests {
         // Test with an empty bitmask
         let mask = 0;
         let expected: Vec<Bitboard> = vec![];
-        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
+        let result: Vec<Bitboard> = mask.iter_bit_combinations().collect();
         assert_eq!(result, expected);
 
         // Test with a bitmask that has one bit set
         let mask = 0b0001;
         let expected: Vec<Bitboard> = vec![0b0000, 0b0001];
-        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
+        let result: Vec<Bitboard> = mask.iter_bit_combinations().collect();
         assert_eq!(result, expected);
 
         // Test with a bitmask that has multiple bits set
         let mask = 0b1010;
         let expected: Vec<Bitboard> = vec![0b0000, 0b0010, 0b1000, 0b1010];
-        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
+        let result: Vec<Bitboard> = mask.iter_bit_combinations().collect();
         assert_eq!(result, expected);
 
         // Test with a full bitmask (all bits set for a small size)
@@ -137,7 +123,7 @@ mod tests {
             0b0000, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0110, 0b0111, 0b1000, 0b1001, 0b1010,
             0b1011, 0b1100, 0b1101, 0b1110, 0b1111,
         ];
-        let result: Vec<Bitboard> = iter_bit_combinations(mask).collect();
+        let result: Vec<Bitboard> = mask.iter_bit_combinations().collect();
         assert_eq!(result, expected);
     }
 }

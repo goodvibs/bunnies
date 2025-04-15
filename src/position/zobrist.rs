@@ -1,8 +1,7 @@
 //! All Zobrist hashing-related code.
 
-use crate::Square;
+use crate::{BitboardUtils, Square};
 use crate::position::board::Board;
-use crate::utilities::iter_squares_from_mask;
 use crate::{Bitboard, PieceType};
 use rand::Rng;
 use static_init::dynamic;
@@ -35,7 +34,7 @@ impl Board {
         for piece_type in PieceType::PIECES {
             // skip PieceType::NoPieceType
             let pieces_mask = self.piece_type_masks[piece_type as usize];
-            for square in iter_squares_from_mask(pieces_mask) {
+            for square in pieces_mask.iter_squares_from_mask() {
                 hash ^= get_piece_zobrist_hash(square, piece_type);
             }
         }

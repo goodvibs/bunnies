@@ -24,12 +24,11 @@ pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) 
 
 #[cfg(test)]
 mod tests {
-    use crate::PieceType;
+    use crate::{BitboardUtils, PieceType};
     use crate::Square;
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-    use crate::utilities::iter_bit_combinations;
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {
@@ -39,7 +38,7 @@ mod tests {
                     PieceType::Rook => ROOK_RELEVANT_MASKS.get(src_square),
                     _ => BISHOP_RELEVANT_MASKS.get(src_square),
                 };
-                let occupied_masks_iter = iter_bit_combinations(relevant_mask);
+                let occupied_masks_iter = relevant_mask.iter_bit_combinations();
                 for occupied_mask in occupied_masks_iter {
                     let magic_attacks = match sliding_piece {
                         PieceType::Rook => magic_single_rook_attacks(src_square, occupied_mask),
