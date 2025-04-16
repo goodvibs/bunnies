@@ -65,8 +65,8 @@ pub const RANKS: [Bitboard; 8] = [
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
 ];
 
-pub const DIAGONALS: [Bitboard; 15] = [
-    // from bottom right to top left
+/// Diagonal masks starting from the bottom right corner to the top left corner.
+pub const DIAGONALS_BR_TO_TL: [Bitboard; 15] = [
     0x0000000000000001,
     0x0000000000000102,
     0x0000000000010204,
@@ -84,8 +84,8 @@ pub const DIAGONALS: [Bitboard; 15] = [
     0x8000000000000000,
 ];
 
-pub const ANTIDIAGONALS: [Bitboard; 15] = [
-    // \\\ from bottom left to top right
+/// Diagonal masks starting from the bottom left corner to the top right corner.
+pub const DIAGONALS_BL_TO_TR: [Bitboard; 15] = [
     0x0000000000000080,
     0x0000000000008040,
     0x0000000000804020,
@@ -130,3 +130,37 @@ pub const STARTING_QUEEN_SIDE_BR: Bitboard = 0x8000000000000000;
 pub const STARTING_KING_SIDE_ROOK: [Bitboard; 2] = [STARTING_KING_SIDE_WR, STARTING_KING_SIDE_BR];
 pub const STARTING_QUEEN_SIDE_ROOK: [Bitboard; 2] =
     [STARTING_QUEEN_SIDE_WR, STARTING_QUEEN_SIDE_BR];
+
+
+#[cfg(test)]
+mod tests {
+    use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL};
+
+    #[test]
+    fn test_diagonals_br_to_tl() {
+        assert_eq!(DIAGONALS_BR_TO_TL.len(), 15);
+        assert_eq!(DIAGONALS_BR_TO_TL[0], 0x1);
+        
+        let mut mask = 0;
+        for diagonal in DIAGONALS_BR_TO_TL {
+            assert_ne!(diagonal, 0);
+            assert_eq!(mask ^ diagonal, mask | diagonal);
+            mask |= diagonal;
+        }
+        assert_eq!(mask.count_zeros(), 0);
+    }
+    
+    #[test]
+    fn test_diagonals_bl_to_tr() {
+        assert_eq!(DIAGONALS_BL_TO_TR.len(), 15);
+        assert_eq!(DIAGONALS_BL_TO_TR[0], 0x80);
+        
+        let mut mask = 0;
+        for diagonal in DIAGONALS_BL_TO_TR {
+            assert_ne!(diagonal, 0);
+            assert_eq!(mask ^ diagonal, mask | diagonal);
+            mask |= diagonal;
+        }
+        assert_eq!(mask.count_zeros(), 0);
+    }
+}

@@ -1,6 +1,6 @@
 use crate::Bitboard;
 use crate::Square;
-use crate::masks::{ANTIDIAGONALS, DIAGONALS, FILE_A, FILE_H, RANK_1, RANK_8};
+use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILE_A, FILE_H, RANK_1, RANK_8};
 use crate::utilities::SquaresToMasks;
 use static_init::dynamic;
 
@@ -30,12 +30,12 @@ fn calc_rook_relevant_mask(square: Square) -> Bitboard {
 fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
     let square_mask = square.mask();
     let mut res = 0 as Bitboard;
-    for &diagonal in DIAGONALS.iter() {
+    for &diagonal in DIAGONALS_BR_TO_TL.iter() {
         if diagonal & square_mask != 0 {
             res |= diagonal;
         }
     }
-    for &antidiagonal in ANTIDIAGONALS.iter() {
+    for &antidiagonal in DIAGONALS_BL_TO_TR.iter() {
         if antidiagonal & square_mask != 0 {
             res |= antidiagonal;
         }
