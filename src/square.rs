@@ -149,6 +149,7 @@ impl Square {
         self.orthogonals_mask() | self.diagonals_mask()
     }
     
+    /// Returns whether the square is on the same orthogonal or diagonal as another square.
     pub fn is_on_same_line_as(&self, other: Square) -> bool {
         SQUARES_ON_SAME_LINE_LOOKUP.get(*self, other)
     }
