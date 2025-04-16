@@ -17,15 +17,11 @@ impl<const NUM_SQUARES_PER_KEY: usize, OutputType: Copy> SquaresMapping<NUM_SQUA
         Self { masks }
     }
 
-    #[inline]
     pub fn get_(&self, squares: [Square; NUM_SQUARES_PER_KEY]) -> OutputType {
         let index = Self::combo_to_index(squares);
-        // Using unsafe here for performance in a hot path
-        // is a common optimization in chess engines
         unsafe { *self.masks.get_unchecked(index) }
     }
 
-    #[inline]
     fn combo_to_index(squares: [Square; NUM_SQUARES_PER_KEY]) -> usize {
         let mut index = 0;
         for i in 0..NUM_SQUARES_PER_KEY {
@@ -71,7 +67,6 @@ pub type SquareTriplesToMasks = SquaresMapping<3, Bitboard>;
 
 // Extension methods for more ergonomic access
 impl<OutputType: Copy> SquaresOneToOneMapping<OutputType> {
-    #[inline]
     pub fn init(calc_mask: impl Fn(Square) -> OutputType) -> Self {
         Self::init_(|squares| calc_mask(squares[0]))
     }
@@ -83,7 +78,6 @@ impl<OutputType: Copy> SquaresOneToOneMapping<OutputType> {
 }
 
 impl<OutputType: Copy> SquaresTwoToOneMapping<OutputType> {
-    #[inline]
     pub fn init(calc_mask: impl Fn(Square, Square) -> OutputType) -> Self {
         Self::init_(|squares| calc_mask(squares[0], squares[1]))
     }
@@ -95,7 +89,6 @@ impl<OutputType: Copy> SquaresTwoToOneMapping<OutputType> {
 }
 
 impl<OutputType: Copy> SquaresThreeToOneMapping<OutputType> {
-    #[inline]
     pub fn init(calc_mask: impl Fn(Square, Square, Square) -> OutputType) -> Self {
         Self::init_(|squares| calc_mask(squares[0], squares[1], squares[2]))
     }
