@@ -1,6 +1,8 @@
 use crate::Bitboard;
-use crate::masks::{FILES, RANKS};
+use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
 use std::fmt::Display;
+use static_init::dynamic;
+use crate::utilities::SquaresToMasks;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -120,6 +122,31 @@ impl Square {
     /// Returns the rank mask for the square.
     pub const fn rank_mask(&self) -> Bitboard {
         RANKS[self.rank() as usize]
+    }
+    
+    /// Returns the combined file and rank mask for the square.
+    pub const fn orthogonals_mask(&self) -> Bitboard {
+        self.file_mask() | self.rank_mask()
+    }
+    
+    /// Returns the ascending diagonal mask for the square (Shaped like '/').
+    pub fn ascending_diagonal_mask(&self) -> Bitboard {
+        ASCENDING_DIAGONAL_LOOKUP.get(*self)
+    }
+    
+    /// Returns the descending diagonal mask for the square (Shaped like '\').
+    pub fn descending_diagonal_mask(&self) -> Bitboard {
+        DESCENDING_DIAGONAL_LOOKUP.get(*self)
+    }
+    
+    /// Returns the combined diagonals mask for the square.
+    pub fn diagonals_mask(&self) -> Bitboard {
+        self.ascending_diagonal_mask() | self.descending_diagonal_mask()
+    }
+    
+    /// Returns the combined orthogonals and diagonals mask for the square.
+    pub fn orthogonals_and_diagonals_mask(&self) -> Bitboard {
+        self.orthogonals_mask() | self.diagonals_mask()
     }
 
     /// Returns the square above the current square, if it exists.
@@ -296,6 +323,28 @@ impl Display for Square {
         write!(f, "{}", self.readable())
     }
 }
+
+#[dynamic]
+static ASCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square| {
+    let mask = square.mask();
+    for diagonal in DIAGONALS_BR_TO_TL {
+        if diagonal & mask != 0 {
+            return diagonal;
+        }
+    }
+    0
+});
+
+#[dynamic]
+static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square| {
+    let mask = square.mask();
+    for diagonal in DIAGONALS_BL_TO_TR {
+        if diagonal & mask != 0 {
+            return diagonal;
+        }
+    }
+    0
+});
 
 #[cfg(test)]
 mod tests {
