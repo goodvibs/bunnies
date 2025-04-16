@@ -1,4 +1,59 @@
+use static_init::dynamic;
 use crate::Square;
+use crate::utilities::SquaresTwoToOneMapping;
+
+#[repr(transparent)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct UnifiedMoveDirection {
+    pub value: u8
+}
+
+impl UnifiedMoveDirection {
+    const NULL_KNIGHT_LIKE: u8 = 0b1111_0000;
+    const NULL_QUEEN_LIKE: u8 = 0b0000_1111;
+    
+    pub const NULL: UnifiedMoveDirection = UnifiedMoveDirection { value: Self::NULL_KNIGHT_LIKE | Self::NULL_QUEEN_LIKE };
+    
+    pub const fn from_queen_like(move_direction: QueenLikeMoveDirection) -> UnifiedMoveDirection {
+        UnifiedMoveDirection { value: Self::NULL_KNIGHT_LIKE | move_direction as u8 }
+    }
+    
+    pub const fn from_knight_like(move_direction: KnightMoveDirection) -> UnifiedMoveDirection {
+        UnifiedMoveDirection { value: ((move_direction as u8) << 4) | Self::NULL_QUEEN_LIKE }
+    }
+    
+    pub const unsafe fn as_queen_like(&self) -> Option<QueenLikeMoveDirection> {
+        let value = self.value & Self::NULL_QUEEN_LIKE;
+        if value == Self::NULL_QUEEN_LIKE {
+            None
+        } else {
+            Some(unsafe { QueenLikeMoveDirection::from(value) })
+        }
+    }
+
+    pub const unsafe fn as_queen_like_unchecked(&self) -> QueenLikeMoveDirection {
+        let value = self.value & Self::NULL_QUEEN_LIKE;
+        unsafe { QueenLikeMoveDirection::from(value) }
+    }
+    
+    pub const unsafe fn as_knight_like(&self) -> Option<KnightMoveDirection> {
+        let value = self.value & Self::NULL_KNIGHT_LIKE;
+        if value == Self::NULL_KNIGHT_LIKE {
+            None
+        } else {
+            Some(unsafe { KnightMoveDirection::from(value >> 4) })
+        }
+    }
+
+    pub const unsafe fn as_knight_like_unchecked(&self) -> KnightMoveDirection {
+        let value = self.value & Self::NULL_KNIGHT_LIKE;
+        unsafe { KnightMoveDirection::from(value >> 4) }
+    }
+    
+    pub const fn is_null(&self) -> bool {
+        self.value == Self::NULL.value
+    }
+}
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -32,6 +87,14 @@ impl QueenLikeMoveDirection {
     /// The value must be in the range 0..=7.
     pub const unsafe fn from(value: u8) -> QueenLikeMoveDirection {
         unsafe { std::mem::transmute::<u8, QueenLikeMoveDirection>(value) }
+    }
+    
+    pub fn lookup(src_square: Square, dst_square: Square) -> Option<QueenLikeMoveDirection> {
+        unsafe { MOVE_DIRECTION_LOOKUP.get(src_square, dst_square).as_queen_like() }
+    }
+    
+    pub unsafe fn lookup_unchecked(src_square: Square, dst_square: Square) -> QueenLikeMoveDirection {
+        unsafe { MOVE_DIRECTION_LOOKUP.get(src_square, dst_square).as_queen_like_unchecked() }
     }
 
     /// Returns the QueenLikeMoveDirection opposite to the current direction.
@@ -105,14 +168,22 @@ impl KnightMoveDirection {
 
     /// Returns the KnightMoveDirection opposite to the current direction.
     pub const fn opposite(&self) -> KnightMoveDirection {
-        KnightMoveDirection::from(7u8.wrapping_sub(*self as u8))
+        unsafe { KnightMoveDirection::from(7u8.wrapping_sub(*self as u8)) }
     }
 
     /// Returns the KnightMoveDirection corresponding to the given value.
     /// # Safety
     /// The value must be in the range 0..=7.
-    pub const fn from(value: u8) -> KnightMoveDirection {
+    pub const unsafe fn from(value: u8) -> KnightMoveDirection {
         unsafe { std::mem::transmute::<u8, KnightMoveDirection>(value) }
+    }
+    
+    pub fn lookup(src_square: Square, dst_square: Square) -> Option<KnightMoveDirection> {
+        unsafe { MOVE_DIRECTION_LOOKUP.get(src_square, dst_square).as_knight_like() }
+    }
+    
+    pub unsafe fn lookup_unchecked(src_square: Square, dst_square: Square) -> KnightMoveDirection {
+        unsafe { MOVE_DIRECTION_LOOKUP.get(src_square, dst_square).as_knight_like_unchecked() }
     }
 
     /// Returns a KnightMoveDirection as calculated from the source and destination squares.
@@ -139,6 +210,26 @@ impl KnightMoveDirection {
         }
     }
 }
+
+#[dynamic]
+static MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> = SquaresTwoToOneMapping::init(
+    |src_square, dst_square| {
+        if src_square.is_on_same_line_as(dst_square) {
+            let direction = QueenLikeMoveDirection::calc(src_square, dst_square, &mut 0);
+            
+            UnifiedMoveDirection::from_queen_like(direction)
+        }
+        else {
+            let direction = KnightMoveDirection::calc(src_square, dst_square);
+            
+            if direction == KnightMoveDirection::TwoRightOneDown {
+                UnifiedMoveDirection::NULL
+            } else {
+                UnifiedMoveDirection::from_knight_like(direction)
+            }
+        }
+    },
+);
 
 #[cfg(test)]
 mod tests {
@@ -214,6 +305,25 @@ mod tests {
     fn test_knight_move_direction() {
         for square in Square::ALL {
             test_all_knight_directions_for_square(square);
+        }
+    }
+    
+    #[test]
+    fn test_unified_move_direction() {
+        assert!(UnifiedMoveDirection::NULL.is_null());
+        
+        assert_eq!(unsafe { UnifiedMoveDirection::NULL.as_knight_like() }, None);
+        assert_eq!(unsafe { UnifiedMoveDirection::NULL.as_queen_like() }, None);
+        
+        for move_direction in KnightMoveDirection::ALL {
+            let unified_move_direction = UnifiedMoveDirection::from_knight_like(move_direction);
+            assert_eq!(unsafe { unified_move_direction.as_knight_like_unchecked() }, move_direction);
+            assert_eq!(unsafe { unified_move_direction.as_queen_like() }, None);
+        }
+        for move_direction in QueenLikeMoveDirection::ALL {
+            let unified_move_direction = UnifiedMoveDirection::from_queen_like(move_direction);
+            assert_eq!(unsafe { unified_move_direction.as_queen_like_unchecked() }, move_direction);
+            assert_eq!(unsafe { unified_move_direction.as_knight_like() }, None);
         }
     }
 }

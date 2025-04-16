@@ -5,6 +5,7 @@ use crate::position::Position;
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.
+#[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
     /// format: {6 bit dest}{6 bit src}{2 bit promotion PieceType value minus 2}{2 bit MoveFlag value}
