@@ -2,7 +2,7 @@ use crate::Bitboard;
 use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
 use std::fmt::Display;
 use static_init::dynamic;
-use crate::utilities::SquaresToMasks;
+use crate::utilities::{SquaresToMasks, SquaresTwoToOneMapping};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -147,6 +147,10 @@ impl Square {
     /// Returns the combined orthogonals and diagonals mask for the square.
     pub fn orthogonals_and_diagonals_mask(&self) -> Bitboard {
         self.orthogonals_mask() | self.diagonals_mask()
+    }
+    
+    pub fn is_on_same_line_as(&self, other: Square) -> bool {
+        SQUARES_ON_SAME_LINE_LOOKUP.get(*self, other)
     }
 
     /// Returns the square above the current square, if it exists.
@@ -344,6 +348,12 @@ static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square
         }
     }
     0
+});
+
+#[dynamic]
+static SQUARES_ON_SAME_LINE_LOOKUP: SquaresTwoToOneMapping<bool> = SquaresTwoToOneMapping::init(|sq1, sq2| {
+    let sq1_rays = sq1.orthogonals_and_diagonals_mask();
+    sq1_rays & sq2.mask() != 0
 });
 
 #[cfg(test)]
