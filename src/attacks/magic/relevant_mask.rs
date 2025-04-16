@@ -35,9 +35,9 @@ fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
             res |= diagonal;
         }
     }
-    for &antidiagonal in DIAGONALS_BL_TO_TR.iter() {
-        if antidiagonal & square_mask != 0 {
-            res |= antidiagonal;
+    for &diagonal in DIAGONALS_BL_TO_TR.iter() {
+        if diagonal & square_mask != 0 {
+            res |= diagonal;
         }
     }
     res & !square_mask & !(FILE_A | FILE_H | RANK_1 | RANK_8)

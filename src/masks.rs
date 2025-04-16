@@ -26,9 +26,6 @@ pub const KING_SIDE: Bitboard = FILE_E | FILE_F | FILE_G | FILE_H;
 pub const QUEEN_SIDE: Bitboard = FILE_A | FILE_B | FILE_C | FILE_D;
 pub const OUTER_EDGES: Bitboard = FILE_A | FILE_H | RANK_1 | RANK_8;
 
-pub const DARK_SQUARES: Bitboard = 0x55AA55AA55AA55AA;
-pub const LIGHT_SQUARES: Bitboard = !DARK_SQUARES;
-
 pub const STARTING_WK_WR_GAP_SHORT: Bitboard = RANK_1 & (FILE_F | FILE_G);
 pub const STARTING_WK_WR_GAP_LONG: Bitboard = RANK_1 & (FILE_B | FILE_C | FILE_D);
 pub const STARTING_BK_BR_GAP_SHORT: Bitboard = RANK_8 & (FILE_F | FILE_G);
@@ -134,7 +131,32 @@ pub const STARTING_QUEEN_SIDE_ROOK: [Bitboard; 2] =
 
 #[cfg(test)]
 mod tests {
-    use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL};
+    use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, FILE_A, RANKS, RANK_1};
+    use crate::Square;
+
+    #[test]
+    fn test_files() {
+        assert_eq!(FILES.len(), 8);
+        assert_eq!(FILE_A, Square::A1.mask() | Square::A2.mask() | Square::A3.mask() | Square::A4.mask() | Square::A5.mask() | Square::A6.mask() | Square::A7.mask() | Square::A8.mask());
+        
+        let mut expected_file = FILE_A;
+        for file in FILES {
+            assert_eq!(file, expected_file);
+            expected_file >>= 1;
+        }
+    }
+    
+    #[test]
+    fn test_ranks() {
+        assert_eq!(RANKS.len(), 8);
+        assert_eq!(RANK_1, Square::A1.mask() | Square::B1.mask() | Square::C1.mask() | Square::D1.mask() | Square::E1.mask() | Square::F1.mask() | Square::G1.mask() | Square::H1.mask());
+        
+        let mut expected_rank = RANK_1;
+        for rank in RANKS {
+            assert_eq!(rank, expected_rank);
+            expected_rank <<= 8;
+        }
+    }
 
     #[test]
     fn test_diagonals_br_to_tl() {
