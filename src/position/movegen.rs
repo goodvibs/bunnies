@@ -17,10 +17,9 @@ impl Position {
     fn add_normal_pawn_captures_pseudolegal(
         &self,
         moves: &mut Vec<Move>,
-        pawns: Bitboard,
     ) {
-        let pawn_srcs = pawns.iter_set_bits_as_masks();
-        
+        let pawn_srcs = self.current_side_pawns().iter_set_bits_as_masks();
+
         let opposite_side_pieces = self.opposite_side_pieces();
 
         let promotion_rank = self.current_side_promotion_rank();
@@ -85,7 +84,7 @@ impl Position {
             }
         }
     }
-    
+
     const unsafe fn get_pawn_push_origin(&self, dst_square: Square) -> Square {
         match self.side_to_move {
             Color::White => unsafe { dst_square.down().unwrap_unchecked() },
@@ -99,7 +98,7 @@ impl Position {
             Color::Black => unsafe { dst_square.up().unwrap_unchecked().up().unwrap_unchecked() }
         }
     }
-    
+
     const fn get_additional_pawn_push_rank_mask(&self) -> Bitboard {
         match self.side_to_move {
             Color::White => RANK_3,
@@ -107,22 +106,22 @@ impl Position {
         }
     }
 
-    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawns: Bitboard) {
+    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>) {
         let occupied_mask = self.board.pieces();
 
         let promotion_rank = self.current_side_promotion_rank();
-        
-        let single_push_dsts = multi_pawn_moves(pawns, self.side_to_move) & !occupied_mask;
+
+        let single_push_dsts = multi_pawn_moves(self.current_side_pawns(), self.side_to_move) & !occupied_mask;
         for dst_square in single_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_push_origin(dst_square) };
-            
+
             if dst_square.rank() == promotion_rank {
                 moves.extend(generate_pawn_promotions(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
-        
+
         let double_push_dsts = multi_pawn_moves(single_push_dsts & self.get_additional_pawn_push_rank_mask(), self.side_to_move) & !occupied_mask;
         for dst_square in double_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_double_push_origin(dst_square) };
@@ -131,11 +130,9 @@ impl Position {
     }
 
     fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let current_side_pawns = self.current_side_pawns();
-
-        self.add_normal_pawn_captures_pseudolegal(moves, current_side_pawns);
+        self.add_normal_pawn_captures_pseudolegal(moves);
         self.add_en_passant_pseudolegal(moves);
-        self.add_pawn_push_pseudolegal(moves, current_side_pawns);
+        self.add_pawn_push_pseudolegal(moves);
     }
 
     fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>) {
