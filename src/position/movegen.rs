@@ -1,10 +1,9 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks, sliding_piece_attacks};
-use crate::masks::{FILE_A, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
+use crate::masks::{FILE_A, RANK_3, RANK_4, RANK_5, RANK_6};
 use crate::position::Position;
 use crate::r#move::{Move, MoveFlag};
-use crate::utilities::MaskBitsIterator;
 use crate::Square;
 use crate::{Bitboard, Color};
 use crate::{BitboardUtils, PieceType};
@@ -18,8 +17,10 @@ impl Position {
     fn add_normal_pawn_captures_pseudolegal(
         &self,
         moves: &mut Vec<Move>,
-        pawn_srcs: MaskBitsIterator,
+        pawns: Bitboard,
     ) {
+        let pawn_srcs = pawns.iter_set_bits_as_masks();
+        
         let opposite_side_pieces = self.opposite_side_pieces();
 
         let promotion_rank = self.current_side_promotion_rank();
@@ -84,68 +85,48 @@ impl Position {
             }
         }
     }
+    
+    const fn get_pawn_origin(&self, dst_square: Square) -> Square {
+        match self.side_to_move {
+            Color::White => dst_square.down().unwrap(),
+            Color::Black => dst_square.up().unwrap()
+        }
+    }
 
-    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawn_srcs: MaskBitsIterator) {
-        let all_occupancy_bb = self.board.pieces();
+    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>, pawns: Bitboard) {
+        let occupied_mask = self.board.pieces();
 
-        let promotion_rank = RANK_8 >> (self.side_to_move as u8 * 7 * 8); // RANK_8 for white, RANK_1 for black
+        let promotion_rank = self.current_side_promotion_rank();
 
-        // pawn pushes
-        let single_push_rank = match self.side_to_move {
+        let additional_push_rank_mask = match self.side_to_move {
             Color::White => RANK_3,
             Color::Black => RANK_6,
         };
-        for src_bb in pawn_srcs {
-            let src_square = unsafe { Square::from_bitboard(src_bb) };
-
-            // single moves
-            let single_move_dst = multi_pawn_moves(src_bb, self.side_to_move) & !all_occupancy_bb;
-            if single_move_dst == 0 {
-                // if no single moves
-                continue;
+        
+        let single_push_dsts = multi_pawn_moves(pawns, self.side_to_move) & !occupied_mask;
+        for dst_square in single_push_dsts.iter_set_bits_as_squares() {
+            let src_square = self.get_pawn_origin(dst_square);
+            
+            if dst_square.rank() == promotion_rank {
+                moves.extend(generate_pawn_promotions(src_square, dst_square));
+            } else {
+                moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
-
-            let single_move_dst_square = unsafe { Square::from_bitboard(single_move_dst) };
-
-            // double push
-            if single_move_dst & single_push_rank != 0 {
-                let double_move_dst =
-                    multi_pawn_moves(single_move_dst, self.side_to_move) & !all_occupancy_bb;
-                if double_move_dst != 0 {
-                    unsafe {
-                        let double_move_dst_square = Square::from_bitboard(double_move_dst);
-                        moves.push(Move::new_non_promotion(
-                            double_move_dst_square,
-                            src_square,
-                            MoveFlag::NormalMove,
-                        ));
-                    }
-                }
-            } else if single_move_dst & promotion_rank != 0 {
-                // promotion
-                moves.extend_from_slice(&generate_pawn_promotions(
-                    src_square,
-                    single_move_dst_square,
-                ));
-                continue;
-            }
-
-            // single push (non-promotion)
-            moves.push(Move::new_non_promotion(
-                single_move_dst_square,
-                src_square,
-                MoveFlag::NormalMove,
-            ));
+        }
+        
+        let double_push_dsts = multi_pawn_moves(single_push_dsts & additional_push_rank_mask, self.side_to_move) & !occupied_mask;
+        for dst_square in double_push_dsts.iter_set_bits_as_squares() {
+            let src_square = self.get_pawn_origin(self.get_pawn_origin(dst_square));
+            moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
         }
     }
 
     fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let pawns_bb = self.current_side_pawns();
-        let pawn_srcs = pawns_bb.iter_set_bits_as_masks();
+        let current_side_pawns = self.current_side_pawns();
 
-        self.add_normal_pawn_captures_pseudolegal(moves, pawn_srcs.clone());
+        self.add_normal_pawn_captures_pseudolegal(moves, current_side_pawns);
         self.add_en_passant_pseudolegal(moves);
-        self.add_pawn_push_pseudolegal(moves, pawn_srcs);
+        self.add_pawn_push_pseudolegal(moves, current_side_pawns);
     }
 
     fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>) {
