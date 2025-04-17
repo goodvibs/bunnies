@@ -108,14 +108,26 @@ impl Position {
 
     fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>) {
         let occupied_mask = self.board.pieces();
-
-        let promotion_rank = self.current_side_promotion_rank();
-
-        let single_push_dsts = multi_pawn_moves(self.current_side_pawns(), self.side_to_move) & !occupied_mask;
+        
+        let mut movable_pawns = self.current_side_pawns();
+        
+        let pinned_pawns = self.pinned_pieces() & movable_pawns;
+        
+        if pinned_pawns != 0 {
+            let current_side_king_file = unsafe { Square::from_bitboard(self.current_side_king()) }.file();
+            
+            for pinned_pawn_square in pinned_pawns.iter_set_bits_as_squares() {
+                if pinned_pawn_square.file() != current_side_king_file {
+                    movable_pawns &= !pinned_pawn_square.mask();
+                }
+            }
+        }
+        
+        let single_push_dsts = multi_pawn_moves(movable_pawns, self.side_to_move) & !occupied_mask;
         for dst_square in single_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_push_origin(dst_square) };
 
-            if dst_square.rank() == promotion_rank {
+            if dst_square.rank() == self.current_side_promotion_rank() {
                 moves.extend(generate_pawn_promotions(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
