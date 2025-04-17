@@ -2,6 +2,7 @@
 
 use crate::position::{Board, PositionContext, GameResult};
 use crate::{Bitboard, BitboardUtils, Color, PieceType, Square};
+use crate::masks::{RANK_1, RANK_8};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -176,6 +177,20 @@ impl Position {
     pub fn opposite_side_king(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::King as usize] &
             self.opposite_side_pieces()
+    }
+    
+    pub const fn current_side_promotion_rank_mask(&self) -> Bitboard {
+        match self.side_to_move {
+            Color::White => RANK_8,
+            Color::Black => RANK_1
+        }
+    }
+
+    pub const fn opposite_side_promotion_rank_mask(&self) -> Bitboard {
+        match self.side_to_move.other() {
+            Color::White => RANK_8,
+            Color::Black => RANK_1
+        }
     }
 }
 

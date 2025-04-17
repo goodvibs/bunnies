@@ -1,7 +1,7 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks, sliding_piece_attacks};
-use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
+use crate::masks::{FILE_A, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
 use crate::position::Position;
 use crate::r#move::{Move, MoveFlag};
 use crate::utilities::MaskBitsIterator;
@@ -22,21 +22,17 @@ impl Position {
     ) {
         let opposite_side_pieces = self.opposite_side_pieces();
 
-        let promotion_rank = match self.side_to_move {
-            Color::White => RANK_8,
-            Color::Black => RANK_1,
-        };
+        let promotion_rank_mask = self.current_side_promotion_rank_mask();
 
         for src in pawn_srcs {
             let move_src = unsafe { Square::from_bitboard(src) };
 
             let pawn_attacks = multi_pawn_attacks(src, self.side_to_move);
-
             let pawn_captures = pawn_attacks & opposite_side_pieces;
 
             for dst in pawn_captures.iter_set_bits_as_masks() {
                 let move_dst = unsafe { Square::from_bitboard(dst) };
-                if dst & promotion_rank != 0 {
+                if dst & promotion_rank_mask != 0 {
                     moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
                 } else {
                     moves.push(Move::new_non_promotion(
@@ -179,10 +175,10 @@ impl Position {
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
             let is_pinned = src_square.mask() & self.pinned_pieces() != 0;
-            
+
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
             let mut possible_moves = attacks & !same_color_bb;
-            
+
             if is_pinned {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
                 possible_moves &= possible_move_ray;
