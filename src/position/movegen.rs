@@ -1,13 +1,13 @@
 //! Move generation functions for the state struct
 
-use crate::{BitboardUtils, PieceType};
-use crate::Square;
-use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_bishop_attacks, single_king_attacks, single_knight_attacks, single_queen_attacks, single_rook_attacks};
+use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks, sliding_piece_attacks};
 use crate::masks::{FILE_A, RANK_1, RANK_3, RANK_4, RANK_5, RANK_6, RANK_8};
-use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
-use crate::utilities::{MaskBitsIterator};
+use crate::r#move::{Move, MoveFlag};
+use crate::utilities::MaskBitsIterator;
+use crate::Square;
 use crate::{Bitboard, Color};
+use crate::{BitboardUtils, PieceType};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     PieceType::PROMOTION_PIECES
@@ -66,7 +66,7 @@ impl Position {
                 // left and right
                 let double_pawn_push_file = context.double_pawn_push as i32 + direction;
 
-                if double_pawn_push_file >= 0 && double_pawn_push_file <= 7 {
+                if (0..=7).contains(&double_pawn_push_file) {
                     // if within bounds
                     let double_pawn_push_file_mask = FILE_A >> double_pawn_push_file;
 
@@ -172,16 +172,16 @@ impl Position {
         }
     }
 
-    fn add_sliding_piece_pseudolegal(&self, piece_mask: Bitboard, gen_attacks: fn(Square, Bitboard) -> Bitboard, moves: &mut Vec<Move>) {
+    fn add_sliding_piece_pseudolegal(&self, piece: PieceType, moves: &mut Vec<Move>) {
         let same_color_bb = self.current_side_pieces();
         let all_occupancy_bb = self.board.pieces();
 
-        let piece_mask = piece_mask & same_color_bb;
+        let piece_mask = self.board.piece_mask(piece) & same_color_bb;
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
             let is_pinned = src_square.mask() & self.pinned_pieces() != 0;
             
-            let attacks = gen_attacks(src_square, all_occupancy_bb);
+            let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
             let mut possible_moves = attacks & !same_color_bb;
             
             if is_pinned {
@@ -201,7 +201,6 @@ impl Position {
 
     fn add_king_pseudolegal(&self, moves: &mut Vec<Move>) {
         let same_color_bb = self.board.color_masks[self.side_to_move as usize];
-        self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
 
         let king_src_bb = self.board.piece_type_masks[PieceType::King as usize] & same_color_bb;
         let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
@@ -249,9 +248,9 @@ impl Position {
 
         self.add_all_pawn_pseudolegal(&mut moves);
         self.add_knight_pseudolegal(&mut moves);
-        self.add_sliding_piece_pseudolegal(self.board.bishops(), single_bishop_attacks, &mut moves);
-        self.add_sliding_piece_pseudolegal(self.board.rooks(), single_rook_attacks, &mut moves);
-        self.add_sliding_piece_pseudolegal(self.board.queens(), single_queen_attacks, &mut moves);
+        self.add_sliding_piece_pseudolegal(PieceType::Bishop, &mut moves);
+        self.add_sliding_piece_pseudolegal(PieceType::Rook, &mut moves);
+        self.add_sliding_piece_pseudolegal(PieceType::Queen, &mut moves);
         self.add_king_pseudolegal(&mut moves);
         self.add_castling_pseudolegal(&mut moves);
 
