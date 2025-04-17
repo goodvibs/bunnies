@@ -155,12 +155,12 @@ impl Position {
     }
 
     fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let knights_bb = self.current_side_knights() & !self.pinned_pieces();
+        let current_side_pieces = self.current_side_pieces();
+        let movable_knights = self.board.knights() & current_side_pieces & !self.pinned_pieces();
 
-        for src_square in knights_bb.iter_set_bits_as_squares() {
+        for src_square in movable_knights.iter_set_bits_as_squares() {
             let knight_attacks = single_knight_attacks(src_square);
-
-            let knight_moves = knight_attacks & !self.current_side_pieces();
+            let knight_moves = knight_attacks & !current_side_pieces;
 
             for dst_square in knight_moves.iter_set_bits_as_squares() {
                 moves.push(Move::new_non_promotion(
@@ -200,14 +200,14 @@ impl Position {
     }
 
     fn add_king_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let same_color_bb = self.board.color_masks[self.side_to_move as usize];
+        let current_side_mask = self.current_side_pieces();
 
-        let king_src_bb = self.board.piece_type_masks[PieceType::King as usize] & same_color_bb;
+        let king_src_bb = self.board.kings() & current_side_mask;
         let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
 
         let king_attacks = single_king_attacks(king_src_square);
 
-        let king_moves = king_attacks & !same_color_bb;
+        let king_moves = king_attacks & !current_side_mask;
 
         for dst_square in king_moves.iter_set_bits_as_squares() {
             moves.push(Move::new_non_promotion(
