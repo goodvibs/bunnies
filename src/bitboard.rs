@@ -48,17 +48,12 @@ fn calc_between_mask(sq1: Square, sq2: Square) -> Bitboard {
         let mut mask = 0;
         let direction = unsafe { QueenLikeMoveDirection::lookup_unchecked(sq1, sq2) };
         let mut current = sq1;
-        loop {
-            match current.at(direction) {
-                Some(next) => {
-                    if next == sq2 {
-                        break;
-                    }
-                    mask |= next.mask();
-                    current = next;
-                }
-                None => break,
-            };
+        while let Some(next) = current.at(direction) {
+            if next == sq2 {
+                break;
+            }
+            mask |= next.mask();
+            current = next;
         }
         mask
     }
