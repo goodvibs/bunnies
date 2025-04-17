@@ -1,7 +1,7 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
 use crate::position::{Board, PositionContext, GameResult};
-use crate::{Bitboard, Color, PieceType};
+use crate::{Bitboard, BitboardUtils, Color, PieceType, Square};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -77,6 +77,105 @@ impl Position {
         if unsafe { (*self.context).has_threefold_repetition_occurred() } {
             self.result = GameResult::ThreefoldRepetition;
         }
+    }
+
+    pub fn update_pinned_pieces(&self) {
+        let current_side_king = self.current_side_king();
+        let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
+
+        let unsafe_diagonals = current_side_king_square.diagonals_mask();
+        let unsafe_orthogonals = current_side_king_square.orthogonals_mask();
+        
+        let possible_diagonal_pinners = (self.opposite_side_bishops() | self.opposite_side_queens())
+            & unsafe_diagonals;
+        let possible_orthogonal_pinners = (self.opposite_side_rooks() | self.opposite_side_queens())
+            & unsafe_orthogonals;
+        let possible_pinners = possible_diagonal_pinners | possible_orthogonal_pinners;
+
+        let mut pinned = 0;
+
+        for possible_pinner in possible_pinners.iter_set_bits_as_squares() {
+            let blockers_bb = Bitboard::between(current_side_king_square, possible_pinner);
+            if blockers_bb != 0 && blockers_bb.count_ones() == 1 {
+                pinned |= blockers_bb;
+            }
+        }
+        
+        pinned &= self.current_side_pieces();
+
+        unsafe { (*self.context).pinned_pieces = pinned; }
+    }
+    
+    pub fn pinned_pieces(&self) -> Bitboard {
+        unsafe { (*self.context).pinned_pieces }
+    }
+    
+    pub fn current_side_pieces(&self) -> Bitboard {
+        self.board.color_masks[self.side_to_move as usize]
+    }
+    
+    pub fn current_side_pawns(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Pawn as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn current_side_knights(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Knight as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn current_side_bishops(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Bishop as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn current_side_rooks(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Rook as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn current_side_queens(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Queen as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn current_side_king(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::King as usize] &
+            self.current_side_pieces()
+    }
+
+    pub fn opposite_side_pieces(&self) -> Bitboard {
+        self.board.color_masks[self.side_to_move.other() as usize]
+    }
+
+    pub fn opposite_side_pawns(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Pawn as usize] &
+            self.opposite_side_pieces()
+    }
+
+    pub fn opposite_side_knights(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Knight as usize] &
+            self.opposite_side_pieces()
+    }
+
+    pub fn opposite_side_bishops(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Bishop as usize] &
+            self.opposite_side_pieces()
+    }
+
+    pub fn opposite_side_rooks(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Rook as usize] &
+            self.opposite_side_pieces()
+    }
+
+    pub fn opposite_side_queens(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::Queen as usize] &
+            self.opposite_side_pieces()
+    }
+
+    pub fn opposite_side_king(&self) -> Bitboard {
+        self.board.piece_type_masks[PieceType::King as usize] &
+            self.opposite_side_pieces()
     }
 }
 

@@ -16,6 +16,7 @@ pub struct PositionContext {
     pub previous: Option<*mut PositionContext>,
     pub zobrist_hash: Bitboard,
     pub current_side_attacks: Bitboard,
+    pub pinned_pieces: Bitboard,
 }
 
 impl PositionContext {
@@ -50,6 +51,7 @@ impl PositionContext {
             previous: Some(previous_context),
             zobrist_hash,
             current_side_attacks,
+            pinned_pieces: 0,
         }
     }
 
@@ -73,6 +75,7 @@ impl PositionContext {
             previous: None,
             zobrist_hash,
             current_side_attacks,
+            pinned_pieces: 0,
         }
     }
 
@@ -100,10 +103,7 @@ impl PositionContext {
                 if (*previous).halfmove_clock == 0 {
                     return None;
                 }
-                match (*previous).previous {
-                    Some(previous_previous) => Some(previous_previous.clone()),
-                    None => None,
-                }
+                (*previous).previous
             },
             None => None,
         }

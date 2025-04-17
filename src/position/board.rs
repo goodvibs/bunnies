@@ -46,34 +46,65 @@ impl Board {
             zobrist_hash: 0,
         }
     }
+    
+    pub const fn piece_mask(&self, piece_type: PieceType) -> Bitboard {
+        self.piece_type_masks[piece_type as usize]
+    }
+    
+    pub const fn color_mask(&self, color: Color) -> Bitboard {
+        self.color_masks[color as usize]
+    }
+    
+    pub const fn pieces(&self) -> Bitboard {
+        self.piece_mask(PieceType::ALL_PIECE_TYPES)
+    }
+    
+    pub const fn pawns(&self) -> Bitboard {
+        self.piece_mask(PieceType::Pawn)
+    }
+
+    pub const fn knights(&self) -> Bitboard {
+        self.piece_mask(PieceType::Knight)
+    }
+
+    pub const fn bishops(&self) -> Bitboard {
+        self.piece_mask(PieceType::Bishop)
+    }
+
+    pub const fn rooks(&self) -> Bitboard {
+        self.piece_mask(PieceType::Rook)
+    }
+
+    pub const fn queens(&self) -> Bitboard {
+        self.piece_mask(PieceType::Queen)
+    }
+
+    pub const fn kings(&self) -> Bitboard {
+        self.piece_mask(PieceType::King)
+    }
 
     pub fn calc_attacks_mask(&self, by_color: Color) -> Bitboard {
-        let attacking_color_mask = self.color_masks[by_color as usize];
-        let occupied_mask = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+        let attacking_color_mask = self.color_mask(by_color);
+        let occupied_mask = self.pieces();
 
-        let pawns_mask = self.piece_type_masks[PieceType::Pawn as usize];
-        let knights_mask = self.piece_type_masks[PieceType::Knight as usize];
-        let bishops_mask = self.piece_type_masks[PieceType::Bishop as usize];
-        let rooks_mask = self.piece_type_masks[PieceType::Rook as usize];
-        let queens_mask = self.piece_type_masks[PieceType::Queen as usize];
-        let kings_mask = self.piece_type_masks[PieceType::King as usize];
+        let queens_mask = self.queens();
 
-        let mut attacks = multi_pawn_attacks(pawns_mask & attacking_color_mask, by_color);
+        let mut attacks = multi_pawn_attacks(self.pawns() & attacking_color_mask, by_color);
 
-        attacks |= multi_knight_attacks(knights_mask & attacking_color_mask);
+        attacks |= multi_knight_attacks(self.knights() & attacking_color_mask);
 
         for src_square in
-            ((bishops_mask | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
+            ((self.bishops() | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in ((rooks_mask | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
+        for src_square in ((self.rooks() | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
 
-        attacks |= multi_king_attacks(kings_mask & attacking_color_mask);
+        attacks |= multi_king_attacks(self.kings() & attacking_color_mask);
 
         attacks
     }

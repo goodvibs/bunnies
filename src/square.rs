@@ -123,32 +123,40 @@ impl Square {
     pub const fn rank_mask(&self) -> Bitboard {
         RANKS[self.rank() as usize]
     }
-    
+
     /// Returns the combined file and rank mask for the square.
     pub const fn orthogonals_mask(&self) -> Bitboard {
         self.file_mask() | self.rank_mask()
     }
-    
+
     /// Returns the ascending diagonal mask for the square (Shaped like '/').
     pub fn ascending_diagonal_mask(&self) -> Bitboard {
         ASCENDING_DIAGONAL_LOOKUP.get(*self)
     }
-    
+
     /// Returns the descending diagonal mask for the square (Shaped like '\').
     pub fn descending_diagonal_mask(&self) -> Bitboard {
         DESCENDING_DIAGONAL_LOOKUP.get(*self)
     }
-    
+
     /// Returns the combined diagonals mask for the square.
     pub fn diagonals_mask(&self) -> Bitboard {
         self.ascending_diagonal_mask() | self.descending_diagonal_mask()
     }
-    
+
     /// Returns the combined orthogonals and diagonals mask for the square.
     pub fn orthogonals_and_diagonals_mask(&self) -> Bitboard {
         self.orthogonals_mask() | self.diagonals_mask()
     }
-    
+
+    pub const fn is_orthogonal_to(&self, other: Square) -> bool {
+        self.file() == other.file() || self.rank() == other.rank()
+    }
+
+    pub fn is_diagonal_to(&self, other: Square) -> bool {
+        SQUARES_ON_SAME_DIAGONAL_LOOKUP.get(*self, other)
+    }
+
     /// Returns whether the square is on the same orthogonal or diagonal as another square.
     pub fn is_on_same_line_as(&self, other: Square) -> bool {
         SQUARES_ON_SAME_LINE_LOOKUP.get(*self, other)
@@ -225,7 +233,7 @@ impl Square {
             Some(unsafe { Square::from(*self as u8 + 9) })
         }
     }
-    
+
     pub const fn at(&self, direction: QueenLikeMoveDirection) -> Option<Square> {
         match direction {
             QueenLikeMoveDirection::Up => self.up(),
@@ -362,6 +370,12 @@ static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square
         }
     }
     0
+});
+
+#[dynamic]
+static SQUARES_ON_SAME_DIAGONAL_LOOKUP: SquaresTwoToOneMapping<bool> = SquaresTwoToOneMapping::init(|sq1, sq2| {
+    let sq1_diagonals = sq1.diagonals_mask();
+    sq1_diagonals & sq2.mask() != 0
 });
 
 #[dynamic]
