@@ -1,7 +1,7 @@
 //! Move generation functions for the state struct
 
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks, sliding_piece_attacks};
-use crate::masks::{FILE_A, RANK_3, RANK_4, RANK_5, RANK_6};
+use crate::masks::{RANK_3, RANK_6};
 use crate::position::Position;
 use crate::r#move::{Move, MoveFlag};
 use crate::Square;
@@ -27,12 +27,16 @@ impl Position {
         for src in pawn_srcs {
             let src_square = unsafe { Square::from_bitboard(src) };
 
-            let pawn_attacks = multi_pawn_attacks(src, self.side_to_move);
-            let pawn_captures = pawn_attacks & opposite_side_pieces;
+            let mut possible_captures = multi_pawn_attacks(src, self.side_to_move) & opposite_side_pieces;
 
-            for dst_square in pawn_captures.iter_set_bits_as_squares() {
+            if src_square.mask() & self.pinned_pieces() != 0 {
+                let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
+                possible_captures &= possible_move_ray;
+            }
+
+            for dst_square in possible_captures.iter_set_bits_as_squares() {
                 if dst_square.rank() == promotion_rank {
-                    moves.extend_from_slice(&generate_pawn_promotions(src_square, dst_square));
+                    moves.extend(generate_pawn_promotions(src_square, dst_square));
                 } else {
                     moves.push(Move::new_non_promotion(
                         dst_square,
@@ -43,43 +47,38 @@ impl Position {
             }
         }
     }
+    
+    const fn get_possible_en_passant_src_squares(&self, double_pawn_push: i8) -> [Option<Square>; 2] {
+        assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
+        
+        let double_pawn_push_dst = match self.side_to_move {
+            Color::White => unsafe { Square::from_rank_file(4, double_pawn_push as u8) },
+            Color::Black => unsafe { Square::from_rank_file(3, double_pawn_push as u8) }
+        };
+        
+        [double_pawn_push_dst.left(), double_pawn_push_dst.right()]
+    }
+
+    const fn get_en_passant_dst_square(&self, double_pawn_push: i8) -> Square {
+        assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
+
+        match self.side_to_move {
+            Color::White => unsafe { Square::from_rank_file(5, double_pawn_push as u8) },
+            Color::Black => unsafe { Square::from_rank_file(2, double_pawn_push as u8) }
+        }
+
+    }
 
     fn add_en_passant_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let context = unsafe { &*self.context };
-        let current_side_pieces = self.current_side_pieces();
-        let current_side_pawns = self.board.pawns() & current_side_pieces;
+        let double_pawn_push = self.double_pawn_push();
+        let current_side_pawns = self.current_side_pawns();
 
-        let (src_rank_bb, src_rank_first_square, dst_rank_first_square) = match self.side_to_move {
-            Color::White => (RANK_5, Square::A5, Square::A6),
-            Color::Black => (RANK_4, Square::A4, Square::A3),
-        };
-
-        if context.double_pawn_push != -1 {
-            // if en passant is possible
-            for direction in [-1, 1] {
-                // left and right
-                let double_pawn_push_file = context.double_pawn_push as i32 + direction;
-
-                if (0..=7).contains(&double_pawn_push_file) {
-                    // if within bounds
-                    let double_pawn_push_file_mask = FILE_A >> double_pawn_push_file;
-
-                    if current_side_pawns & double_pawn_push_file_mask & src_rank_bb != 0 {
-                        let move_src = unsafe {
-                            Square::from(src_rank_first_square as u8 + double_pawn_push_file as u8)
-                        };
-                        let move_dst = unsafe {
-                            Square::from(
-                                dst_rank_first_square as u8 + context.double_pawn_push as u8,
-                            )
-                        };
-
-                        moves.push(Move::new_non_promotion(
-                            move_dst,
-                            move_src,
-                            MoveFlag::EnPassant,
-                        ));
-                    }
+        if double_pawn_push != -1 {
+            let dst_square = self.get_en_passant_dst_square(double_pawn_push);
+            
+            for src_square in self.get_possible_en_passant_src_squares(double_pawn_push).into_iter().flatten() {
+                if src_square.mask() & current_side_pawns != 0 {
+                    moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::EnPassant));
                 }
             }
         }
@@ -108,21 +107,20 @@ impl Position {
 
     fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>) {
         let occupied_mask = self.board.pieces();
-        
+
         let mut movable_pawns = self.current_side_pawns();
-        
+
         let pinned_pawns = self.pinned_pieces() & movable_pawns;
-        
         if pinned_pawns != 0 {
             let current_side_king_file = unsafe { Square::from_bitboard(self.current_side_king()) }.file();
-            
+
             for pinned_pawn_square in pinned_pawns.iter_set_bits_as_squares() {
                 if pinned_pawn_square.file() != current_side_king_file {
                     movable_pawns &= !pinned_pawn_square.mask();
                 }
             }
         }
-        
+
         let single_push_dsts = multi_pawn_moves(movable_pawns, self.side_to_move) & !occupied_mask;
         for dst_square in single_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_push_origin(dst_square) };
@@ -172,12 +170,10 @@ impl Position {
         let piece_mask = self.board.piece_mask(piece) & same_color_bb;
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
-            let is_pinned = src_square.mask() & self.pinned_pieces() != 0;
-
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
             let mut possible_moves = attacks & !same_color_bb;
 
-            if is_pinned {
+            if src_square.mask() & self.pinned_pieces() != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
                 possible_moves &= possible_move_ray;
             }

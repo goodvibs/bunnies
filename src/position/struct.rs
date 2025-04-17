@@ -1,8 +1,7 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
-use crate::position::{Board, PositionContext, GameResult};
+use crate::position::{Board, GameResult, PositionContext};
 use crate::{Bitboard, BitboardUtils, Color, PieceType, Square};
-use crate::masks::{RANK_1, RANK_8};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -107,74 +106,78 @@ impl Position {
         unsafe { (*self.context).pinned_pieces = pinned; }
     }
     
-    pub fn pinned_pieces(&self) -> Bitboard {
+    pub const fn pinned_pieces(&self) -> Bitboard {
         unsafe { (*self.context).pinned_pieces }
     }
+
+    pub const fn double_pawn_push(&self) -> i8 {
+        unsafe { (*self.context).double_pawn_push }
+    }
     
-    pub fn current_side_pieces(&self) -> Bitboard {
+    pub const fn current_side_pieces(&self) -> Bitboard {
         self.board.color_masks[self.side_to_move as usize]
     }
     
-    pub fn current_side_pawns(&self) -> Bitboard {
+    pub const fn current_side_pawns(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Pawn as usize] &
             self.current_side_pieces()
     }
 
-    pub fn current_side_knights(&self) -> Bitboard {
+    pub const fn current_side_knights(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Knight as usize] &
             self.current_side_pieces()
     }
 
-    pub fn current_side_bishops(&self) -> Bitboard {
+    pub const fn current_side_bishops(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Bishop as usize] &
             self.current_side_pieces()
     }
 
-    pub fn current_side_rooks(&self) -> Bitboard {
+    pub const fn current_side_rooks(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Rook as usize] &
             self.current_side_pieces()
     }
 
-    pub fn current_side_queens(&self) -> Bitboard {
+    pub const fn current_side_queens(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Queen as usize] &
             self.current_side_pieces()
     }
 
-    pub fn current_side_king(&self) -> Bitboard {
+    pub const fn current_side_king(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::King as usize] &
             self.current_side_pieces()
     }
 
-    pub fn opposite_side_pieces(&self) -> Bitboard {
+    pub const fn opposite_side_pieces(&self) -> Bitboard {
         self.board.color_masks[self.side_to_move.other() as usize]
     }
 
-    pub fn opposite_side_pawns(&self) -> Bitboard {
+    pub const fn opposite_side_pawns(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Pawn as usize] &
             self.opposite_side_pieces()
     }
 
-    pub fn opposite_side_knights(&self) -> Bitboard {
+    pub const fn opposite_side_knights(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Knight as usize] &
             self.opposite_side_pieces()
     }
 
-    pub fn opposite_side_bishops(&self) -> Bitboard {
+    pub const fn opposite_side_bishops(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Bishop as usize] &
             self.opposite_side_pieces()
     }
 
-    pub fn opposite_side_rooks(&self) -> Bitboard {
+    pub const fn opposite_side_rooks(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Rook as usize] &
             self.opposite_side_pieces()
     }
 
-    pub fn opposite_side_queens(&self) -> Bitboard {
+    pub const fn opposite_side_queens(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::Queen as usize] &
             self.opposite_side_pieces()
     }
 
-    pub fn opposite_side_king(&self) -> Bitboard {
+    pub const fn opposite_side_king(&self) -> Bitboard {
         self.board.piece_type_masks[PieceType::King as usize] &
             self.opposite_side_pieces()
     }
@@ -209,7 +212,7 @@ impl Position {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::position::{PositionContext, GameResult, Position};
+    use crate::position::{GameResult, Position, PositionContext};
     use crate::{Color, ColoredPieceType, PieceType, Square};
 
     #[test]
