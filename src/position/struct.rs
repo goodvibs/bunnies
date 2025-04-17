@@ -178,18 +178,18 @@ impl Position {
         self.board.piece_type_masks[PieceType::King as usize] &
             self.opposite_side_pieces()
     }
-    
-    pub const fn current_side_promotion_rank_mask(&self) -> Bitboard {
+
+    pub const fn current_side_promotion_rank(&self) -> u8 {
         match self.side_to_move {
-            Color::White => RANK_8,
-            Color::Black => RANK_1
+            Color::White => 7,
+            Color::Black => 0
         }
     }
 
-    pub const fn opposite_side_promotion_rank_mask(&self) -> Bitboard {
+    pub const fn opposite_side_promotion_rank(&self) -> u8 {
         match self.side_to_move.other() {
-            Color::White => RANK_8,
-            Color::Black => RANK_1
+            Color::White => 7,
+            Color::Black => 0
         }
     }
 }

@@ -22,22 +22,21 @@ impl Position {
     ) {
         let opposite_side_pieces = self.opposite_side_pieces();
 
-        let promotion_rank_mask = self.current_side_promotion_rank_mask();
+        let promotion_rank = self.current_side_promotion_rank();
 
         for src in pawn_srcs {
-            let move_src = unsafe { Square::from_bitboard(src) };
+            let src_square = unsafe { Square::from_bitboard(src) };
 
             let pawn_attacks = multi_pawn_attacks(src, self.side_to_move);
             let pawn_captures = pawn_attacks & opposite_side_pieces;
 
-            for dst in pawn_captures.iter_set_bits_as_masks() {
-                let move_dst = unsafe { Square::from_bitboard(dst) };
-                if dst & promotion_rank_mask != 0 {
-                    moves.extend_from_slice(&generate_pawn_promotions(move_src, move_dst));
+            for dst_square in pawn_captures.iter_set_bits_as_squares() {
+                if dst_square.rank() == promotion_rank {
+                    moves.extend_from_slice(&generate_pawn_promotions(src_square, dst_square));
                 } else {
                     moves.push(Move::new_non_promotion(
-                        move_dst,
-                        move_src,
+                        dst_square,
+                        src_square,
                         MoveFlag::NormalMove,
                     ));
                 }
