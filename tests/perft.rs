@@ -17,7 +17,7 @@ fn test_initial_position() {
     // run_perft_test(initial_state, 3, 8902);
     // run_perft_test(initial_state, 4, 197281);
     // run_perft_test(initial_state, 5, 4865609);
-    run_perft_test(initial_state, 6, 119060324); // ~ 8 seconds on M1 Pro
+    run_perft_test(initial_state, 6, 119060324); // ~ 7 seconds on M1 Pro
 }
 
 #[test]
