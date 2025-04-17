@@ -2,7 +2,7 @@ use crate::Bitboard;
 use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
 use std::fmt::Display;
 use static_init::dynamic;
-use crate::utilities::{SquaresToMasks, SquaresTwoToOneMapping};
+use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks, SquaresTwoToOneMapping};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -223,6 +223,19 @@ impl Square {
             None
         } else {
             Some(unsafe { Square::from(*self as u8 + 9) })
+        }
+    }
+    
+    pub const fn at(&self, direction: QueenLikeMoveDirection) -> Option<Square> {
+        match direction {
+            QueenLikeMoveDirection::Up => self.up(),
+            QueenLikeMoveDirection::Down => self.down(),
+            QueenLikeMoveDirection::Left => self.left(),
+            QueenLikeMoveDirection::Right => self.right(),
+            QueenLikeMoveDirection::UpLeft => self.up_left(),
+            QueenLikeMoveDirection::UpRight => self.up_right(),
+            QueenLikeMoveDirection::DownLeft => self.down_left(),
+            QueenLikeMoveDirection::DownRight => self.down_right(),
         }
     }
 
