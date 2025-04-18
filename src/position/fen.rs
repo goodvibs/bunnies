@@ -185,6 +185,8 @@ impl Position {
                     result: GameResult::None,
                     context: Box::into_raw(Box::new(context)),
                 };
+                
+                state.update_pinned_pieces();
 
                 if state.is_unequivocally_valid() {
                     Ok(state)

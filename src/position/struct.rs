@@ -18,13 +18,17 @@ impl Position {
     pub fn initial() -> Position {
         let board = Board::initial();
         let zobrist_hash = board.zobrist_hash;
-        Position {
+        let res = Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
             context: Box::into_raw(Box::new(PositionContext::initial(zobrist_hash))),
-        }
+        };
+        res.update_pinned_pieces();
+        assert!(res.is_unequivocally_valid());
+        
+        res
     }
 
     /// Gets the fullmove number of the position. 1-based.
