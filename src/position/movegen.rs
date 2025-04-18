@@ -75,8 +75,15 @@ impl Position {
 
         if double_pawn_push != -1 {
             let dst_square = self.get_en_passant_dst_square(double_pawn_push);
-            
+
             for src_square in self.get_possible_en_passant_src_squares(double_pawn_push).into_iter().flatten() {
+                if src_square.mask() & self.pinned_pieces() != 0 {
+                    let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
+                    if possible_move_ray & dst_square.mask() == 0 {
+                        continue;
+                    }
+                }
+                
                 if src_square.mask() & current_side_pawns != 0 {
                     moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::EnPassant));
                 }
