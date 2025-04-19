@@ -60,8 +60,11 @@ impl Position {
         let mut pinned = 0;
         let mut checkers = 0;
         
+        let occupied = self.board.pieces();
+        
         for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
-            let blockers = Bitboard::between(current_side_king_square, attacker_square);
+            let blockers = Bitboard::between(current_side_king_square, attacker_square) & occupied;
+            
             if blockers == 0 {
                 checkers |= attacker_square.mask();
             } else if blockers.count_ones() == 1 {
@@ -80,8 +83,7 @@ impl Position {
     }
 
     pub fn is_current_side_in_check(&self) -> bool {
-        // self.context().checkers == 0
-        self.board.is_mask_attacked(self.current_side_king(), self.side_to_move.other())
+        self.context().checkers != 0
     }
 
     pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
