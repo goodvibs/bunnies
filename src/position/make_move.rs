@@ -122,12 +122,9 @@ impl Position {
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
     pub fn make_move(&mut self, mv: Move) {
-        let attacks_mask = self.current_side_attacks();
-        unsafe { (*self.context).initialize_current_side_attacks(attacks_mask) };
-
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = unsafe { PositionContext::new_with_previous(self.context, 0, 0) };
+        let mut new_context = unsafe { PositionContext::new_with_previous(self.context) };
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
@@ -150,7 +147,7 @@ impl Position {
         self.side_to_move = self.side_to_move.other();
         self.context = Box::into_raw(Box::new(new_context));
         
-        self.update_pinned_pieces();
+        self.update_pins_and_checks();
     }
 }
 

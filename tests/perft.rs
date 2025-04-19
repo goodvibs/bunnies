@@ -68,3 +68,10 @@ fn test_position_5() {
     // run_perft_test(state, 4, 2103487);
     run_perft_test(state, 5, 89941194); // ~ 6 seconds on M1 Pro
 }
+
+#[test]
+fn test_pinned_en_passant() {
+    let state =
+        Position::from_fen("7k/8/8/2KPp2r/8/8/8/8 w - e6 11 53").unwrap();
+    run_perft_test(state, 1, 7);
+}

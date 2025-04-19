@@ -18,18 +18,16 @@ impl Position {
         &self,
         moves: &mut Vec<Move>,
     ) {
-        let pawn_srcs = self.current_side_pawns().iter_set_bits_as_masks();
-
         let opposite_side_pieces = self.opposite_side_pieces();
 
         let promotion_rank = self.current_side_promotion_rank();
 
-        for src in pawn_srcs {
+        for src in self.current_side_pawns().iter_set_bits_as_masks() {
             let src_square = unsafe { Square::from_bitboard(src) };
 
             let mut possible_captures = multi_pawn_attacks(src, self.side_to_move) & opposite_side_pieces;
 
-            if src_square.mask() & self.pinned_pieces() != 0 {
+            if src_square.mask() & self.context().pinned != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
                 possible_captures &= possible_move_ray;
             }
@@ -70,14 +68,14 @@ impl Position {
     }
 
     fn add_en_passant_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let double_pawn_push = self.double_pawn_push();
+        let double_pawn_push = self.context().double_pawn_push;
         let current_side_pawns = self.current_side_pawns();
 
         if double_pawn_push != -1 {
             let dst_square = self.get_en_passant_dst_square(double_pawn_push);
 
             for src_square in self.get_possible_en_passant_src_squares(double_pawn_push).into_iter().flatten() {
-                if src_square.mask() & self.pinned_pieces() != 0 {
+                if src_square.mask() & self.context().pinned != 0 {
                     let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
                     if possible_move_ray & dst_square.mask() == 0 {
                         continue;
@@ -117,7 +115,7 @@ impl Position {
 
         let mut movable_pawns = self.current_side_pawns();
 
-        let pinned_pawns = self.pinned_pieces() & movable_pawns;
+        let pinned_pawns = self.context().pinned & movable_pawns;
         if pinned_pawns != 0 {
             let current_side_king_file = unsafe { Square::from_bitboard(self.current_side_king()) }.file();
 
@@ -154,7 +152,7 @@ impl Position {
 
     fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>) {
         let current_side_pieces = self.current_side_pieces();
-        let movable_knights = self.board.knights() & current_side_pieces & !self.pinned_pieces();
+        let movable_knights = self.board.knights() & current_side_pieces & !self.context().pinned;
 
         for src_square in movable_knights.iter_set_bits_as_squares() {
             let knight_attacks = single_knight_attacks(src_square);
@@ -180,7 +178,7 @@ impl Position {
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
             let mut possible_moves = attacks & !same_color_bb;
 
-            if src_square.mask() & self.pinned_pieces() != 0 {
+            if src_square.mask() & self.context().pinned != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
                 possible_moves &= possible_move_ray;
             }

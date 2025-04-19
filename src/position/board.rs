@@ -82,6 +82,49 @@ impl Board {
     pub const fn kings(&self) -> Bitboard {
         self.piece_mask(PieceType::King)
     }
+    
+    pub const fn diagonal_sliders(&self) -> Bitboard {
+        self.bishops() | self.queens()
+    }
+
+    pub const fn orthogonal_sliders(&self) -> Bitboard {
+        self.rooks() | self.queens()
+    }
+    
+    // pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
+    //     let attackers = self.color_mask(by_color);
+    //     
+    //     if (multi_pawn_attacks(mask, by_color.other()) & self.pawns() & attackers != 0) ||
+    //         (multi_knight_attacks(mask) & self.knights() & attackers != 0) ||
+    //         (multi_king_attacks(mask) & self.kings() & attackers != 0) { 
+    //         true
+    //     } else {
+    //         let diagonal_attackers = self.diagonal_sliders() & attackers;
+    //         let orthogonal_attackers = self.orthogonal_sliders() & attackers;
+    // 
+    //         for defending_square in mask.iter_set_bits_as_squares() {
+    //             let relevant_diagonals = defending_square.diagonals_mask();
+    //             let relevant_orthogonals = defending_square.orthogonals_mask();
+    // 
+    //             let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
+    //             let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
+    //             let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
+    // 
+    //             for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
+    //                 let blockers = Bitboard::between(defending_square, attacker_square);
+    //                 if blockers == 0 {
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+    // 
+    //         false
+    //     }
+    // }
+
+    pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
+        self.calc_attacks_mask(by_color) & mask != 0
+    }
 
     pub fn calc_attacks_mask(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_mask(by_color);
@@ -295,7 +338,7 @@ impl Board {
         println!("{}", self);
     }
 
-    pub fn to_cb(&self) -> Charboard {
+    pub fn ascii_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
             let colored_piece = self.get_colored_piece_at(square);
@@ -304,7 +347,7 @@ impl Board {
         cb
     }
 
-    pub fn to_cb_pretty(&self) -> Charboard {
+    pub fn unicode_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
             let colored_piece = self.get_colored_piece_at(square);
@@ -316,6 +359,6 @@ impl Board {
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.to_cb_pretty().to_string())
+        write!(f, "{}", &self.unicode_charboard().to_string())
     }
 }

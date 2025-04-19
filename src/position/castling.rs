@@ -55,12 +55,12 @@ impl Position {
     /// Returns true if the opponent has no pieces that can attack the squares the king moves through for short castling.
     /// Else, returns false.
     fn can_castle_short_without_check(&self) -> bool {
-        CASTLING_CHECK_MASK_SHORT[self.side_to_move as usize] & self.opposite_side_attacks() == 0
+        !self.board.is_mask_attacked(CASTLING_CHECK_MASK_SHORT[self.side_to_move as usize], self.side_to_move.other())
     }
 
     /// Returns true if the opponent has no pieces that can attack the squares the king moves through for long castling.
     /// Else, returns false.
     fn can_castle_long_without_check(&self) -> bool {
-        CASTLING_CHECK_MASK_LONG[self.side_to_move as usize] & self.opposite_side_attacks() == 0
+        !self.board.is_mask_attacked(CASTLING_CHECK_MASK_LONG[self.side_to_move as usize], self.side_to_move.other())
     }
 }

@@ -1,5 +1,6 @@
 //! Contains the State struct, which is the main struct for representing a position in a chess game.
 
+use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::position::{Board, GameResult, PositionContext};
 use crate::{Bitboard, BitboardUtils, Color, PieceType, Square};
 
@@ -17,15 +18,16 @@ impl Position {
     /// Creates an initial state with the standard starting position.
     pub fn initial() -> Position {
         let board = Board::initial();
-        let zobrist_hash = board.zobrist_hash;
-        let res = Position {
+        let mut context = PositionContext::initial();
+        context.zobrist_hash = board.zobrist_hash;
+        let mut res = Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Box::into_raw(Box::new(PositionContext::initial(zobrist_hash))),
+            context: Box::into_raw(Box::new(context)),
         };
-        res.update_pinned_pieces();
+        res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
         
         res
@@ -36,30 +38,50 @@ impl Position {
         self.halfmove / 2 + 1
     }
 
-    pub fn current_side_attacks(&self) -> Bitboard {
-        match unsafe { (*self.context).current_side_attacks } {
-            0 => self.board.calc_attacks_mask(self.side_to_move),
-            attacks => attacks,
-        }
+    pub fn context(&self) -> &PositionContext {
+        unsafe { &(*self.context) }
     }
 
-    pub fn opposite_side_attacks(&self) -> Bitboard {
-        match unsafe { &(*self.context).previous } {
-            // Some(previous) => previous.borrow().current_side_attacks,
-            _ => self.board.calc_attacks_mask(self.side_to_move.other()),
+    pub fn mut_context(&mut self) -> &mut PositionContext {
+        unsafe { &mut (*self.context) }
+    }
+
+    pub fn update_pins_and_checks(&mut self) {
+        let current_side_king = self.current_side_king();
+        let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
+        
+        let relevant_diagonals = current_side_king_square.diagonals_mask();
+        let relevant_orthogonals = current_side_king_square.orthogonals_mask();
+        
+        let relevant_diagonal_attackers = (self.opposite_side_bishops() | self.opposite_side_queens()) & relevant_diagonals;
+        let relevant_orthogonal_attackers = (self.opposite_side_rooks() | self.opposite_side_queens()) & relevant_orthogonals;
+        let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
+        
+        let mut pinned = 0;
+        let mut checkers = 0;
+        
+        for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
+            let blockers = Bitboard::between(current_side_king_square, attacker_square);
+            if blockers == 0 {
+                checkers |= attacker_square.mask();
+            } else if blockers.count_ones() == 1 {
+                pinned |= blockers;
+            }
         }
+        
+        pinned &= self.current_side_pieces();
+        
+        checkers |= single_knight_attacks(current_side_king_square) & self.opposite_side_knights();
+        checkers |= multi_pawn_attacks(current_side_king, self.side_to_move) & self.opposite_side_pawns();
+        
+        let context = self.mut_context();
+        context.pinned = pinned;
+        context.checkers = checkers;
     }
 
     pub fn is_current_side_in_check(&self) -> bool {
-        let kings_bb = self.board.piece_type_masks[PieceType::King as usize];
-        let current_side_bb = self.board.color_masks[self.side_to_move as usize];
-        kings_bb & current_side_bb & self.opposite_side_attacks() != 0
-    }
-
-    pub fn is_opposite_side_in_check(&self) -> bool {
-        let kings_bb = self.board.piece_type_masks[PieceType::King as usize];
-        let opposite_side_bb = self.board.color_masks[self.side_to_move.other() as usize];
-        kings_bb & opposite_side_bb & self.current_side_attacks() != 0
+        // self.context().checkers == 0
+        self.board.is_mask_attacked(self.current_side_king(), self.side_to_move.other())
     }
 
     pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
@@ -71,51 +93,16 @@ impl Position {
         }
     }
 
-    pub fn update_halfmove_clock(&mut self) {
-        if unsafe { (*self.context).halfmove_clock < 100 } {
+    pub fn update_fifty_move_rule(&mut self) {
+        if self.context().halfmove_clock < 100 {
             self.result = GameResult::FiftyMoveRule;
         }
     }
 
     pub fn update_threefold_repetition(&mut self) {
-        if unsafe { (*self.context).has_threefold_repetition_occurred() } {
+        if self.context().has_threefold_repetition_occurred() {
             self.result = GameResult::ThreefoldRepetition;
         }
-    }
-
-    pub fn update_pinned_pieces(&self) {
-        let current_side_king = self.current_side_king();
-        let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
-
-        let unsafe_diagonals = current_side_king_square.diagonals_mask();
-        let unsafe_orthogonals = current_side_king_square.orthogonals_mask();
-        
-        let possible_diagonal_pinners = (self.opposite_side_bishops() | self.opposite_side_queens())
-            & unsafe_diagonals;
-        let possible_orthogonal_pinners = (self.opposite_side_rooks() | self.opposite_side_queens())
-            & unsafe_orthogonals;
-        let possible_pinners = possible_diagonal_pinners | possible_orthogonal_pinners;
-
-        let mut pinned = 0;
-
-        for possible_pinner in possible_pinners.iter_set_bits_as_squares() {
-            let blockers_bb = Bitboard::between(current_side_king_square, possible_pinner);
-            if blockers_bb != 0 && blockers_bb.count_ones() == 1 {
-                pinned |= blockers_bb;
-            }
-        }
-        
-        pinned &= self.current_side_pieces();
-
-        unsafe { (*self.context).pinned_pieces = pinned; }
-    }
-    
-    pub const fn pinned_pieces(&self) -> Bitboard {
-        unsafe { (*self.context).pinned_pieces }
-    }
-
-    pub const fn double_pawn_push(&self) -> i8 {
-        unsafe { (*self.context).double_pawn_push }
     }
     
     pub const fn current_side_pieces(&self) -> Bitboard {
@@ -216,8 +203,8 @@ impl Position {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::position::{GameResult, Position, PositionContext};
-    use crate::{Color, ColoredPieceType, PieceType, Square};
+    use crate::position::{GameResult, Position};
+    use crate::Color;
 
     #[test]
     fn test_initial_state() {
@@ -245,46 +232,5 @@ mod state_tests {
 
         state.halfmove = 10;
         assert_eq!(state.get_fullmove(), 6); // After 10 halfmoves
-    }
-
-    #[test]
-    fn test_current_side_attacks() {
-        let state = Position::initial();
-        let expected_attacks = state.board.calc_attacks_mask(state.side_to_move);
-        assert_eq!(state.current_side_attacks(), expected_attacks);
-    }
-
-    #[test]
-    fn test_opposite_side_attacks() {
-        let initial_state = Position::initial();
-        let initial_black_attacks = initial_state
-            .board
-            .calc_attacks_mask(initial_state.side_to_move.other());
-        assert_eq!(initial_state.opposite_side_attacks(), initial_black_attacks);
-        unsafe { (*initial_state.context).initialize_current_side_attacks(initial_black_attacks) };
-
-        let mut next_state_board = initial_state.board.clone();
-        next_state_board.move_colored_piece(
-            ColoredPieceType::new(Color::White, PieceType::Pawn),
-            Square::E4,
-            Square::E2,
-        );
-        let next_state_zobrist = next_state_board.zobrist_hash;
-
-        let next_state_context =
-            unsafe { PositionContext::new_with_previous(initial_state.context, next_state_zobrist, 0) };
-
-        let next_state = Position {
-            board: next_state_board,
-            side_to_move: Color::Black,
-            halfmove: 1,
-            result: GameResult::None,
-            context: Box::into_raw(Box::new(next_state_context)),
-        };
-
-        let next_state_white_attacks = next_state
-            .board
-            .calc_attacks_mask(next_state.side_to_move.other());
-        assert_eq!(next_state.opposite_side_attacks(), next_state_white_attacks);
     }
 }
