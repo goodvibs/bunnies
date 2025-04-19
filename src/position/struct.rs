@@ -48,6 +48,11 @@ impl Position {
 
     pub fn update_pins_and_checks(&mut self) {
         let current_side_king = self.current_side_king();
+        
+        if current_side_king.count_ones() != 1 {
+            return;
+        }
+        
         let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
         
         let relevant_diagonals = current_side_king_square.diagonals_mask();

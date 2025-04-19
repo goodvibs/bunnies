@@ -3,7 +3,7 @@ use crate::masks::{
     STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
 };
 use crate::position::Position;
-use crate::{Bitboard, Color, PieceType};
+use crate::{Bitboard, Color, PieceType, Square};
 
 impl Position {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -28,7 +28,7 @@ impl Position {
     }
     
     pub fn is_opposite_side_in_check(&self) -> bool {
-        self.board.is_mask_attacked(self.opposite_side_king(), self.side_to_move)
+        self.board.is_square_attacked(unsafe { Square::from_bitboard(self.opposite_side_king()) }, self.side_to_move)
     }
 
     /// Checks if the halfmove clock is valid and consistent with the halfmove counter.

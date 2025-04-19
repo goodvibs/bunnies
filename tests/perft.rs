@@ -29,7 +29,7 @@ fn test_kiwipete() {
     // run_perft_test(state, 2, 2039);
     // run_perft_test(state, 3, 97862);
     // run_perft_test(state, 4, 4085603);
-    run_perft_test(state, 5, 193690690); // ~ 12 seconds on M1 Pro
+    run_perft_test(state, 5, 193690690); // ~ 10 seconds on M1 Pro
     // run_perft_test(state, 6, 8031647685);
 }
 
