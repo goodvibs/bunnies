@@ -55,7 +55,7 @@ fn test_position_4() {
     // run_perft_test(state, 3, 9467);
     // run_perft_test(state, 4, 422333);
     run_perft_test(state, 5, 15833292); // ~ 1 second on M1 Pro
-    // run_perft_test(state, 6, 706045033); // ~ 57 seconds on M1 Pro
+    // run_perft_test(state, 6, 706045033); // ~ 49 seconds on M1 Pro
 }
 
 #[test]
