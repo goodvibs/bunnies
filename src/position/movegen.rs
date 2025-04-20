@@ -237,7 +237,7 @@ impl Position {
 
     /// Returns a vector of pseudolegal moves.
     pub fn calc_pseudolegal_moves(&self) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
+        let mut moves: Vec<Move> = Vec::with_capacity(35);
 
         self.add_all_pawn_pseudolegal(&mut moves);
         self.add_knight_pseudolegal(&mut moves);
