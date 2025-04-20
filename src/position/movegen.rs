@@ -1,5 +1,6 @@
 //! Move generation functions for the state struct
 
+use static_init::dynamic;
 use crate::attacks::{multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks, sliding_piece_attacks};
 use crate::masks::{RANK_3, RANK_6};
 use crate::position::Position;
@@ -7,6 +8,10 @@ use crate::r#move::{Move, MoveFlag};
 use crate::Square;
 use crate::{Bitboard, Color};
 use crate::{BitboardUtils, PieceType};
+use crate::utilities::SquaresTwoToOneMapping;
+
+#[dynamic]
+static PAWN_PROMOTIONS_LOOKUP: SquaresTwoToOneMapping<[Move; 4]> = SquaresTwoToOneMapping::init(generate_pawn_promotions);
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     PieceType::PROMOTION_PIECES
@@ -14,7 +19,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 }
 
 impl Position {
-    fn add_normal_pawn_captures_pseudolegal(
+    fn add_legal_non_ep_pawn_captures(
         &self,
         moves: &mut Vec<Move>,
     ) {
@@ -34,7 +39,7 @@ impl Position {
 
             for dst_square in possible_captures.iter_set_bits_as_squares() {
                 if dst_square.rank() == promotion_rank {
-                    moves.extend(generate_pawn_promotions(src_square, dst_square));
+                    moves.extend(PAWN_PROMOTIONS_LOOKUP.get(src_square, dst_square));
                 } else {
                     moves.push(Move::new_non_promotion(
                         dst_square,
@@ -67,7 +72,7 @@ impl Position {
 
     }
 
-    fn add_en_passant_pseudolegal(&self, moves: &mut Vec<Move>) {
+    fn add_pseudolegal_en_passant(&self, moves: &mut Vec<Move>) {
         let double_pawn_push = self.context().double_pawn_push;
         let current_side_pawns = self.current_side_pawns();
 
@@ -110,7 +115,7 @@ impl Position {
         }
     }
 
-    fn add_pawn_push_pseudolegal(&self, moves: &mut Vec<Move>) {
+    fn add_legal_pawn_pushes(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
         let occupied_mask = self.board.pieces();
 
         let mut movable_pawns = self.current_side_pawns();
@@ -127,36 +132,36 @@ impl Position {
         }
 
         let single_push_dsts = multi_pawn_moves(movable_pawns, self.side_to_move) & !occupied_mask;
-        for dst_square in single_push_dsts.iter_set_bits_as_squares() {
+        let single_push_dsts_without_check = single_push_dsts & possible_dsts;
+        for dst_square in single_push_dsts_without_check.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_push_origin(dst_square) };
 
             if dst_square.rank() == self.current_side_promotion_rank() {
-                moves.extend(generate_pawn_promotions(src_square, dst_square));
+                moves.extend(PAWN_PROMOTIONS_LOOKUP.get(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
             }
         }
 
-        let double_push_dsts = multi_pawn_moves(single_push_dsts & self.get_additional_pawn_push_rank_mask(), self.side_to_move) & !occupied_mask;
+        let double_push_dsts = multi_pawn_moves(single_push_dsts & self.get_additional_pawn_push_rank_mask(), self.side_to_move) & !occupied_mask & possible_dsts;
         for dst_square in double_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { self.get_pawn_double_push_origin(dst_square) };
             moves.push(Move::new_non_promotion(dst_square, src_square, MoveFlag::NormalMove));
         }
     }
 
-    fn add_all_pawn_pseudolegal(&self, moves: &mut Vec<Move>) {
-        self.add_normal_pawn_captures_pseudolegal(moves);
-        self.add_en_passant_pseudolegal(moves);
-        self.add_pawn_push_pseudolegal(moves);
+    fn add_pawn_moves(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
+        self.add_legal_non_ep_pawn_captures(moves);
+        self.add_pseudolegal_en_passant(moves);
+        self.add_legal_pawn_pushes(possible_dsts, moves);
     }
 
-    fn add_knight_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let current_side_pieces = self.current_side_pieces();
-        let movable_knights = self.board.knights() & current_side_pieces & !self.context().pinned;
+    fn add_legal_knight_moves(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
+        let movable_knights = self.board.knights() & self.current_side_pieces() & !self.context().pinned;
 
         for src_square in movable_knights.iter_set_bits_as_squares() {
             let knight_attacks = single_knight_attacks(src_square);
-            let knight_moves = knight_attacks & !current_side_pieces;
+            let knight_moves = knight_attacks & possible_dsts;
 
             for dst_square in knight_moves.iter_set_bits_as_squares() {
                 moves.push(Move::new_non_promotion(
@@ -168,15 +173,14 @@ impl Position {
         }
     }
 
-    fn add_sliding_piece_pseudolegal(&self, piece: PieceType, moves: &mut Vec<Move>) {
-        let same_color_bb = self.current_side_pieces();
+    fn add_legal_sliding_piece_moves(&self, piece: PieceType, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
         let all_occupancy_bb = self.board.pieces();
 
-        let piece_mask = self.board.piece_mask(piece) & same_color_bb;
+        let piece_mask = self.board.piece_mask(piece) & self.current_side_pieces();
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
-            let mut possible_moves = attacks & !same_color_bb;
+            let mut possible_moves = attacks & possible_dsts;
 
             if src_square.mask() & self.context().pinned != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
@@ -193,7 +197,7 @@ impl Position {
         }
     }
 
-    fn add_king_pseudolegal(&self, moves: &mut Vec<Move>) {
+    fn add_legal_king_moves(&self, moves: &mut Vec<Move>) {
         let current_side_mask = self.current_side_pieces();
 
         let king_src_bb = self.board.kings() & current_side_mask;
@@ -210,12 +214,16 @@ impl Position {
             ));
         }
     }
-
-    fn add_castling_pseudolegal(&self, moves: &mut Vec<Move>) {
-        let king_src_square = match self.side_to_move {
+    
+    const fn get_castling_king_src_square(&self) -> Square {
+        match self.side_to_move {
             Color::White => Square::E1,
             Color::Black => Square::E8,
-        };
+        }
+    }
+
+    fn add_legal_castling_moves(&self, moves: &mut Vec<Move>) {
+        let king_src_square = self.get_castling_king_src_square();
 
         if self.can_legally_castle_short() {
             let king_dst_square = unsafe { Square::from(king_src_square as u8 + 2) };
@@ -239,14 +247,41 @@ impl Position {
     pub fn calc_pseudolegal_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(35);
 
-        self.add_all_pawn_pseudolegal(&mut moves);
-        self.add_knight_pseudolegal(&mut moves);
-        self.add_sliding_piece_pseudolegal(PieceType::Bishop, &mut moves);
-        self.add_sliding_piece_pseudolegal(PieceType::Rook, &mut moves);
-        self.add_sliding_piece_pseudolegal(PieceType::Queen, &mut moves);
-        self.add_king_pseudolegal(&mut moves);
-        self.add_castling_pseudolegal(&mut moves);
+        let mut possible_non_king_dsts = !self.current_side_pieces();
+        
+        match self.context().checkers {
+            0 => {
+                self.add_pawn_moves(possible_non_king_dsts, &mut moves);
+                self.add_legal_knight_moves(possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Bishop, possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Rook, possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Queen, possible_non_king_dsts, &mut moves);
+                self.add_legal_king_moves(&mut moves);
+                self.add_legal_castling_moves(&mut moves);
+            },
+            checkers if checkers.count_ones() == 1 => {
+                let checker_square = unsafe { Square::from_bitboard(checkers) };
+                let is_checker_a_slider = self.board.get_piece_type_at(checker_square).is_sliding_piece();
 
+                if is_checker_a_slider {
+                    let possible_move_ray = Bitboard::edge_to_edge_ray(checker_square, unsafe { Square::from_bitboard(self.current_side_king()) });
+                    possible_non_king_dsts &= possible_move_ray;
+                } else {
+                    possible_non_king_dsts = checker_square.mask();
+                }
+
+                self.add_pawn_moves(possible_non_king_dsts, &mut moves);
+                self.add_legal_knight_moves(possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Bishop, possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Rook, possible_non_king_dsts, &mut moves);
+                self.add_legal_sliding_piece_moves(PieceType::Queen, possible_non_king_dsts, &mut moves);
+                self.add_legal_king_moves(&mut moves);
+            },
+            _ => {
+                self.add_legal_king_moves(&mut moves);
+            }
+        }
+        
         moves
     }
 
