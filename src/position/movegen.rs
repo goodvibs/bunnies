@@ -19,10 +19,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 }
 
 impl Position {
-    fn add_legal_non_ep_pawn_captures(
-        &self,
-        moves: &mut Vec<Move>,
-    ) {
+    fn add_legal_non_ep_pawn_captures(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
         let opposite_side_pieces = self.opposite_side_pieces();
 
         let promotion_rank = self.current_side_promotion_rank();
@@ -30,7 +27,7 @@ impl Position {
         for src in self.current_side_pawns().iter_set_bits_as_masks() {
             let src_square = unsafe { Square::from_bitboard(src) };
 
-            let mut possible_captures = multi_pawn_attacks(src, self.side_to_move) & opposite_side_pieces;
+            let mut possible_captures = multi_pawn_attacks(src, self.side_to_move) & opposite_side_pieces & possible_dsts;
 
             if src_square.mask() & self.context().pinned != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe { Square::from_bitboard(self.current_side_king()) });
@@ -151,7 +148,7 @@ impl Position {
     }
 
     fn add_pawn_moves(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
-        self.add_legal_non_ep_pawn_captures(moves);
+        self.add_legal_non_ep_pawn_captures(possible_dsts, moves);
         self.add_pseudolegal_en_passant(moves);
         self.add_legal_pawn_pushes(possible_dsts, moves);
     }
