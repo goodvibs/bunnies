@@ -155,6 +155,37 @@ impl Board {
         }
     }
 
+    pub fn is_square_attacked_after_king_move(&self, square: Square, by_color: Color, king_move_src_dst: Bitboard) -> bool {
+        let attackers = self.color_mask(by_color) & !king_move_src_dst;
+
+        if (multi_pawn_attacks(square.mask(), by_color.other()) & self.pawns() & attackers != 0) ||
+            (single_knight_attacks(square) & self.knights() & attackers != 0) ||
+            (single_king_attacks(square) & self.kings() & attackers != 0) {
+            true
+        } else {
+            let diagonal_attackers = self.diagonal_sliders() & attackers;
+            let orthogonal_attackers = self.orthogonal_sliders() & attackers;
+
+            let relevant_diagonals = square.diagonals_mask();
+            let relevant_orthogonals = square.orthogonals_mask();
+
+            let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
+            let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
+            let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
+
+            let occupied = self.pieces() ^ king_move_src_dst;
+
+            for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
+                let blockers = Bitboard::between(square, attacker_square) & occupied;
+                if blockers == 0 {
+                    return true;
+                }
+            }
+
+            false
+        }
+    }
+
     pub fn calc_attacks(&self, by_color: Color) -> Bitboard {
         let attacking_color_mask = self.color_mask(by_color);
         let occupied_mask = self.pieces();

@@ -204,11 +204,13 @@ impl Position {
         let king_moves = king_attacks & !current_side_mask;
 
         for dst_square in king_moves.iter_set_bits_as_squares() {
-            moves.push(Move::new_non_promotion(
-                dst_square,
-                king_src_square,
-                MoveFlag::NormalMove,
-            ));
+            if !self.board.is_square_attacked_after_king_move(dst_square, self.side_to_move.other(), king_src_bb | dst_square.mask()) {
+                moves.push(Move::new_non_promotion(
+                    dst_square,
+                    king_src_square,
+                    MoveFlag::NormalMove,
+                ));
+            }
         }
     }
     
