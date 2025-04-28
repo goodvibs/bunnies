@@ -6,36 +6,37 @@ A fast chess library for chess engines. **Currently in alpha**.
 
 ## Current Features
 - Game state representation
-- (Pseudo-legal) move generation and application (and un-application)
+- Legal move generation
+- Forwards-backwards move application
 - FEN parsing and generation
 - UCI generation
 - Full PGN parsing and generation
   - Support for NAGs and variations (comments are parsed, but not generated)
   - Support for nested variations
-- Perft testing
+- Perft tests
 - Game termination detection (and draw detection)
 
 ## Optimizations
 `bunnies` makes use of the following optimizations:
 - Bitboard-based board representation
-- Pseudo-legal move generation
-- Make-unmake move application (eliminating the need to copy game state)
+- Direct legal move generation that takes pins and checks into account (no pseudolegal step and validation)
+- Make-unmake move application (eliminating the need to copy game state during search)
 - Magic bitboards for sliding piece attack generation
 - Precomputed attacks for knights and kings
 - Zobrist hashing for board state hashing
 
-`bunnies` is currently able to generate ~19M moves/thread/second (as measured on an M1 Macbook Pro),
+`bunnies` is currently able to generate ~23M moves/thread/second (as measured on an M1 Macbook Pro),
 which is not nearly as fast as programs like `Stockfish` (which is able to generate
 ~120M moves/thread/sec under the same conditions).
 
 ## Contribution
 `bunnies` needs the following to make 1.0.0 happen:
+- Multithreading
 - Further performance improvement
-  - Reuse calculated attacks for sliding pieces
-  - Maybe keep track of pinners and checkers to reduce legality checking
-- Some more benchmarks
-- Some more integration tests
+  - Figure out bottlenecks
+  - Solve inefficiencies
+- More tests wouldn't hurt
+- More benchmarks wouldn't hurt
 - Support for PGN comments
-- Unit tests for draw detection
 
 Feedback and contributions welcome!
