@@ -40,7 +40,7 @@ lto = true
 name = "perft"
 
 [[bench]]
-name = "attack_generation"
+name = "attacks"
 harness = false
 
 [[bench]]
