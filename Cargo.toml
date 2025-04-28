@@ -2,7 +2,7 @@
 name = "bunnies"
 version = "0.4.1"
 edition = "2024"
-description = "A fast chess library for chess engines."
+description = "A fast chess library for fast chess engines."
 authors = ["Vibhav Singamshetty <vibsingamshetty@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/goodvibs/bunnies"
