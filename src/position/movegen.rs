@@ -8,14 +8,8 @@ use crate::attacks::{
 use crate::masks::{FILE_A, FILE_H, RANK_3, RANK_6};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
-use crate::utilities::SquaresTwoToOneMapping;
 use crate::{Bitboard, Color};
 use crate::{BitboardUtils, PieceType};
-use static_init::dynamic;
-
-#[dynamic]
-static PAWN_PROMOTIONS_LOOKUP: SquaresTwoToOneMapping<[Move; 4]> =
-    SquaresTwoToOneMapping::init(generate_pawn_promotions);
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     PieceType::PROMOTION_PIECES
@@ -54,7 +48,7 @@ impl Position {
 
             for dst_square in possible_captures.iter_set_bits_as_squares() {
                 if dst_square.rank() == promotion_rank {
-                    moves.extend(PAWN_PROMOTIONS_LOOKUP.get(src_square, dst_square));
+                    moves.extend(generate_pawn_promotions(src_square, dst_square));
                 } else {
                     moves.push(Move::new_non_promotion(
                         src_square,
@@ -226,7 +220,7 @@ impl Position {
             let src_square = unsafe { self.get_pawn_push_origin(dst_square) };
 
             if dst_square.rank() == self.current_side_promotion_rank() {
-                moves.extend(PAWN_PROMOTIONS_LOOKUP.get(src_square, dst_square));
+                moves.extend(generate_pawn_promotions(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(
                     src_square,
