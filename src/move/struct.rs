@@ -8,7 +8,7 @@ use crate::position::Position;
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
-    /// format: {6 bit dest}{6 bit src}{2 bit promotion PieceType value minus 2}{2 bit MoveFlag value}
+    /// format: {6 bit dest}{6 bit src}{2 bit promotion Piece value minus 2}{2 bit MoveFlag value}
     pub value: u16,
 }
 

@@ -1,7 +1,7 @@
 //! Contains the implementation of the `State::unmake_move` method.
 
 use crate::Color;
-use crate::ColoredPieceType;
+use crate::ColoredPiece;
 use crate::Piece;
 use crate::Square;
 use crate::masks::STARTING_KING_ROOK_GAP_SHORT;
@@ -72,7 +72,7 @@ impl Position {
         };
 
         self.board.move_colored_piece(
-            ColoredPieceType::new(self.side_to_move.other(), Piece::Rook),
+            ColoredPiece::new(self.side_to_move.other(), Piece::Rook),
             rook_src_square,
             rook_dst_square,
         ); // move rook back

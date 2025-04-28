@@ -6,7 +6,7 @@ use crate::attacks::*;
 use crate::masks::*;
 use crate::utilities::{Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
-use crate::{BitboardUtils, ColoredPieceType};
+use crate::{BitboardUtils, ColoredPiece};
 use std::fmt::Display;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
@@ -242,7 +242,7 @@ impl Board {
 
     /// Populates a square with `colored_piece`.
     /// Updates the zobrist hash.
-    pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
+    pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
         let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
@@ -268,7 +268,7 @@ impl Board {
 
     /// Removes `colored_piece` from a square.
     /// Updates the zobrist hash.
-    pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
+    pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
         let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
@@ -311,7 +311,7 @@ impl Board {
     /// Updates the zobrist hash.
     pub fn move_colored_piece(
         &mut self,
-        colored_piece: ColoredPieceType,
+        colored_piece: ColoredPiece,
         dst_square: Square,
         src_square: Square,
     ) {
@@ -345,10 +345,10 @@ impl Board {
     }
 
     /// Returns the colored piece at `square`.
-    pub fn get_colored_piece_at(&self, square: Square) -> ColoredPieceType {
+    pub fn get_colored_piece_at(&self, square: Square) -> ColoredPiece {
         let piece_type = self.piece_at(square);
         let color = self.color_at(square);
-        ColoredPieceType::new(color, piece_type)
+        ColoredPiece::new(color, piece_type)
     }
 
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).

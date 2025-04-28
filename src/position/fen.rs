@@ -1,5 +1,5 @@
 use crate::Color;
-use crate::ColoredPieceType;
+use crate::ColoredPiece;
 use crate::Square;
 use crate::position::{Board, GameResult, Position, PositionContext};
 
@@ -105,8 +105,8 @@ fn parse_fen_board_row(
                 return Err(FenParseError::InvalidBoardRow(row.to_string()));
             }
         } else if c.is_ascii_alphabetic() {
-            match ColoredPieceType::from_ascii(c) {
-                ColoredPieceType::NoPiece => {
+            match ColoredPiece::from_ascii(c) {
+                ColoredPiece::NoPiece => {
                     return Err(FenParseError::InvalidBoardRow(row.to_string()));
                 }
                 colored_piece => {

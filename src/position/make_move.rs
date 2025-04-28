@@ -2,7 +2,7 @@
 
 use crate::Bitboard;
 use crate::Color;
-use crate::ColoredPieceType;
+use crate::ColoredPiece;
 use crate::Piece;
 use crate::Square;
 use crate::masks::{
@@ -41,7 +41,7 @@ impl Position {
         self.board
             .move_piece(moved_piece, dst_square, src_square);
         new_context.process_normal_disregarding_capture(
-            ColoredPieceType::new(self.side_to_move, moved_piece),
+            ColoredPiece::new(self.side_to_move, moved_piece),
             dst_square,
             src_square,
         );
@@ -58,7 +58,7 @@ impl Position {
         if captured_piece != Piece::Null {
             self.board.remove_piece_at(captured_piece, dst_square);
             new_context.process_capture(
-                ColoredPieceType::new(opposite_color, captured_piece),
+                ColoredPiece::new(opposite_color, captured_piece),
                 dst_mask,
             );
         }
@@ -110,7 +110,7 @@ impl Position {
         };
 
         self.board.move_colored_piece(
-            ColoredPieceType::new(self.side_to_move, Piece::Rook),
+            ColoredPiece::new(self.side_to_move, Piece::Rook),
             rook_dst_square,
             rook_src_square,
         );
@@ -159,7 +159,7 @@ impl PositionContext {
 
     fn process_normal_disregarding_capture(
         &mut self,
-        moved_piece: ColoredPieceType,
+        moved_piece: ColoredPiece,
         dst_square: Square,
         src_square: Square,
     ) {
@@ -224,7 +224,7 @@ impl PositionContext {
         self.castling_rights &= !(0b00001100 >> right_shift);
     }
 
-    fn process_capture(&mut self, captured_colored_piece: ColoredPieceType, dst_mask: Bitboard) {
+    fn process_capture(&mut self, captured_colored_piece: ColoredPiece, dst_mask: Bitboard) {
         let captured_color = captured_colored_piece.color();
         let captured_piece = captured_colored_piece.piece();
 
