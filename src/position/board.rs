@@ -1,12 +1,12 @@
 //! Board struct and methods
 
-use crate::{BitboardUtils, ColoredPieceType};
 use crate::PieceType;
 use crate::Square;
 use crate::attacks::*;
 use crate::masks::*;
 use crate::utilities::{Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
+use crate::{BitboardUtils, ColoredPieceType};
 use std::fmt::Display;
 
 /// A struct representing the positions of all pieces on the board, for both colors,
@@ -46,19 +46,19 @@ impl Board {
             zobrist_hash: 0,
         }
     }
-    
+
     pub const fn piece_mask(&self, piece_type: PieceType) -> Bitboard {
         self.piece_type_masks[piece_type as usize]
     }
-    
+
     pub const fn color_mask(&self, color: Color) -> Bitboard {
         self.color_masks[color as usize]
     }
-    
+
     pub const fn pieces(&self) -> Bitboard {
         self.piece_mask(PieceType::ALL_PIECE_TYPES)
     }
-    
+
     pub const fn pawns(&self) -> Bitboard {
         self.piece_mask(PieceType::Pawn)
     }
@@ -82,7 +82,7 @@ impl Board {
     pub const fn kings(&self) -> Bitboard {
         self.piece_mask(PieceType::King)
     }
-    
+
     pub const fn diagonal_sliders(&self) -> Bitboard {
         self.bishops() | self.queens()
     }
@@ -90,28 +90,30 @@ impl Board {
     pub const fn orthogonal_sliders(&self) -> Bitboard {
         self.rooks() | self.queens()
     }
-    
+
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
         let attackers = self.color_mask(by_color);
-        
-        if (multi_pawn_attacks(mask, by_color.other()) & self.pawns() & attackers != 0) ||
-            (multi_knight_attacks(mask) & self.knights() & attackers != 0) ||
-            (multi_king_attacks(mask) & self.kings() & attackers != 0) { 
+
+        if (multi_pawn_attacks(mask, by_color.other()) & self.pawns() & attackers != 0)
+            || (multi_knight_attacks(mask) & self.knights() & attackers != 0)
+            || (multi_king_attacks(mask) & self.kings() & attackers != 0)
+        {
             true
         } else {
             let diagonal_attackers = self.diagonal_sliders() & attackers;
             let orthogonal_attackers = self.orthogonal_sliders() & attackers;
-    
+
             for defending_square in mask.iter_set_bits_as_squares() {
                 let relevant_diagonals = defending_square.diagonals_mask();
                 let relevant_orthogonals = defending_square.orthogonals_mask();
-    
+
                 let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
                 let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
-                let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
+                let relevant_sliding_attackers =
+                    relevant_diagonal_attackers | relevant_orthogonal_attackers;
 
                 let occupied = self.pieces();
-    
+
                 for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
                     let blockers = Bitboard::between(defending_square, attacker_square) & occupied;
                     if blockers == 0 {
@@ -119,7 +121,7 @@ impl Board {
                     }
                 }
             }
-    
+
             false
         }
     }
@@ -127,9 +129,10 @@ impl Board {
     pub fn is_square_attacked(&self, square: Square, by_color: Color) -> bool {
         let attackers = self.color_mask(by_color);
 
-        if (multi_pawn_attacks(square.mask(), by_color.other()) & self.pawns() & attackers != 0) ||
-            (single_knight_attacks(square) & self.knights() & attackers != 0) ||
-            (single_king_attacks(square) & self.kings() & attackers != 0) {
+        if (multi_pawn_attacks(square.mask(), by_color.other()) & self.pawns() & attackers != 0)
+            || (single_knight_attacks(square) & self.knights() & attackers != 0)
+            || (single_king_attacks(square) & self.kings() & attackers != 0)
+        {
             true
         } else {
             let diagonal_attackers = self.diagonal_sliders() & attackers;
@@ -140,8 +143,9 @@ impl Board {
 
             let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
             let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
-            let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
-            
+            let relevant_sliding_attackers =
+                relevant_diagonal_attackers | relevant_orthogonal_attackers;
+
             let occupied = self.pieces();
 
             for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
@@ -155,12 +159,18 @@ impl Board {
         }
     }
 
-    pub fn is_square_attacked_after_king_move(&self, square: Square, by_color: Color, king_move_src_dst: Bitboard) -> bool {
+    pub fn is_square_attacked_after_king_move(
+        &self,
+        square: Square,
+        by_color: Color,
+        king_move_src_dst: Bitboard,
+    ) -> bool {
         let attackers = self.color_mask(by_color) & !king_move_src_dst;
 
-        if (multi_pawn_attacks(square.mask(), by_color.other()) & self.pawns() & attackers != 0) ||
-            (single_knight_attacks(square) & self.knights() & attackers != 0) ||
-            (single_king_attacks(square) & self.kings() & attackers != 0) {
+        if (multi_pawn_attacks(square.mask(), by_color.other()) & self.pawns() & attackers != 0)
+            || (single_knight_attacks(square) & self.knights() & attackers != 0)
+            || (single_king_attacks(square) & self.kings() & attackers != 0)
+        {
             true
         } else {
             let diagonal_attackers = self.diagonal_sliders() & attackers;
@@ -171,7 +181,8 @@ impl Board {
 
             let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
             let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
-            let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
+            let relevant_sliding_attackers =
+                relevant_diagonal_attackers | relevant_orthogonal_attackers;
 
             let occupied = self.pieces() ^ king_move_src_dst;
 
@@ -202,7 +213,8 @@ impl Board {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in ((self.rooks() | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
+        for src_square in
+            ((self.rooks() | queens_mask) & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }

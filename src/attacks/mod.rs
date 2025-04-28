@@ -2,9 +2,9 @@
 //! The direct exports are the recommended way to calculate attack masks.
 //! However, the `precomputed`, `manual`, and `magic` submodules may also be used.
 
-use crate::{Bitboard, PieceType};
 use crate::Color;
 use crate::Square;
+use crate::{Bitboard, PieceType};
 
 pub mod magic;
 pub mod manual;
@@ -55,13 +55,17 @@ pub fn single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitbo
 /// Returns an attack mask encoding all squares attacked by a queen on `src_square`,
 /// with `occupied_mask` as the mask of occupied squares
 pub fn single_queen_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    magic::magic_single_bishop_attacks(src_square, occupied_mask) |
-        magic::magic_single_rook_attacks(src_square, occupied_mask)
+    magic::magic_single_bishop_attacks(src_square, occupied_mask)
+        | magic::magic_single_rook_attacks(src_square, occupied_mask)
 }
 
 /// Returns an attack mask encoding all squares attacked by `piece` on `src_square`,
 /// with `occupied_mask` as the mask of occupied squares
-pub fn sliding_piece_attacks(src_square: Square, occupied_mask: Bitboard, piece: PieceType) -> Bitboard {
+pub fn sliding_piece_attacks(
+    src_square: Square,
+    occupied_mask: Bitboard,
+    piece: PieceType,
+) -> Bitboard {
     match piece {
         PieceType::Bishop => single_bishop_attacks(src_square, occupied_mask),
         PieceType::Rook => single_rook_attacks(src_square, occupied_mask),

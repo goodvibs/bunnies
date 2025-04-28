@@ -110,29 +110,48 @@ pub const STARTING_KING_SIDE_ROOK: [Bitboard; 2] = [STARTING_KING_SIDE_WR, START
 pub const STARTING_QUEEN_SIDE_ROOK: [Bitboard; 2] =
     [STARTING_QUEEN_SIDE_WR, STARTING_QUEEN_SIDE_BR];
 
-
 #[cfg(test)]
 mod tests {
-    use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, FILE_A, RANKS, RANK_1};
     use crate::Square;
+    use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILE_A, FILES, RANK_1, RANKS};
 
     #[test]
     fn test_files() {
         assert_eq!(FILES.len(), 8);
-        assert_eq!(FILE_A, Square::A1.mask() | Square::A2.mask() | Square::A3.mask() | Square::A4.mask() | Square::A5.mask() | Square::A6.mask() | Square::A7.mask() | Square::A8.mask());
-        
+        assert_eq!(
+            FILE_A,
+            Square::A1.mask()
+                | Square::A2.mask()
+                | Square::A3.mask()
+                | Square::A4.mask()
+                | Square::A5.mask()
+                | Square::A6.mask()
+                | Square::A7.mask()
+                | Square::A8.mask()
+        );
+
         let mut expected_file = FILE_A;
         for file in FILES {
             assert_eq!(file, expected_file);
             expected_file >>= 1;
         }
     }
-    
+
     #[test]
     fn test_ranks() {
         assert_eq!(RANKS.len(), 8);
-        assert_eq!(RANK_1, Square::A1.mask() | Square::B1.mask() | Square::C1.mask() | Square::D1.mask() | Square::E1.mask() | Square::F1.mask() | Square::G1.mask() | Square::H1.mask());
-        
+        assert_eq!(
+            RANK_1,
+            Square::A1.mask()
+                | Square::B1.mask()
+                | Square::C1.mask()
+                | Square::D1.mask()
+                | Square::E1.mask()
+                | Square::F1.mask()
+                | Square::G1.mask()
+                | Square::H1.mask()
+        );
+
         let mut expected_rank = RANK_1;
         for rank in RANKS {
             assert_eq!(rank, expected_rank);
@@ -144,7 +163,7 @@ mod tests {
     fn test_diagonals_br_to_tl() {
         assert_eq!(DIAGONALS_BR_TO_TL.len(), 15);
         assert_eq!(DIAGONALS_BR_TO_TL[0], 0x1);
-        
+
         let mut mask = 0;
         for diagonal in DIAGONALS_BR_TO_TL {
             assert_ne!(diagonal, 0);
@@ -153,12 +172,12 @@ mod tests {
         }
         assert_eq!(mask.count_zeros(), 0);
     }
-    
+
     #[test]
     fn test_diagonals_bl_to_tr() {
         assert_eq!(DIAGONALS_BL_TO_TR.len(), 15);
         assert_eq!(DIAGONALS_BL_TO_TR[0], 0x80);
-        
+
         let mut mask = 0;
         for diagonal in DIAGONALS_BL_TO_TR {
             assert_ne!(diagonal, 0);

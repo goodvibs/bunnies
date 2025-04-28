@@ -29,7 +29,7 @@ impl Position {
         };
         res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
-        
+
         res
     }
 
@@ -48,40 +48,44 @@ impl Position {
 
     pub fn update_pins_and_checks(&mut self) {
         let current_side_king = self.current_side_king();
-        
+
         if current_side_king.count_ones() != 1 {
             return;
         }
-        
+
         let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
-        
+
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
-        
-        let relevant_diagonal_attackers = (self.opposite_side_bishops() | self.opposite_side_queens()) & relevant_diagonals;
-        let relevant_orthogonal_attackers = (self.opposite_side_rooks() | self.opposite_side_queens()) & relevant_orthogonals;
-        let relevant_sliding_attackers = relevant_diagonal_attackers | relevant_orthogonal_attackers;
-        
+
+        let relevant_diagonal_attackers =
+            (self.opposite_side_bishops() | self.opposite_side_queens()) & relevant_diagonals;
+        let relevant_orthogonal_attackers =
+            (self.opposite_side_rooks() | self.opposite_side_queens()) & relevant_orthogonals;
+        let relevant_sliding_attackers =
+            relevant_diagonal_attackers | relevant_orthogonal_attackers;
+
         let mut pinned = 0;
         let mut checkers = 0;
-        
+
         let occupied = self.board.pieces();
-        
+
         for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
             let blockers = Bitboard::between(current_side_king_square, attacker_square) & occupied;
-            
+
             if blockers == 0 {
                 checkers |= attacker_square.mask();
             } else if blockers.count_ones() == 1 {
                 pinned |= blockers;
             }
         }
-        
+
         pinned &= self.current_side_pieces();
-        
+
         checkers |= single_knight_attacks(current_side_king_square) & self.opposite_side_knights();
-        checkers |= multi_pawn_attacks(current_side_king, self.side_to_move) & self.opposite_side_pawns();
-        
+        checkers |=
+            multi_pawn_attacks(current_side_king, self.side_to_move) & self.opposite_side_pawns();
+
         let context = self.mut_context();
         context.pinned = pinned;
         context.checkers = checkers;
@@ -111,39 +115,33 @@ impl Position {
             self.result = GameResult::ThreefoldRepetition;
         }
     }
-    
+
     pub const fn current_side_pieces(&self) -> Bitboard {
         self.board.color_masks[self.side_to_move as usize]
     }
-    
+
     pub const fn current_side_pawns(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Pawn as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::Pawn as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_knights(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Knight as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::Knight as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_bishops(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Bishop as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::Bishop as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_rooks(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Rook as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::Rook as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_queens(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Queen as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::Queen as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_king(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::King as usize] &
-            self.current_side_pieces()
+        self.board.piece_type_masks[PieceType::King as usize] & self.current_side_pieces()
     }
 
     pub const fn opposite_side_pieces(&self) -> Bitboard {
@@ -151,46 +149,40 @@ impl Position {
     }
 
     pub const fn opposite_side_pawns(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Pawn as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::Pawn as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_knights(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Knight as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::Knight as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_bishops(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Bishop as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::Bishop as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_rooks(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Rook as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::Rook as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_queens(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Queen as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::Queen as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_king(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::King as usize] &
-            self.opposite_side_pieces()
+        self.board.piece_type_masks[PieceType::King as usize] & self.opposite_side_pieces()
     }
 
     pub const fn current_side_promotion_rank(&self) -> u8 {
         match self.side_to_move {
             Color::White => 7,
-            Color::Black => 0
+            Color::Black => 0,
         }
     }
 
     pub const fn opposite_side_promotion_rank(&self) -> u8 {
         match self.side_to_move.other() {
             Color::White => 7,
-            Color::Black => 0
+            Color::Black => 0,
         }
     }
 }
@@ -210,8 +202,8 @@ impl Position {
 
 #[cfg(test)]
 mod state_tests {
-    use crate::position::{GameResult, Position};
     use crate::Color;
+    use crate::position::{GameResult, Position};
 
     #[test]
     fn test_initial_state() {

@@ -1,8 +1,8 @@
 //! All Zobrist hashing-related code.
 
-use crate::{BitboardUtils, Square};
 use crate::position::board::Board;
 use crate::{Bitboard, PieceType};
+use crate::{BitboardUtils, Square};
 use rand::Rng;
 use static_init::dynamic;
 

@@ -24,11 +24,11 @@ pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) 
 
 #[cfg(test)]
 mod tests {
-    use crate::{BitboardUtils, PieceType};
     use crate::Square;
     use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
     use crate::attacks::magic::{magic_single_bishop_attacks, magic_single_rook_attacks};
     use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
+    use crate::{BitboardUtils, PieceType};
 
     #[test]
     fn test_fill_magic_numbers_and_attacks() {

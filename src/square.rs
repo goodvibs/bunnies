@@ -1,8 +1,8 @@
 use crate::Bitboard;
 use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
-use std::fmt::Display;
-use static_init::dynamic;
 use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks, SquaresTwoToOneMapping};
+use static_init::dynamic;
+use std::fmt::Display;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -373,16 +373,18 @@ static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square
 });
 
 #[dynamic]
-static SQUARES_ON_SAME_DIAGONAL_LOOKUP: SquaresTwoToOneMapping<bool> = SquaresTwoToOneMapping::init(|sq1, sq2| {
-    let sq1_diagonals = sq1.diagonals_mask();
-    sq1_diagonals & sq2.mask() != 0
-});
+static SQUARES_ON_SAME_DIAGONAL_LOOKUP: SquaresTwoToOneMapping<bool> =
+    SquaresTwoToOneMapping::init(|sq1, sq2| {
+        let sq1_diagonals = sq1.diagonals_mask();
+        sq1_diagonals & sq2.mask() != 0
+    });
 
 #[dynamic]
-static SQUARES_ON_SAME_LINE_LOOKUP: SquaresTwoToOneMapping<bool> = SquaresTwoToOneMapping::init(|sq1, sq2| {
-    let sq1_rays = sq1.orthogonals_and_diagonals_mask();
-    sq1_rays & sq2.mask() != 0
-});
+static SQUARES_ON_SAME_LINE_LOOKUP: SquaresTwoToOneMapping<bool> =
+    SquaresTwoToOneMapping::init(|sq1, sq2| {
+        let sq1_rays = sq1.orthogonals_and_diagonals_mask();
+        sq1_rays & sq2.mask() != 0
+    });
 
 #[cfg(test)]
 mod tests {

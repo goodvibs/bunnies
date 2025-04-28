@@ -26,9 +26,12 @@ impl Position {
     pub fn is_zobrist_consistent(&self) -> bool {
         self.board.zobrist_hash == unsafe { (*self.context).zobrist_hash }
     }
-    
+
     pub fn is_opposite_side_in_check(&self) -> bool {
-        self.board.is_square_attacked(unsafe { Square::from_bitboard(self.opposite_side_king()) }, self.side_to_move)
+        self.board.is_square_attacked(
+            unsafe { Square::from_bitboard(self.opposite_side_king()) },
+            self.side_to_move,
+        )
     }
 
     /// Checks if the halfmove clock is valid and consistent with the halfmove counter.

@@ -1,7 +1,7 @@
 use crate::Color;
 use crate::ColoredPieceType;
 use crate::Square;
-use crate::position::{Board, PositionContext, GameResult, Position};
+use crate::position::{Board, GameResult, Position, PositionContext};
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -186,7 +186,7 @@ impl Position {
 
                 if state.is_unequivocally_valid() {
                     state.update_pins_and_checks();
-                    
+
                     Ok(state)
                 } else {
                     Err(FenParseError::InvalidPosition(fen.to_string()))

@@ -147,7 +147,7 @@ impl Position {
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.other();
         self.context = Box::into_raw(Box::new(new_context));
-        
+
         self.update_pins_and_checks();
     }
 }

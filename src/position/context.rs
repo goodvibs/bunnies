@@ -21,9 +21,7 @@ pub struct PositionContext {
 
 impl PositionContext {
     /// Creates a new context linking to the previous context
-    pub unsafe fn new_with_previous(
-        previous_context: *mut PositionContext,
-    ) -> PositionContext {
+    pub unsafe fn new_with_previous(previous_context: *mut PositionContext) -> PositionContext {
         let (previous_halfmove_clock, previous_castling_rights) = unsafe {
             assert_ne!(
                 (*previous_context).zobrist_hash,

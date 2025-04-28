@@ -27,7 +27,7 @@ impl PieceType {
         );
         unsafe { std::mem::transmute::<u8, PieceType>(piece_type_number) }
     }
-    
+
     pub fn is_sliding_piece(&self) -> bool {
         Self::SLIDING_PIECES.contains(self)
     }
@@ -148,9 +148,6 @@ impl PieceType {
         PieceType::Queen,
     ];
 
-    pub const SLIDING_PIECES: [PieceType; 3] = [
-        PieceType::Bishop,
-        PieceType::Rook,
-        PieceType::Queen,
-    ];
+    pub const SLIDING_PIECES: [PieceType; 3] =
+        [PieceType::Bishop, PieceType::Rook, PieceType::Queen];
 }

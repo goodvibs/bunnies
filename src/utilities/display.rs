@@ -6,7 +6,7 @@ pub trait BitboardDisplay {
 
     /// Converts the Bitboard to a Charboard.
     fn to_cb(self) -> Charboard;
-    
+
     /// Pretty prints the Bitboard as a chess board.
     fn print_pretty(&self);
 }
@@ -31,7 +31,7 @@ impl BitboardDisplay for Bitboard {
         }
         cb
     }
-    
+
     fn print_pretty(&self) {
         self.to_cb().print();
     }
@@ -43,7 +43,7 @@ pub type Charboard = [[char; 8]; 8];
 pub trait CharboardDisplay {
     /// Converts the Charboard to a string representation.
     fn to_string(&self) -> String;
-    
+
     /// Prints the Charboard.
     fn print(&self);
 }

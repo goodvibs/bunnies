@@ -4,7 +4,9 @@ pub struct SquaresMapping<const NUM_SQUARES_PER_KEY: usize, OutputType: Copy> {
     masks: Vec<OutputType>,
 }
 
-impl<const NUM_SQUARES_PER_KEY: usize, OutputType: Copy> SquaresMapping<NUM_SQUARES_PER_KEY, OutputType> {
+impl<const NUM_SQUARES_PER_KEY: usize, OutputType: Copy>
+    SquaresMapping<NUM_SQUARES_PER_KEY, OutputType>
+{
     pub fn init_(calc_mask: impl Fn([Square; NUM_SQUARES_PER_KEY]) -> OutputType) -> Self {
         let total_combos = 64usize.pow(NUM_SQUARES_PER_KEY as u32);
         let mut masks = vec![unsafe { std::mem::zeroed() }; total_combos];

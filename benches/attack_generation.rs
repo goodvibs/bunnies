@@ -1,9 +1,9 @@
-use bunnies::{Bitboard, BitboardUtils};
 use bunnies::Color;
 use bunnies::Square;
 use bunnies::attacks::magic::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use bunnies::attacks::{magic, manual, precomputed};
-use bunnies::utilities::{SquaresToMasks};
+use bunnies::utilities::SquaresToMasks;
+use bunnies::{Bitboard, BitboardUtils};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn sliding_piece_attacks_test(

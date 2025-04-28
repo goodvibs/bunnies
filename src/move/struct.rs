@@ -79,7 +79,12 @@ impl Move {
             MoveFlag::Promotion => self.promotion().uppercase_ascii().to_string(),
             _ => "".to_string(),
         };
-        format!("{}{}{}", self.source().algebraic(), self.destination().algebraic(), promotion_str)
+        format!(
+            "{}{}{}",
+            self.source().algebraic(),
+            self.destination().algebraic(),
+            promotion_str
+        )
     }
 }
 

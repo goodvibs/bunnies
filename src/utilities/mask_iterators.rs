@@ -94,8 +94,8 @@ impl Iterator for BitCombinationsIterator {
 
 #[cfg(test)]
 mod tests {
-    use crate::BitboardUtils;
     use super::*;
+    use crate::BitboardUtils;
 
     #[test]
     fn test_generate_bit_combinations() {

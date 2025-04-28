@@ -343,10 +343,9 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = Position::from_fen(
-            "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
-        )
-        .unwrap();
+        let state =
+            Position::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
+                .unwrap();
 
         // Test knight move
         let knight_move = PgnNonCastlingMove {
