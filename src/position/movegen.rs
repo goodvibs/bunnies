@@ -336,7 +336,7 @@ impl Position {
         }
     }
 
-    /// Returns a vector of pseudolegal moves.
+    /// Returns a vector of legal moves.
     pub fn moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(35);
 
