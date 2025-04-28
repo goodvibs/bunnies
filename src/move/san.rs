@@ -1,6 +1,6 @@
 use crate::PieceType;
 use crate::r#move::Move;
-use crate::r#move::move_flag::MoveFlag;
+use crate::r#move::flag::MoveFlag;
 
 impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.
