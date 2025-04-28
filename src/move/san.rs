@@ -12,8 +12,8 @@ impl Move {
         is_checkmate: bool,
         is_capture: bool,
     ) -> String {
-        let dst_square = self.get_destination();
-        let flag = self.get_flag();
+        let dst_square = self.destination();
+        let flag = self.flag();
 
         let move_str = if flag == MoveFlag::Castling {
             match dst_square.file() {
@@ -22,8 +22,8 @@ impl Move {
                 _ => panic!("Invalid castling move"),
             }
         } else {
-            let src_square = self.get_source();
-            let promotion = self.get_promotion();
+            let src_square = self.source();
+            let promotion = self.promotion();
 
             let piece_str = match moved_piece {
                 PieceType::Pawn => {

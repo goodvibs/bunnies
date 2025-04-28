@@ -41,11 +41,11 @@ pub struct PgnNonCastlingMove {
 
 impl PgnMove for PgnNonCastlingMove {
     fn matches_move(&self, mv: Move, initial_state: &Position) -> bool {
-        let dst = mv.get_destination();
-        let src = mv.get_source();
-        let flag = mv.get_flag();
+        let dst = mv.destination();
+        let src = mv.source();
+        let flag = mv.flag();
         let promotion = match flag {
-            MoveFlag::Promotion => mv.get_promotion(),
+            MoveFlag::Promotion => mv.promotion(),
             _ => PieceType::NoPieceType,
         };
 
@@ -364,7 +364,7 @@ mod tests {
             },
         };
 
-        let actual_move = Move::new_non_promotion(Square::D4, Square::F3, MoveFlag::NormalMove);
+        let actual_move = Move::new_non_promotion(Square::F3, Square::D4, MoveFlag::NormalMove);
 
         assert!(knight_move.matches_move(actual_move, &state));
 

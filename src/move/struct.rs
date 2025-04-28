@@ -17,7 +17,7 @@ impl Move {
     pub const DEFAULT_PROMOTION_VALUE: PieceType = PieceType::Rook;
 
     /// Creates a new move.
-    pub fn new(dst: Square, src: Square, promotion: PieceType, flag: MoveFlag) -> Move {
+    pub fn new(src: Square, dst: Square, promotion: PieceType, flag: MoveFlag) -> Move {
         assert!(
             promotion != PieceType::King && promotion != PieceType::Pawn,
             "Invalid promotion piece type"
@@ -31,90 +31,61 @@ impl Move {
     }
 
     /// Creates a new move with the default promotion value.
-    pub fn new_non_promotion(dst: Square, src: Square, flag: MoveFlag) -> Move {
-        Move::new(dst, src, Move::DEFAULT_PROMOTION_VALUE, flag)
+    pub fn new_non_promotion(src: Square, dst: Square, flag: MoveFlag) -> Move {
+        Move::new(src, dst, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
-    pub fn new_promotion(dst: Square, src: Square, promotion: PieceType) -> Move {
-        Move::new(dst, src, promotion, MoveFlag::Promotion)
+    pub fn new_promotion(src: Square, dst: Square, promotion: PieceType) -> Move {
+        Move::new(src, dst, promotion, MoveFlag::Promotion)
     }
 
     /// Gets the destination square of the move.
-    pub const fn get_destination(&self) -> Square {
+    pub const fn destination(&self) -> Square {
         let dst_int = (self.value >> 10) as u8;
         unsafe { Square::from(dst_int) }
     }
 
     /// Gets the source square of the move.
-    pub const fn get_source(&self) -> Square {
+    pub const fn source(&self) -> Square {
         let src_int = ((self.value & 0b0000001111110000) >> 4) as u8;
         unsafe { Square::from(src_int) }
     }
 
     /// Gets the promotion piece type of the move.
-    pub const fn get_promotion(&self) -> PieceType {
+    pub const fn promotion(&self) -> PieceType {
         let promotion_int = ((self.value & 0b0000000000001100) >> 2) as u8;
         unsafe { PieceType::from(promotion_int + 2) }
     }
 
     /// Gets the flag of the move.
-    pub const fn get_flag(&self) -> MoveFlag {
+    pub const fn flag(&self) -> MoveFlag {
         let flag_int = (self.value & 0b0000000000000011) as u8;
         unsafe { MoveFlag::from(flag_int) }
     }
 
-    /// Unpacks the move into its components.
-    pub const fn unpack(&self) -> (Square, Square, PieceType, MoveFlag) {
-        (
-            self.get_destination(),
-            self.get_source(),
-            self.get_promotion(),
-            self.get_flag(),
-        )
-    }
-
     pub fn is_capture(&self, initial_state: &Position) -> bool {
-        match self.get_flag() {
+        match self.flag() {
             MoveFlag::NormalMove | MoveFlag::Promotion => {
-                initial_state.board.is_occupied_at(self.get_destination())
+                initial_state.board.is_occupied_at(self.destination())
             }
             MoveFlag::EnPassant => true,
             MoveFlag::Castling => false,
         }
     }
 
-    /// Returns a readable representation of the move.
-    pub fn readable(&self) -> String {
-        let (dst, src, promotion, flag) = self.unpack();
-        let (dst_str, src_str, promotion_char, flag_str) = (
-            src.readable(),
-            dst.readable(),
-            promotion.uppercase_ascii(),
-            flag.to_readable(),
-        );
-        format!(
-            "{}{}{}",
-            dst_str,
-            src_str,
-            flag_str.replace('?', &promotion_char.to_string())
-        )
-    }
-
     /// Returns the UCI (Universal Chess Interface) representation of the move.
     pub fn uci(&self) -> String {
-        let (dst, src, promotion, flag) = self.unpack();
-        let (dst_str, src_str) = (dst.readable(), src.readable());
-        let promotion_str = match flag {
-            MoveFlag::Promotion => promotion.uppercase_ascii().to_string(),
+        let promotion_str = match self.flag() {
+            MoveFlag::Promotion => self.promotion().uppercase_ascii().to_string(),
             _ => "".to_string(),
         };
-        format!("{}{}{}", src_str, dst_str, promotion_str)
+        format!("{}{}{}", self.source().algebraic(), self.destination().algebraic(), promotion_str)
     }
 }
 
 impl std::fmt::Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.readable())
+        write!(f, "{}", self.uci())
     }
 }
 
@@ -138,11 +109,11 @@ mod tests {
                     for flag_int in 0..4 {
                         let flag = unsafe { MoveFlag::from(flag_int) };
 
-                        let mv = Move::new(dst_square, src_square, promotion_piece, flag);
-                        assert_eq!(mv.get_destination(), dst_square);
-                        assert_eq!(mv.get_source(), src_square);
-                        assert_eq!(mv.get_promotion(), promotion_piece);
-                        assert_eq!(mv.get_flag(), flag);
+                        let mv = Move::new(src_square, dst_square, promotion_piece, flag);
+                        assert_eq!(mv.destination(), dst_square);
+                        assert_eq!(mv.source(), src_square);
+                        assert_eq!(mv.promotion(), promotion_piece);
+                        assert_eq!(mv.flag(), flag);
                     }
                 }
             }

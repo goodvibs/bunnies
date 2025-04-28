@@ -82,14 +82,15 @@ impl Position {
     /// This method is used to undo a move that was previously made with `State::make_move`, regardless of
     /// whether the move was legal. However, the move must have been valid (not malformed).
     pub fn unmake_move(&mut self, mv: Move) {
-        let (dst_square, src_square, promotion, flag) = mv.unpack();
+        let src_square = mv.source();
+        let dst_square = mv.destination();
 
         self.board
             .move_color(self.side_to_move.other(), src_square, dst_square);
 
-        match flag {
+        match mv.flag() {
             MoveFlag::NormalMove => self.unprocess_normal(dst_square, src_square),
-            MoveFlag::Promotion => self.unprocess_promotion(dst_square, src_square, promotion),
+            MoveFlag::Promotion => self.unprocess_promotion(dst_square, src_square, mv.promotion()),
             MoveFlag::EnPassant => self.unprocess_en_passant(dst_square, src_square),
             MoveFlag::Castling => self.unprocess_castling(dst_square, src_square),
         }

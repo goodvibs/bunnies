@@ -28,8 +28,8 @@ pub struct PgnCastlingMove {
 
 impl PgnMove for PgnCastlingMove {
     fn matches_move(&self, mv: Move, _initial_state: &Position) -> bool {
-        let flag = mv.get_flag();
-        if flag != MoveFlag::Castling || self.is_kingside != (mv.get_destination().file() == 6) {
+        let flag = mv.flag();
+        if flag != MoveFlag::Castling || self.is_kingside != (mv.destination().file() == 6) {
             return false;
         }
 
@@ -193,9 +193,9 @@ mod tests {
         };
         let state = Position::initial();
         let kingside_castling_move =
-            Move::new_non_promotion(Square::G8, Square::E8, MoveFlag::Castling);
+            Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
         let queenside_castling_move =
-            Move::new_non_promotion(Square::C8, Square::E8, MoveFlag::Castling);
+            Move::new_non_promotion(Square::E8, Square::C8, MoveFlag::Castling);
         assert_eq!(
             castling_move.matches_move(kingside_castling_move, &state),
             true

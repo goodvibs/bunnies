@@ -80,8 +80,8 @@ impl MoveTreeNode {
 
         let rendered_move = if let Some(move_data) = &self.move_data {
             let mv = move_data.mv;
-            let mv_source = mv.get_source();
-            let mv_dest = mv.get_destination();
+            let mv_source = mv.source();
+            let mv_dest = mv.destination();
             let moved_piece = state.board.get_piece_type_at(mv_source);
             let side_to_move = state.side_to_move;
 
@@ -104,8 +104,8 @@ impl MoveTreeNode {
                     let disambiguation_moves: Vec<Move> = all_other_moves
                         .iter()
                         .filter(|m| {
-                            m.get_destination() == mv_dest
-                                && state.board.get_piece_type_at(m.get_source()) == moved_piece
+                            m.destination() == mv_dest
+                                && state.board.get_piece_type_at(m.source()) == moved_piece
                         })
                         .cloned()
                         .collect::<Vec<Move>>();
@@ -116,10 +116,10 @@ impl MoveTreeNode {
                             let rank = mv_source.rank();
                             let is_file_ambiguous = disambiguation_moves
                                 .iter()
-                                .any(|m| m.get_source().file() == file);
+                                .any(|m| m.source().file() == file);
                             let is_rank_ambiguous = disambiguation_moves
                                 .iter()
-                                .any(|m| m.get_source().rank() == rank);
+                                .any(|m| m.source().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
                                 (true, true) => mv_source.to_string(),
                                 (true, false) => mv_source.rank_char().to_string(),
@@ -131,7 +131,7 @@ impl MoveTreeNode {
                 }
             };
 
-            let is_capture = match mv.get_flag() {
+            let is_capture = match mv.flag() {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
                 MoveFlag::NormalMove | MoveFlag::Promotion => {

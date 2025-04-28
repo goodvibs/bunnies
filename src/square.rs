@@ -263,8 +263,8 @@ impl Square {
     }
 
     /// Returns a string representing the square in algebraic notation.
-    pub const fn readable(&self) -> &str {
-        Self::ALL_STR[*self as usize]
+    pub const fn algebraic(&self) -> &str {
+        Self::ALL_ALGEBRAIC[*self as usize]
     }
 
     /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
@@ -335,7 +335,7 @@ impl Square {
         Square::H1,
     ];
 
-    pub const ALL_STR: [&'static str; 64] = [
+    pub const ALL_ALGEBRAIC: [&'static str; 64] = [
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
         "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",
         "g5", "h5", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a3", "b3", "c3", "d3", "e3",
@@ -346,7 +346,7 @@ impl Square {
 
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.readable())
+        write!(f, "{}", self.algebraic())
     }
 }
 
@@ -581,9 +581,9 @@ mod tests {
 
     #[test]
     fn test_readable() {
-        assert_eq!(Square::A1.readable(), "a1");
-        assert_eq!(Square::H8.readable(), "h8");
-        assert_eq!(Square::E4.readable(), "e4");
+        assert_eq!(Square::A1.algebraic(), "a1");
+        assert_eq!(Square::H8.algebraic(), "h8");
+        assert_eq!(Square::E4.algebraic(), "e4");
     }
 
     #[test]

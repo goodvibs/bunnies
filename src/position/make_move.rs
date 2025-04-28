@@ -122,17 +122,18 @@ impl Position {
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
     pub fn make_move(&mut self, mv: Move) {
-        let (dst_square, src_square, promotion, flag) = mv.unpack();
+        let src_square = mv.source();
+        let dst_square = mv.destination();
 
         let mut new_context = unsafe { PositionContext::new_with_previous(self.context) };
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
 
-        match flag {
+        match mv.flag() {
             MoveFlag::NormalMove => self.process_normal(dst_square, src_square, &mut new_context),
             MoveFlag::Promotion => {
-                self.process_promotion(dst_square, src_square, promotion, &mut new_context)
+                self.process_promotion(dst_square, src_square, mv.promotion(), &mut new_context)
             }
             MoveFlag::EnPassant => {
                 self.process_en_passant(dst_square, src_square, &mut new_context)
