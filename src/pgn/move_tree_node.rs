@@ -1,5 +1,5 @@
 use crate::Color;
-use crate::PieceType;
+use crate::Piece;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
@@ -82,7 +82,7 @@ impl MoveTreeNode {
             let mv = move_data.mv;
             let mv_source = mv.source();
             let mv_dest = mv.destination();
-            let moved_piece = state.board.get_piece_type_at(mv_source);
+            let moved_piece = state.board.piece_at(mv_source);
             let side_to_move = state.side_to_move;
 
             // Add move number for white's move or at the start of a variation
@@ -95,8 +95,8 @@ impl MoveTreeNode {
             };
 
             let disambiguation_str = match moved_piece {
-                PieceType::Pawn | PieceType::King => "".to_string(),
-                PieceType::NoPieceType => panic!("Invalid piece type"),
+                Piece::Pawn | Piece::King => "".to_string(),
+                Piece::Null => panic!("Invalid piece type"),
                 _ => {
                     let all_moves = state.moves();
                     let all_other_moves: Vec<Move> =
@@ -105,7 +105,7 @@ impl MoveTreeNode {
                         .iter()
                         .filter(|m| {
                             m.destination() == mv_dest
-                                && state.board.get_piece_type_at(m.source()) == moved_piece
+                                && state.board.piece_at(m.source()) == moved_piece
                         })
                         .cloned()
                         .collect::<Vec<Move>>();
@@ -135,7 +135,7 @@ impl MoveTreeNode {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
                 MoveFlag::NormalMove | MoveFlag::Promotion => {
-                    state.board.get_piece_type_at(mv_dest) != PieceType::NoPieceType
+                    state.board.piece_at(mv_dest) != Piece::Null
                 }
             };
             state.make_move(mv); // if attacks_mask is 0, then it will be filled in automatically

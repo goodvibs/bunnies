@@ -1,4 +1,4 @@
-use crate::PieceType;
+use crate::Piece;
 use crate::Square;
 use crate::r#move::MoveFlag;
 use crate::position::Position;
@@ -14,12 +14,12 @@ pub struct Move {
 
 impl Move {
     /// The default promotion value for a move.
-    pub const DEFAULT_PROMOTION_VALUE: PieceType = PieceType::Rook;
+    pub const DEFAULT_PROMOTION_VALUE: Piece = Piece::Rook;
 
     /// Creates a new move.
-    pub fn new(src: Square, dst: Square, promotion: PieceType, flag: MoveFlag) -> Move {
+    pub fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
         assert!(
-            promotion != PieceType::King && promotion != PieceType::Pawn,
+            promotion != Piece::King && promotion != Piece::Pawn,
             "Invalid promotion piece type"
         );
         Move {
@@ -35,7 +35,7 @@ impl Move {
         Move::new(src, dst, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
-    pub fn new_promotion(src: Square, dst: Square, promotion: PieceType) -> Move {
+    pub fn new_promotion(src: Square, dst: Square, promotion: Piece) -> Move {
         Move::new(src, dst, promotion, MoveFlag::Promotion)
     }
 
@@ -52,9 +52,9 @@ impl Move {
     }
 
     /// Gets the promotion piece type of the move.
-    pub const fn promotion(&self) -> PieceType {
+    pub const fn promotion(&self) -> Piece {
         let promotion_int = ((self.value & 0b0000000000001100) >> 2) as u8;
-        unsafe { PieceType::from(promotion_int + 2) }
+        unsafe { Piece::from(promotion_int + 2) }
     }
 
     /// Gets the flag of the move.
@@ -103,14 +103,14 @@ impl std::fmt::Debug for Move {
 #[cfg(test)]
 mod tests {
     use super::{Move, MoveFlag};
-    use crate::PieceType;
+    use crate::Piece;
     use crate::Square;
 
     #[test]
     fn test_move() {
         for dst_square in Square::ALL {
             for src_square in Square::ALL {
-                for promotion_piece in PieceType::PROMOTION_PIECES {
+                for promotion_piece in Piece::PROMOTION_PIECES {
                     for flag_int in 0..4 {
                         let flag = unsafe { MoveFlag::from(flag_int) };
 

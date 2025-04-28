@@ -1,7 +1,7 @@
 //! All Zobrist hashing-related code.
 
 use crate::position::board::Board;
-use crate::{Bitboard, PieceType};
+use crate::{Bitboard, Piece};
 use crate::{BitboardUtils, Square};
 use rand::Rng;
 use static_init::dynamic;
@@ -23,7 +23,7 @@ fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
 }
 
 /// Gets the Zobrist hash for a piece on a square.
-pub fn get_piece_zobrist_hash(square: Square, piece_type: PieceType) -> Bitboard {
+pub fn get_piece_zobrist_hash(square: Square, piece_type: Piece) -> Bitboard {
     ZOBRIST_TABLE[square as usize][piece_type as usize - 1]
 }
 
@@ -31,9 +31,8 @@ impl Board {
     /// Calculates the Zobrist hash scratch.
     pub fn calc_zobrist_hash(&self) -> Bitboard {
         let mut hash: Bitboard = 0;
-        for piece_type in PieceType::PIECES {
-            // skip PieceType::NoPieceType
-            let pieces_mask = self.piece_type_masks[piece_type as usize];
+        for piece_type in Piece::PIECES {
+            let pieces_mask = self.piece_masks[piece_type as usize];
             for square in pieces_mask.iter_set_bits_as_squares() {
                 hash ^= get_piece_zobrist_hash(square, piece_type);
             }
@@ -42,7 +41,7 @@ impl Board {
     }
 
     /// Applies the xor of the Zobrist hash of a piece on a square
-    pub fn xor_piece_zobrist_hash(&mut self, square: Square, piece_type: PieceType) {
+    pub fn xor_piece_zobrist_hash(&mut self, square: Square, piece_type: Piece) {
         self.zobrist_hash ^= get_piece_zobrist_hash(square, piece_type)
     }
 }

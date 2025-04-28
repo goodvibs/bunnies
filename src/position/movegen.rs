@@ -9,10 +9,10 @@ use crate::masks::{FILE_A, FILE_H, RANK_3, RANK_6};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
 use crate::{Bitboard, Color};
-use crate::{BitboardUtils, PieceType};
+use crate::{BitboardUtils, Piece};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
-    PieceType::PROMOTION_PIECES
+    Piece::PROMOTION_PIECES
         .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
 }
 
@@ -127,13 +127,13 @@ impl Position {
                     {
                         let mut board_copy = self.board.clone();
 
-                        board_copy.piece_type_masks[PieceType::Pawn as usize] ^=
+                        board_copy.piece_masks[Piece::Pawn as usize] ^=
                             src_square.mask() | dst_square.mask() | capture_square.mask();
                         board_copy.color_masks[self.side_to_move as usize] ^=
                             src_square.mask() | dst_square.mask();
                         board_copy.color_masks[self.side_to_move.other() as usize] &=
                             !capture_square.mask();
-                        board_copy.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] ^=
+                        board_copy.piece_masks[Piece::ALL_PIECES as usize] ^=
                             src_square.mask() | dst_square.mask() | capture_square.mask();
 
                         if !board_copy.is_square_attacked(
@@ -286,7 +286,7 @@ impl Position {
      */
     fn add_legal_sliding_piece_moves(
         &self,
-        piece: PieceType,
+        piece: Piece,
         possible_dsts: Bitboard,
         moves: &mut Vec<Move>,
     ) {
@@ -401,17 +401,17 @@ impl Position {
                 self.add_legal_pawn_pushes(possible_non_king_dsts, &mut moves);
                 self.add_legal_knight_moves(possible_non_king_dsts, &mut moves);
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Bishop,
+                    Piece::Bishop,
                     possible_non_king_dsts,
                     &mut moves,
                 );
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Rook,
+                    Piece::Rook,
                     possible_non_king_dsts,
                     &mut moves,
                 );
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Queen,
+                    Piece::Queen,
                     possible_non_king_dsts,
                     &mut moves,
                 );
@@ -422,7 +422,7 @@ impl Position {
                 let checker_square = unsafe { Square::from_bitboard(checkers) };
                 let is_checker_a_slider = self
                     .board
-                    .get_piece_type_at(checker_square)
+                    .piece_at(checker_square)
                     .is_sliding_piece();
 
                 if is_checker_a_slider {
@@ -439,17 +439,17 @@ impl Position {
                 self.add_legal_pawn_pushes(possible_non_king_dsts, &mut moves);
                 self.add_legal_knight_moves(possible_non_king_dsts, &mut moves);
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Bishop,
+                    Piece::Bishop,
                     possible_non_king_dsts,
                     &mut moves,
                 );
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Rook,
+                    Piece::Rook,
                     possible_non_king_dsts,
                     &mut moves,
                 );
                 self.add_legal_sliding_piece_moves(
-                    PieceType::Queen,
+                    Piece::Queen,
                     possible_non_king_dsts,
                     &mut moves,
                 );
@@ -466,7 +466,7 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Move, MoveFlag, PieceType, Position, Square};
+    use crate::{Move, MoveFlag, Piece, Position, Square};
     use std::collections::HashSet;
 
     fn expected_moves_test<const N: usize>(
@@ -583,10 +583,10 @@ mod tests {
                 Move::new_non_promotion(Square::G2, Square::G3, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::G2, Square::G4, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::D5, Square::D6, MoveFlag::NormalMove),
-                Move::new_promotion(Square::A7, Square::A8, PieceType::Knight),
-                Move::new_promotion(Square::A7, Square::A8, PieceType::Bishop),
-                Move::new_promotion(Square::A7, Square::A8, PieceType::Rook),
-                Move::new_promotion(Square::A7, Square::A8, PieceType::Queen),
+                Move::new_promotion(Square::A7, Square::A8, Piece::Knight),
+                Move::new_promotion(Square::A7, Square::A8, Piece::Bishop),
+                Move::new_promotion(Square::A7, Square::A8, Piece::Rook),
+                Move::new_promotion(Square::A7, Square::A8, Piece::Queen),
             ],
         );
     }
@@ -606,18 +606,18 @@ mod tests {
                 Move::new_non_promotion(Square::A2, Square::B3, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::C2, Square::B3, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::G2, Square::H3, MoveFlag::NormalMove),
-                Move::new_promotion(Square::A7, Square::B8, PieceType::Knight),
-                Move::new_promotion(Square::A7, Square::B8, PieceType::Bishop),
-                Move::new_promotion(Square::A7, Square::B8, PieceType::Rook),
-                Move::new_promotion(Square::A7, Square::B8, PieceType::Queen),
-                Move::new_promotion(Square::C7, Square::B8, PieceType::Knight),
-                Move::new_promotion(Square::C7, Square::B8, PieceType::Bishop),
-                Move::new_promotion(Square::C7, Square::B8, PieceType::Rook),
-                Move::new_promotion(Square::C7, Square::B8, PieceType::Queen),
-                Move::new_promotion(Square::C7, Square::D8, PieceType::Knight),
-                Move::new_promotion(Square::C7, Square::D8, PieceType::Bishop),
-                Move::new_promotion(Square::C7, Square::D8, PieceType::Rook),
-                Move::new_promotion(Square::C7, Square::D8, PieceType::Queen),
+                Move::new_promotion(Square::A7, Square::B8, Piece::Knight),
+                Move::new_promotion(Square::A7, Square::B8, Piece::Bishop),
+                Move::new_promotion(Square::A7, Square::B8, Piece::Rook),
+                Move::new_promotion(Square::A7, Square::B8, Piece::Queen),
+                Move::new_promotion(Square::C7, Square::B8, Piece::Knight),
+                Move::new_promotion(Square::C7, Square::B8, Piece::Bishop),
+                Move::new_promotion(Square::C7, Square::B8, Piece::Rook),
+                Move::new_promotion(Square::C7, Square::B8, Piece::Queen),
+                Move::new_promotion(Square::C7, Square::D8, Piece::Knight),
+                Move::new_promotion(Square::C7, Square::D8, Piece::Bishop),
+                Move::new_promotion(Square::C7, Square::D8, Piece::Rook),
+                Move::new_promotion(Square::C7, Square::D8, Piece::Queen),
                 Move::new_non_promotion(Square::D5, Square::E6, MoveFlag::NormalMove),
             ],
         );

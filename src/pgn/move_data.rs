@@ -1,4 +1,4 @@
-use crate::PieceType;
+use crate::Piece;
 use crate::r#move::Move;
 
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ pub(crate) struct PgnMoveData {
 impl PgnMoveData {
     pub(crate) fn render(
         &self,
-        moved_piece: PieceType,
+        moved_piece: Piece,
         disambiguation_str: &str,
         is_check: bool,
         is_checkmate: bool,

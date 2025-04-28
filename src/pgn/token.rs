@@ -57,7 +57,7 @@ pub enum PgnToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::PieceType;
+    use crate::Piece;
     use crate::Square;
 
     #[test]
@@ -115,14 +115,14 @@ mod tests {
         );
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Pawn && mv.to == Square::E4
+                mv.piece_moved == Piece::Pawn && mv.to == Square::E4
             )
         );
 
         // First black move
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Pawn && mv.to == Square::E5
+                mv.piece_moved == Piece::Pawn && mv.to == Square::E5
             )
         );
 
@@ -132,14 +132,14 @@ mod tests {
         );
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Knight && mv.to == Square::F3
+                mv.piece_moved == Piece::Knight && mv.to == Square::F3
             )
         );
 
         // Second black move
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Knight && mv.to == Square::C6
+                mv.piece_moved == Piece::Knight && mv.to == Square::C6
             )
         );
 
@@ -149,14 +149,14 @@ mod tests {
         );
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Bishop && mv.to == Square::B5
+                mv.piece_moved == Piece::Bishop && mv.to == Square::B5
             )
         );
 
         // Third black move
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Pawn && mv.to == Square::A6
+                mv.piece_moved == Piece::Pawn && mv.to == Square::A6
             )
         );
 
@@ -173,14 +173,14 @@ mod tests {
         );
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Bishop && mv.to == Square::A4
+                mv.piece_moved == Piece::Bishop && mv.to == Square::A4
             )
         );
 
         // Fourth black move
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::NonCastlingMove(mv))) if
-                mv.piece_moved == PieceType::Knight && mv.to == Square::F6
+                mv.piece_moved == Piece::Knight && mv.to == Square::F6
             )
         );
 

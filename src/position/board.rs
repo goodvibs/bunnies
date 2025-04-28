@@ -1,6 +1,6 @@
 //! Board struct and methods
 
-use crate::PieceType;
+use crate::Piece;
 use crate::Square;
 use crate::attacks::*;
 use crate::masks::*;
@@ -13,7 +13,7 @@ use std::fmt::Display;
 /// and the zobrist hash of the position.
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct Board {
-    pub piece_type_masks: [Bitboard; PieceType::LIMIT as usize],
+    pub piece_masks: [Bitboard; Piece::LIMIT as usize],
     pub color_masks: [Bitboard; 2],
     pub zobrist_hash: Bitboard,
 }
@@ -22,7 +22,7 @@ impl Board {
     /// The board for the initial position.
     pub fn initial() -> Board {
         let mut res = Board {
-            piece_type_masks: [
+            piece_masks: [
                 STARTING_ALL,
                 STARTING_WP | STARTING_BP,
                 STARTING_WN | STARTING_BN,
@@ -41,14 +41,14 @@ impl Board {
     /// The board for a blank position with no pieces on it.
     pub const fn blank() -> Board {
         Board {
-            piece_type_masks: [0; PieceType::LIMIT as usize],
+            piece_masks: [0; Piece::LIMIT as usize],
             color_masks: [0; 2],
             zobrist_hash: 0,
         }
     }
 
-    pub const fn piece_mask(&self, piece_type: PieceType) -> Bitboard {
-        self.piece_type_masks[piece_type as usize]
+    pub const fn piece_mask(&self, piece_type: Piece) -> Bitboard {
+        self.piece_masks[piece_type as usize]
     }
 
     pub const fn color_mask(&self, color: Color) -> Bitboard {
@@ -56,31 +56,31 @@ impl Board {
     }
 
     pub const fn pieces(&self) -> Bitboard {
-        self.piece_mask(PieceType::ALL_PIECE_TYPES)
+        self.piece_mask(Piece::ALL_PIECES)
     }
 
     pub const fn pawns(&self) -> Bitboard {
-        self.piece_mask(PieceType::Pawn)
+        self.piece_mask(Piece::Pawn)
     }
 
     pub const fn knights(&self) -> Bitboard {
-        self.piece_mask(PieceType::Knight)
+        self.piece_mask(Piece::Knight)
     }
 
     pub const fn bishops(&self) -> Bitboard {
-        self.piece_mask(PieceType::Bishop)
+        self.piece_mask(Piece::Bishop)
     }
 
     pub const fn rooks(&self) -> Bitboard {
-        self.piece_mask(PieceType::Rook)
+        self.piece_mask(Piece::Rook)
     }
 
     pub const fn queens(&self) -> Bitboard {
-        self.piece_mask(PieceType::Queen)
+        self.piece_mask(Piece::Queen)
     }
 
     pub const fn kings(&self) -> Bitboard {
-        self.piece_mask(PieceType::King)
+        self.piece_mask(Piece::King)
     }
 
     pub const fn diagonal_sliders(&self) -> Bitboard {
@@ -233,21 +233,21 @@ impl Board {
 
     /// Populates a square with `piece_type`, but no color.
     /// Updates the zobrist hash.
-    pub fn put_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
+    pub fn put_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
-        self.piece_type_masks[piece_type as usize] |= mask;
-        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] |= mask;
+        self.piece_masks[piece_type as usize] |= mask;
+        self.piece_masks[Piece::ALL_PIECES as usize] |= mask;
         self.xor_piece_zobrist_hash(square, piece_type);
     }
 
     /// Populates a square with `colored_piece`.
     /// Updates the zobrist hash.
     pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
-        let piece_type = colored_piece.piece_type();
+        let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
         self.put_color_at(color, square);
-        self.put_piece_type_at(piece_type, square);
+        self.put_piece_at(piece_type, square);
     }
 
     /// Removes `color` from a square, but not piece type.
@@ -259,29 +259,29 @@ impl Board {
 
     /// Removes `piece_type` from a square, but not color.
     /// Updates the zobrist hash.
-    pub fn remove_piece_type_at(&mut self, piece_type: PieceType, square: Square) {
+    pub fn remove_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
-        self.piece_type_masks[piece_type as usize] &= !mask;
-        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] &= !mask;
+        self.piece_masks[piece_type as usize] &= !mask;
+        self.piece_masks[Piece::ALL_PIECES as usize] &= !mask;
         self.xor_piece_zobrist_hash(square, piece_type);
     }
 
     /// Removes `colored_piece` from a square.
     /// Updates the zobrist hash.
     pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPieceType, square: Square) {
-        let piece_type = colored_piece.piece_type();
+        let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
         self.remove_color_at(color, square);
-        self.remove_piece_type_at(piece_type, square);
+        self.remove_piece_at(piece_type, square);
     }
 
     /// Moves `piece_type` from `src_square` to `dst_square`.
     /// Does not update color.
     /// Updates the zobrist hash.
-    pub fn move_piece_type(
+    pub fn move_piece(
         &mut self,
-        piece_type: PieceType,
+        piece_type: Piece,
         dst_square: Square,
         src_square: Square,
     ) {
@@ -289,8 +289,8 @@ impl Board {
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;
 
-        self.piece_type_masks[piece_type as usize] ^= src_dst_mask;
-        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] ^= src_dst_mask;
+        self.piece_masks[piece_type as usize] ^= src_dst_mask;
+        self.piece_masks[Piece::ALL_PIECES as usize] ^= src_dst_mask;
 
         self.xor_piece_zobrist_hash(dst_square, piece_type);
         self.xor_piece_zobrist_hash(src_square, piece_type);
@@ -315,39 +315,39 @@ impl Board {
         dst_square: Square,
         src_square: Square,
     ) {
-        let piece_type = colored_piece.piece_type();
+        let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
         self.move_color(color, dst_square, src_square);
-        self.move_piece_type(piece_type, dst_square, src_square);
+        self.move_piece(piece_type, dst_square, src_square);
     }
 
     /// Returns the piece type at `square`.
-    pub fn get_piece_type_at(&self, square: Square) -> PieceType {
+    pub fn piece_at(&self, square: Square) -> Piece {
         let mask = square.mask();
-        for piece_type in PieceType::PIECES {
-            if self.piece_type_masks[piece_type as usize] & mask != 0 {
+        for piece_type in Piece::PIECES {
+            if self.piece_masks[piece_type as usize] & mask != 0 {
                 return piece_type;
             }
         }
-        PieceType::NoPieceType
+        Piece::Null
     }
 
     pub fn is_occupied_at(&self, square: Square) -> bool {
         let mask = square.mask();
-        self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize] & mask != 0
+        self.piece_masks[Piece::ALL_PIECES as usize] & mask != 0
     }
 
     /// Returns the color at `square`.
-    pub fn get_color_at(&self, square: Square) -> Color {
+    pub fn color_at(&self, square: Square) -> Color {
         let mask = square.mask();
         Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
     }
 
     /// Returns the colored piece at `square`.
     pub fn get_colored_piece_at(&self, square: Square) -> ColoredPieceType {
-        let piece_type = self.get_piece_type_at(square);
-        let color = self.get_color_at(square);
+        let piece_type = self.piece_at(square);
+        let color = self.color_at(square);
         ColoredPieceType::new(color, piece_type)
     }
 
@@ -359,7 +359,7 @@ impl Board {
             return false;
         }
 
-        let all_occupancy_bb = self.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize];
+        let all_occupancy_bb = self.piece_masks[Piece::ALL_PIECES as usize];
 
         if (white_bb | black_bb) != all_occupancy_bb {
             return false;
@@ -367,8 +367,8 @@ impl Board {
 
         let mut all_occupancy_bb_reconstructed: Bitboard = 0;
 
-        for piece_type in PieceType::PIECES {
-            let piece_bb = self.piece_type_masks[piece_type as usize];
+        for piece in Piece::PIECES {
+            let piece_bb = self.piece_masks[piece as usize];
 
             if piece_bb & all_occupancy_bb != piece_bb {
                 return false;
@@ -390,7 +390,7 @@ impl Board {
     /// Checks if the board has one king of each color.
     pub const fn has_valid_kings(&self) -> bool {
         let white_bb = self.color_masks[Color::White as usize];
-        let kings_bb = self.piece_type_masks[PieceType::King as usize];
+        let kings_bb = self.piece_masks[Piece::King as usize];
 
         kings_bb.count_ones() == 2 && (white_bb & kings_bb).count_ones() == 1
     }

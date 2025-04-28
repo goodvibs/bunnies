@@ -1,6 +1,6 @@
 use crate::masks::{STARTING_KING_ROOK_GAP_LONG, STARTING_KING_ROOK_GAP_SHORT};
 use crate::position::Position;
-use crate::{Bitboard, Color, PieceType, Square};
+use crate::{Bitboard, Color, Piece, Square};
 
 impl Position {
     /// Returns true if the current side to move can legally castle short.
@@ -37,7 +37,7 @@ impl Position {
     /// Else, returns false.
     const fn has_castling_space_short(&self) -> bool {
         STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize]
-            & self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize]
+            & self.board.piece_masks[Piece::ALL_PIECES as usize]
             == 0
     }
 
@@ -45,7 +45,7 @@ impl Position {
     /// Else, returns false.
     const fn has_castling_space_long(&self) -> bool {
         STARTING_KING_ROOK_GAP_LONG[self.side_to_move as usize]
-            & self.board.piece_type_masks[PieceType::ALL_PIECE_TYPES as usize]
+            & self.board.piece_masks[Piece::ALL_PIECES as usize]
             == 0
     }
 

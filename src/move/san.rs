@@ -1,4 +1,4 @@
-use crate::PieceType;
+use crate::Piece;
 use crate::r#move::Move;
 use crate::r#move::flag::MoveFlag;
 
@@ -6,7 +6,7 @@ impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.
     pub fn san(
         &self,
-        moved_piece: PieceType,
+        moved_piece: Piece,
         disambiguation_str: &str,
         is_check: bool,
         is_checkmate: bool,
@@ -26,18 +26,18 @@ impl Move {
             let promotion = self.promotion();
 
             let piece_str = match moved_piece {
-                PieceType::Pawn => {
+                Piece::Pawn => {
                     if is_capture {
                         src_square.file_char().to_string()
                     } else {
                         "".to_string()
                     }
                 }
-                PieceType::Knight => "N".to_string(),
-                PieceType::Bishop => "B".to_string(),
-                PieceType::Rook => "R".to_string(),
-                PieceType::Queen => "Q".to_string(),
-                PieceType::King => "K".to_string(),
+                Piece::Knight => "N".to_string(),
+                Piece::Bishop => "B".to_string(),
+                Piece::Rook => "R".to_string(),
+                Piece::Queen => "Q".to_string(),
+                Piece::King => "K".to_string(),
                 _ => panic!("Invalid piece type"),
             };
 

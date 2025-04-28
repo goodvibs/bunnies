@@ -3,7 +3,7 @@
 use crate::Bitboard;
 use crate::Color;
 use crate::ColoredPieceType;
-use crate::PieceType;
+use crate::Piece;
 use crate::Square;
 use crate::masks::{
     STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
@@ -17,13 +17,13 @@ impl Position {
         &mut self,
         dst_square: Square,
         src_square: Square,
-        promotion: PieceType,
+        promotion: Piece,
         new_context: &mut PositionContext,
     ) {
         self.process_possible_capture(dst_square, new_context);
 
-        self.board.remove_piece_type_at(PieceType::Pawn, src_square);
-        self.board.put_piece_type_at(promotion, dst_square);
+        self.board.remove_piece_at(Piece::Pawn, src_square);
+        self.board.put_piece_at(promotion, dst_square);
 
         new_context.process_promotion_disregarding_capture();
     }
@@ -36,10 +36,10 @@ impl Position {
     ) {
         self.process_possible_capture(dst_square, new_context);
 
-        let moved_piece = self.board.get_piece_type_at(src_square);
-        assert_ne!(moved_piece, PieceType::NoPieceType);
+        let moved_piece = self.board.piece_at(src_square);
+        assert_ne!(moved_piece, Piece::Null);
         self.board
-            .move_piece_type(moved_piece, dst_square, src_square);
+            .move_piece(moved_piece, dst_square, src_square);
         new_context.process_normal_disregarding_capture(
             ColoredPieceType::new(self.side_to_move, moved_piece),
             dst_square,
@@ -54,9 +54,9 @@ impl Position {
         self.board.remove_color_at(opposite_color, dst_square);
 
         // remove captured piece and get captured piece type
-        let captured_piece = self.board.get_piece_type_at(dst_square);
-        if captured_piece != PieceType::NoPieceType {
-            self.board.remove_piece_type_at(captured_piece, dst_square);
+        let captured_piece = self.board.piece_at(dst_square);
+        if captured_piece != Piece::Null {
+            self.board.remove_piece_at(captured_piece, dst_square);
             new_context.process_capture(
                 ColoredPieceType::new(opposite_color, captured_piece),
                 dst_mask,
@@ -80,9 +80,9 @@ impl Position {
         self.board
             .remove_color_at(opposite_color, en_passant_capture_square);
         self.board
-            .move_piece_type(PieceType::Pawn, dst_square, src_square);
+            .move_piece(Piece::Pawn, dst_square, src_square);
         self.board
-            .remove_piece_type_at(PieceType::Pawn, en_passant_capture_square);
+            .remove_piece_at(Piece::Pawn, en_passant_capture_square);
 
         new_context.process_en_passant();
     }
@@ -96,7 +96,7 @@ impl Position {
         let dst_mask = dst_square.mask();
 
         self.board
-            .move_piece_type(PieceType::King, dst_square, src_square);
+            .move_piece(Piece::King, dst_square, src_square);
 
         let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize] != 0;
 
@@ -110,7 +110,7 @@ impl Position {
         };
 
         self.board.move_colored_piece(
-            ColoredPieceType::new(self.side_to_move, PieceType::Rook),
+            ColoredPieceType::new(self.side_to_move, Piece::Rook),
             rook_dst_square,
             rook_src_square,
         );
@@ -163,17 +163,17 @@ impl PositionContext {
         dst_square: Square,
         src_square: Square,
     ) {
-        let moved_piece_type = moved_piece.piece_type();
+        let moved_piece_type = moved_piece.piece();
         let moved_piece_color = moved_piece.color();
 
         match moved_piece_type {
-            PieceType::Pawn => {
+            Piece::Pawn => {
                 self.process_normal_pawn_move_disregarding_capture(dst_square, src_square)
             }
-            PieceType::King => {
+            Piece::King => {
                 self.process_normal_king_move_disregarding_capture(moved_piece_color)
             }
-            PieceType::Rook => {
+            Piece::Rook => {
                 self.process_normal_rook_move_disregarding_capture(moved_piece_color, src_square)
             }
             _ => {}
@@ -215,7 +215,7 @@ impl PositionContext {
 
     fn process_en_passant(&mut self) {
         self.halfmove_clock = 0;
-        self.captured_piece = PieceType::Pawn;
+        self.captured_piece = Piece::Pawn;
     }
 
     fn process_castling(&mut self, color: Color) {
@@ -226,11 +226,11 @@ impl PositionContext {
 
     fn process_capture(&mut self, captured_colored_piece: ColoredPieceType, dst_mask: Bitboard) {
         let captured_color = captured_colored_piece.color();
-        let captured_piece = captured_colored_piece.piece_type();
+        let captured_piece = captured_colored_piece.piece();
 
         self.captured_piece = captured_piece;
         self.halfmove_clock = 0;
-        if captured_piece == PieceType::Rook {
+        if captured_piece == Piece::Rook {
             let king_side_rook_mask = STARTING_KING_SIDE_ROOK[captured_color as usize];
             let queen_side_rook_mask = STARTING_QUEEN_SIDE_ROOK[captured_color as usize];
             let right_shift = calc_castling_color_adjustment(captured_color) as u8;

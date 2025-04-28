@@ -3,7 +3,7 @@ use crate::masks::{
     STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
 };
 use crate::position::Position;
-use crate::{Bitboard, Color, PieceType, Square};
+use crate::{Bitboard, Color, Piece, Square};
 
 impl Position {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -49,8 +49,8 @@ impl Position {
     pub fn has_valid_castling_rights(&self) -> bool {
         let context = unsafe { &*self.context };
 
-        let kings_bb = self.board.piece_type_masks[PieceType::King as usize];
-        let rooks_bb = self.board.piece_type_masks[PieceType::Rook as usize];
+        let kings_bb = self.board.piece_masks[Piece::King as usize];
+        let rooks_bb = self.board.piece_masks[Piece::Rook as usize];
 
         let white_bb = self.board.color_masks[Color::White as usize];
         let black_bb = self.board.color_masks[Color::Black as usize];
@@ -99,7 +99,7 @@ impl Position {
                     return false;
                 }
                 let color_just_moved = self.side_to_move.other();
-                let pawns_bb = self.board.piece_type_masks[PieceType::Pawn as usize];
+                let pawns_bb = self.board.piece_masks[Piece::Pawn as usize];
                 let colored_pawns_bb = pawns_bb & self.board.color_masks[color_just_moved as usize];
                 let file_mask = FILES[file as usize];
                 let rank_mask = RANK_4 << (color_just_moved as Bitboard * 8); // 4 for white, 5 for black

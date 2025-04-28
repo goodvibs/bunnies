@@ -1,5 +1,5 @@
 use crate::Color;
-use crate::PieceType;
+use crate::Piece;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -27,11 +27,11 @@ impl ColoredPieceType {
     pub const COLOR_DIFFERENCE: u8 = 8;
 
     /// Returns a new ColoredPieceType.
-    pub const fn new(color: Color, piece_type: PieceType) -> ColoredPieceType {
-        let piece_type_int = piece_type as u8;
-        let is_piece = piece_type_int != PieceType::NoPieceType as u8;
+    pub const fn new(color: Color, piece_type: Piece) -> ColoredPieceType {
+        let piece_int = piece_type as u8;
+        let is_piece = piece_int != Piece::Null as u8;
         let color_int_shifted = (is_piece as u8 & color as u8) << 3;
-        unsafe { std::mem::transmute::<u8, ColoredPieceType>(color_int_shifted | piece_type_int) }
+        unsafe { std::mem::transmute::<u8, ColoredPieceType>(color_int_shifted | piece_int) }
     }
 
     /// Returns the color of the piece.
@@ -40,8 +40,8 @@ impl ColoredPieceType {
     }
 
     /// Returns the piece type of the piece.
-    pub const fn piece_type(&self) -> PieceType {
-        unsafe { std::mem::transmute::<u8, PieceType>(*self as u8 & 0b111) }
+    pub const fn piece(&self) -> Piece {
+        unsafe { std::mem::transmute::<u8, Piece>(*self as u8 & 0b111) }
     }
 
     /// Returns a ColoredPieceType from an ASCII character.
@@ -117,19 +117,19 @@ mod tests {
         assert_eq!(ColoredPieceType::COLOR_DIFFERENCE, 8);
 
         assert_eq!(
-            ColoredPieceType::new(Color::White, PieceType::Pawn),
+            ColoredPieceType::new(Color::White, Piece::Pawn),
             ColoredPieceType::WhitePawn
         );
         assert_eq!(
-            ColoredPieceType::new(Color::Black, PieceType::Pawn),
+            ColoredPieceType::new(Color::Black, Piece::Pawn),
             ColoredPieceType::BlackPawn
         );
 
         assert_eq!(ColoredPieceType::WhitePawn.color(), Color::White);
         assert_eq!(ColoredPieceType::BlackPawn.color(), Color::Black);
 
-        assert_eq!(ColoredPieceType::WhitePawn.piece_type(), PieceType::Pawn);
-        assert_eq!(ColoredPieceType::BlackPawn.piece_type(), PieceType::Pawn);
+        assert_eq!(ColoredPieceType::WhitePawn.piece(), Piece::Pawn);
+        assert_eq!(ColoredPieceType::BlackPawn.piece(), Piece::Pawn);
 
         assert_eq!(
             ColoredPieceType::from_ascii('P'),

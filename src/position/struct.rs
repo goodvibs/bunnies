@@ -2,7 +2,7 @@
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::position::{Board, GameResult, PositionContext};
-use crate::{Bitboard, BitboardUtils, Color, PieceType, Square};
+use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -121,27 +121,27 @@ impl Position {
     }
 
     pub const fn current_side_pawns(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Pawn as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::Pawn as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_knights(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Knight as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::Knight as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_bishops(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Bishop as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::Bishop as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_rooks(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Rook as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::Rook as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_queens(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Queen as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::Queen as usize] & self.current_side_pieces()
     }
 
     pub const fn current_side_king(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::King as usize] & self.current_side_pieces()
+        self.board.piece_masks[Piece::King as usize] & self.current_side_pieces()
     }
 
     pub const fn opposite_side_pieces(&self) -> Bitboard {
@@ -149,27 +149,27 @@ impl Position {
     }
 
     pub const fn opposite_side_pawns(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Pawn as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::Pawn as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_knights(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Knight as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::Knight as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_bishops(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Bishop as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::Bishop as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_rooks(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Rook as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::Rook as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_queens(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::Queen as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::Queen as usize] & self.opposite_side_pieces()
     }
 
     pub const fn opposite_side_king(&self) -> Bitboard {
-        self.board.piece_type_masks[PieceType::King as usize] & self.opposite_side_pieces()
+        self.board.piece_masks[Piece::King as usize] & self.opposite_side_pieces()
     }
 
     pub const fn current_side_promotion_rank(&self) -> u8 {

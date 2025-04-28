@@ -4,7 +4,7 @@
 
 use crate::Color;
 use crate::Square;
-use crate::{Bitboard, PieceType};
+use crate::{Bitboard, Piece};
 
 pub mod magic;
 pub mod manual;
@@ -64,12 +64,12 @@ pub fn single_queen_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitb
 pub fn sliding_piece_attacks(
     src_square: Square,
     occupied_mask: Bitboard,
-    piece: PieceType,
+    piece: Piece,
 ) -> Bitboard {
     match piece {
-        PieceType::Bishop => single_bishop_attacks(src_square, occupied_mask),
-        PieceType::Rook => single_rook_attacks(src_square, occupied_mask),
-        PieceType::Queen => single_queen_attacks(src_square, occupied_mask),
+        Piece::Bishop => single_bishop_attacks(src_square, occupied_mask),
+        Piece::Rook => single_rook_attacks(src_square, occupied_mask),
+        Piece::Queen => single_queen_attacks(src_square, occupied_mask),
         _ => panic!("Not a sliding piece!"),
     }
 }
