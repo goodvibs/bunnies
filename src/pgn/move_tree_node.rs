@@ -98,7 +98,7 @@ impl MoveTreeNode {
                 PieceType::Pawn | PieceType::King => "".to_string(),
                 PieceType::NoPieceType => panic!("Invalid piece type"),
                 _ => {
-                    let all_moves = state.calc_legal_moves();
+                    let all_moves = state.moves();
                     let all_other_moves: Vec<Move> =
                         all_moves.iter().filter(|m| **m != mv).cloned().collect();
                     let disambiguation_moves: Vec<Move> = all_other_moves
@@ -142,7 +142,7 @@ impl MoveTreeNode {
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {
-                    let all_moves = state.calc_legal_moves();
+                    let all_moves = state.moves();
                     let is_checkmate = all_moves.is_empty();
                     if is_checkmate {
                         state.result = GameResult::Checkmate;

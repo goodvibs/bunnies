@@ -6,7 +6,7 @@ fn count_nodes(state: &mut Position, depth: u8) -> u64 {
     } else {
         let mut total_nodes = 0;
 
-        let pseudolegal_moves = state.calc_pseudolegal_moves();
+        let pseudolegal_moves = state.moves();
 
         for mv in pseudolegal_moves {
             state.make_move(mv);

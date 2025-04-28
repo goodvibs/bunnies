@@ -171,7 +171,7 @@ impl<'a> PgnParser<'a> {
                         pgn_move
                     )));
                 }
-                let possible_moves = current_state.calc_legal_moves();
+                let possible_moves = current_state.moves();
 
                 let mut matched_move = None;
                 for possible_move in possible_moves {

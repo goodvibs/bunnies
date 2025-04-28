@@ -337,7 +337,7 @@ impl Position {
     }
 
     /// Returns a vector of pseudolegal moves.
-    pub fn calc_pseudolegal_moves(&self) -> Vec<Move> {
+    pub fn moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(35);
 
         let mut possible_non_king_dsts = !self.current_side_pieces();
@@ -380,31 +380,6 @@ impl Position {
         
         moves
     }
-
-    /// Returns a vector of legal moves.
-    /// For each pseudolegal move, it makes the move, checks if the state is probably valid,
-    /// and if so, adds the move to the vector.
-    /// The state then unmakes the move before moving on to the next move.
-    pub fn calc_legal_moves(&self) -> Vec<Move> {
-        assert!(self.result.is_none());
-
-        let pseudolegal_moves = self.calc_pseudolegal_moves();
-        let mut filtered_moves = Vec::new();
-
-        // let self_keepsake = self.clone();
-
-        let mut state = self.clone();
-        for move_ in pseudolegal_moves {
-            state.make_move(move_);
-            if state.is_probably_valid() {
-                filtered_moves.push(move_);
-            }
-            state.unmake_move(move_);
-            // assert!(state.is_valid());
-            // assert!(self_keepsake.eq(&state));
-        }
-        filtered_moves
-    }
 }
 
 #[cfg(test)]
@@ -414,7 +389,7 @@ mod tests {
 
     fn expected_moves_test<const N: usize>(fen: &str, include_move: fn(Move, &Position) -> bool, expected_moves: [Move; N]) {
         let pos = Position::from_fen(fen).unwrap();
-        let moves: Vec<Move> = pos.calc_pseudolegal_moves().into_iter()
+        let moves: Vec<Move> = pos.moves().into_iter()
             .filter(|mv| include_move(*mv, &pos))
             .collect();
 
