@@ -1,9 +1,7 @@
 use crate::position::Position;
 
 fn count_nodes(state: &mut Position, depth: u8) -> u64 {
-    if !state.is_probably_valid() {
-        0
-    } else if depth == 0 {
+    if depth == 0 {
         1
     } else {
         let mut total_nodes = 0;

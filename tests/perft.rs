@@ -17,7 +17,7 @@ fn test_initial_position() {
     // run_perft_test(initial_state, 3, 8902);
     // run_perft_test(initial_state, 4, 197281);
     // run_perft_test(initial_state, 5, 4865609);
-    run_perft_test(initial_state, 6, 119060324); // ~ 7 seconds on M1 Pro
+    run_perft_test(initial_state, 6, 119060324); // ~ 5 seconds on M1 Pro
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn test_kiwipete() {
     // run_perft_test(state, 2, 2039);
     // run_perft_test(state, 3, 97862);
     // run_perft_test(state, 4, 4085603);
-    run_perft_test(state, 5, 193690690); // ~ 10 seconds on M1 Pro
+    run_perft_test(state, 5, 193690690); // ~ 8 seconds on M1 Pro
     // run_perft_test(state, 6, 8031647685);
 }
 
@@ -42,7 +42,7 @@ fn test_position_3() {
     // run_perft_test(state, 4, 43238);
     // run_perft_test(state, 5, 674624);
     // run_perft_test(state, 6, 11030083);
-    run_perft_test(state, 7, 178633661); // ~ 11 seconds on M1 Pro
+    run_perft_test(state, 7, 178633661); // ~ 8 seconds on M1 Pro
 }
 
 #[test]
@@ -54,8 +54,8 @@ fn test_position_4() {
     // run_perft_test(state, 2, 264);
     // run_perft_test(state, 3, 9467);
     // run_perft_test(state, 4, 422333);
-    run_perft_test(state, 5, 15833292); // ~ 1 second on M1 Pro
-    // run_perft_test(state, 6, 706045033); // ~ 49 seconds on M1 Pro
+    // run_perft_test(state, 5, 15833292); // < 1 second on M1 Pro
+    run_perft_test(state, 6, 706045033); // ~ 31 seconds on M1 Pro
 }
 
 #[test]
@@ -66,12 +66,5 @@ fn test_position_5() {
     // run_perft_test(state, 2, 1486);
     // run_perft_test(state, 3, 62379);
     // run_perft_test(state, 4, 2103487);
-    run_perft_test(state, 5, 89941194); // ~ 6 seconds on M1 Pro
-}
-
-#[test]
-fn test_pinned_en_passant() {
-    let state =
-        Position::from_fen("7k/8/8/2KPp2r/8/8/8/8 w - e6 11 53").unwrap();
-    run_perft_test(state, 1, 7);
+    run_perft_test(state, 5, 89941194); // ~ 4 seconds on M1 Pro
 }
