@@ -121,16 +121,10 @@ impl Position {
     /// Applies a move without checking if it is valid or legal.
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
-    pub fn make_move(&mut self, mv: Move, mut attacks_mask: Bitboard) {
-        if attacks_mask == 0 {
-            attacks_mask = self.current_side_attacks();
-        }
-
-        unsafe { (*self.context).initialize_current_side_attacks(attacks_mask) };
-
+    pub fn make_move(&mut self, mv: Move) {
         let (dst_square, src_square, promotion, flag) = mv.unpack();
 
-        let mut new_context = unsafe { PositionContext::new_with_previous(self.context, 0, 0) };
+        let mut new_context = unsafe { PositionContext::new_with_previous(self.context) };
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
@@ -152,6 +146,8 @@ impl Position {
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.other();
         self.context = Box::into_raw(Box::new(new_context));
+        
+        self.update_pins_and_checks();
     }
 }
 

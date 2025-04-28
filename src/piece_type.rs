@@ -27,6 +27,10 @@ impl PieceType {
         );
         unsafe { std::mem::transmute::<u8, PieceType>(piece_type_number) }
     }
+    
+    pub fn is_sliding_piece(&self) -> bool {
+        Self::SLIDING_PIECES.contains(self)
+    }
 
     /// Returns the PieceType from the given uppercase char.
     pub const fn from_uppercase_char(piece_char: char) -> PieceType {
@@ -139,6 +143,12 @@ impl PieceType {
     /// An array of all PieceTypes representing promotion pieces (4 in total).
     pub const PROMOTION_PIECES: [PieceType; 4] = [
         PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Rook,
+        PieceType::Queen,
+    ];
+
+    pub const SLIDING_PIECES: [PieceType; 3] = [
         PieceType::Bishop,
         PieceType::Rook,
         PieceType::Queen,

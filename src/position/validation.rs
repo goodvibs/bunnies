@@ -3,7 +3,7 @@ use crate::masks::{
     STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
 };
 use crate::position::Position;
-use crate::{Bitboard, Color, PieceType};
+use crate::{Bitboard, Color, PieceType, Square};
 
 impl Position {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -13,24 +13,22 @@ impl Position {
             && self.has_valid_castling_rights()
             && self.has_valid_double_pawn_push()
             && self.has_valid_halfmove_clock()
-            && self.is_not_in_illegal_check()
+            && !self.is_opposite_side_in_check()
             && self.is_zobrist_consistent()
     }
 
     /// Quick check for whether the state is probably valid, should be used after making pseudo-legal moves.
     pub fn is_probably_valid(&self) -> bool {
-        self.board.has_valid_kings() && self.is_not_in_illegal_check()
+        self.board.has_valid_kings() && !self.is_opposite_side_in_check()
     }
 
     /// Checks if the zobrist hash in the board is consistent with the zobrist hash in the context.
     pub fn is_zobrist_consistent(&self) -> bool {
         self.board.zobrist_hash == unsafe { (*self.context).zobrist_hash }
     }
-
-    /// Returns true if the opponent king is not in check.
-    /// Else, returns false.
-    pub fn is_not_in_illegal_check(&self) -> bool {
-        !self.is_opposite_side_in_check()
+    
+    pub fn is_opposite_side_in_check(&self) -> bool {
+        self.board.is_square_attacked(unsafe { Square::from_bitboard(self.opposite_side_king()) }, self.side_to_move)
     }
 
     /// Checks if the halfmove clock is valid and consistent with the halfmove counter.

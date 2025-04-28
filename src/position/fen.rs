@@ -170,15 +170,13 @@ impl Position {
                 let zobrist_hash = board.zobrist_hash;
                 let halfmove =
                     (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = PositionContext::new_without_previous(
-                    castling_rights,
-                    zobrist_hash,
-                    board.calc_attacks_mask(side_to_move),
-                );
+                let mut context = PositionContext::new_without_previous();
+                context.castling_rights = castling_rights;
+                context.zobrist_hash = zobrist_hash;
                 context.double_pawn_push = double_pawn_push;
                 context.halfmove_clock = halfmove_clock;
 
-                let state = Position {
+                let mut state = Position {
                     board,
                     side_to_move,
                     halfmove,
@@ -187,6 +185,8 @@ impl Position {
                 };
 
                 if state.is_unequivocally_valid() {
+                    state.update_pins_and_checks();
+                    
                     Ok(state)
                 } else {
                     Err(FenParseError::InvalidPosition(fen.to_string()))

@@ -80,7 +80,6 @@ impl MoveTreeNode {
 
         let rendered_move = if let Some(move_data) = &self.move_data {
             let mv = move_data.mv;
-            let mut attacks_mask = 0;
             let mv_source = mv.get_source();
             let mv_dest = mv.get_destination();
             let moved_piece = state.board.get_piece_type_at(mv_source);
@@ -99,7 +98,7 @@ impl MoveTreeNode {
                 PieceType::Pawn | PieceType::King => "".to_string(),
                 PieceType::NoPieceType => panic!("Invalid piece type"),
                 _ => {
-                    let all_moves = state.calc_legal_moves(&mut attacks_mask);
+                    let all_moves = state.moves();
                     let all_other_moves: Vec<Move> =
                         all_moves.iter().filter(|m| **m != mv).cloned().collect();
                     let disambiguation_moves: Vec<Move> = all_other_moves
@@ -139,11 +138,11 @@ impl MoveTreeNode {
                     state.board.get_piece_type_at(mv_dest) != PieceType::NoPieceType
                 }
             };
-            state.make_move(mv, attacks_mask); // if attacks_mask is 0, then it will be filled in automatically
+            state.make_move(mv); // if attacks_mask is 0, then it will be filled in automatically
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {
-                    let all_moves = state.calc_legal_moves(&mut 0);
+                    let all_moves = state.moves();
                     let is_checkmate = all_moves.is_empty();
                     if is_checkmate {
                         state.result = GameResult::Checkmate;
