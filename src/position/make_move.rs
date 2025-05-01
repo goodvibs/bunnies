@@ -1,22 +1,22 @@
 //! Contains the implementation of the `State::make_move` method.
 
+use crate::masks::{
+    STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
+};
+use crate::position::context::PositionContext;
+use crate::position::Position;
+use crate::r#move::{Move, MoveFlag};
 use crate::Bitboard;
 use crate::Color;
 use crate::ColoredPiece;
 use crate::Piece;
 use crate::Square;
-use crate::masks::{
-    STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
-};
-use crate::r#move::{Move, MoveFlag};
-use crate::position::Position;
-use crate::position::context::PositionContext;
 
 impl Position {
     fn process_promotion(
         &mut self,
-        dst_square: Square,
         src_square: Square,
+        dst_square: Square,
         promotion: Piece,
         new_context: &mut PositionContext,
     ) {
@@ -30,13 +30,16 @@ impl Position {
 
     fn process_normal(
         &mut self,
-        dst_square: Square,
         src_square: Square,
+        dst_square: Square,
+        moved_piece: Piece,
+        is_guaranteed_non_capture: bool,
         new_context: &mut PositionContext,
     ) {
-        self.process_possible_capture(dst_square, new_context);
+        if !is_guaranteed_non_capture {
+            self.process_possible_capture(dst_square, new_context);
+        }
 
-        let moved_piece = self.board.piece_at(src_square);
         assert_ne!(moved_piece, Piece::Null);
         self.board
             .move_piece(moved_piece, dst_square, src_square);
@@ -87,26 +90,24 @@ impl Position {
         new_context.process_en_passant();
     }
 
-    fn process_castling(
+    fn process_castling<const IS_SHORT: bool>(
         &mut self,
         dst_square: Square,
         src_square: Square,
-        new_context: &mut PositionContext,
+        new_context: &mut PositionContext
     ) {
-        let dst_mask = dst_square.mask();
-
         self.board
             .move_piece(Piece::King, dst_square, src_square);
 
-        let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize] != 0;
-
-        let rook_src_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 3) },
-            false => unsafe { Square::from(src_square as u8 - 4) },
+        let rook_src_square = if IS_SHORT {
+            unsafe { Square::from(src_square as u8 + 3) }
+        } else {
+            unsafe { Square::from(src_square as u8 - 4) }
         };
-        let rook_dst_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 1) },
-            false => unsafe { Square::from(src_square as u8 - 1) },
+        let rook_dst_square = if IS_SHORT {
+            unsafe { Square::from(src_square as u8 + 1) }
+        } else {
+            unsafe { Square::from(src_square as u8 - 1) }
         };
 
         self.board.move_colored_piece(
@@ -131,14 +132,17 @@ impl Position {
             .move_color(self.side_to_move, dst_square, src_square);
 
         match mv.flag() {
-            MoveFlag::NormalMove => self.process_normal(dst_square, src_square, &mut new_context),
-            MoveFlag::Promotion => {
-                self.process_promotion(dst_square, src_square, mv.promotion(), &mut new_context)
-            }
             MoveFlag::EnPassant => {
                 self.process_en_passant(dst_square, src_square, &mut new_context)
-            }
-            MoveFlag::Castling => self.process_castling(dst_square, src_square, &mut new_context),
+            },
+            MoveFlag::ShortCastling => self.process_castling::<true>(dst_square, src_square, &mut new_context),
+            MoveFlag::LongCastling => self.process_castling::<false>(dst_square, src_square, &mut new_context),
+            flag if flag.is_promotion() => {
+                let promotion = unsafe { Piece::from(flag as u8 - MoveFlag::PromotionToKnight as u8 + 2) };
+                self.process_promotion(src_square, dst_square, promotion, &mut new_context)
+            },
+            flag if flag.is_pawn_push() => self.process_normal(src_square, dst_square, flag.moved_piece(), true, &mut new_context),
+            flag => self.process_normal(src_square, dst_square, flag.moved_piece(), false, &mut new_context),
         }
 
         new_context.zobrist_hash = self.board.zobrist_hash;

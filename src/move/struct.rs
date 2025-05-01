@@ -8,35 +8,18 @@ use crate::position::Position;
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
-    /// format: {6 bit dest}{6 bit src}{2 bit promotion Piece value minus 2}{2 bit MoveFlag value}
+    /// format: {6 bit dest}{6 bit src}{4 bit MoveFlag value}
     pub value: u16,
 }
 
 impl Move {
-    /// The default promotion value for a move.
-    pub const DEFAULT_PROMOTION_VALUE: Piece = Piece::Rook;
-
     /// Creates a new move.
-    pub fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
-        assert!(
-            promotion != Piece::King && promotion != Piece::Pawn,
-            "Invalid promotion piece type"
-        );
+    pub const fn new(src: Square, dst: Square, flag: MoveFlag) -> Move {
         Move {
             value: ((dst as u16) << 10)
                 | ((src as u16) << 4)
-                | ((promotion as u16 - 2) << 2)
                 | flag as u16,
         }
-    }
-
-    /// Creates a new move with the default promotion value.
-    pub fn new_non_promotion(src: Square, dst: Square, flag: MoveFlag) -> Move {
-        Move::new(src, dst, Move::DEFAULT_PROMOTION_VALUE, flag)
-    }
-
-    pub fn new_promotion(src: Square, dst: Square, promotion: Piece) -> Move {
-        Move::new(src, dst, promotion, MoveFlag::Promotion)
     }
 
     /// Gets the destination square of the move.
@@ -51,33 +34,39 @@ impl Move {
         unsafe { Square::from(src_int) }
     }
 
-    /// Gets the promotion piece type of the move.
-    pub const fn promotion(&self) -> Piece {
-        let promotion_int = ((self.value & 0b0000000000001100) >> 2) as u8;
-        unsafe { Piece::from(promotion_int + 2) }
-    }
-
     /// Gets the flag of the move.
     pub const fn flag(&self) -> MoveFlag {
-        let flag_int = (self.value & 0b0000000000000011) as u8;
+        let flag_int = (self.value & 0b0000000000001111) as u8;
         unsafe { MoveFlag::from(flag_int) }
+    }
+    
+    pub const fn promotion(&self) -> Piece {
+        match self.flag() {
+            MoveFlag::PromotionToKnight => Piece::Knight,
+            MoveFlag::PromotionToBishop => Piece::Bishop,
+            MoveFlag::PromotionToRook => Piece::Rook,
+            MoveFlag::PromotionToQueen => Piece::Queen,
+            _ => Piece::Null
+        }
     }
 
     pub fn is_capture(&self, initial_state: &Position) -> bool {
         match self.flag() {
-            MoveFlag::NormalMove | MoveFlag::Promotion => {
+            MoveFlag::NormalPawnPush | MoveFlag::PawnDoublePush | MoveFlag::ShortCastling | MoveFlag::LongCastling => false,
+            MoveFlag::NormalPawnCapture | MoveFlag::EnPassant => true,
+            _ => {
                 initial_state.board.is_occupied_at(self.destination())
             }
-            MoveFlag::EnPassant => true,
-            MoveFlag::Castling => false,
         }
     }
 
     /// Returns the UCI (Universal Chess Interface) representation of the move.
     pub fn uci(&self) -> String {
-        let promotion_str = match self.flag() {
-            MoveFlag::Promotion => self.promotion().uppercase_ascii().to_string(),
-            _ => "".to_string(),
+        let promotion = self.promotion();
+        let promotion_str = if promotion != Piece::Null {
+            promotion.uppercase_ascii().to_string()
+        } else {
+            "".to_string()
         };
         format!(
             "{}{}{}",
@@ -103,23 +92,19 @@ impl std::fmt::Debug for Move {
 #[cfg(test)]
 mod tests {
     use super::{Move, MoveFlag};
-    use crate::Piece;
     use crate::Square;
 
     #[test]
     fn test_move() {
         for dst_square in Square::ALL {
             for src_square in Square::ALL {
-                for promotion_piece in Piece::PROMOTION_PIECES {
-                    for flag_int in 0..4 {
-                        let flag = unsafe { MoveFlag::from(flag_int) };
+                for flag_int in MoveFlag::Null as u8..=MoveFlag::LongCastling as u8 {
+                    let flag = unsafe { MoveFlag::from(flag_int) };
 
-                        let mv = Move::new(src_square, dst_square, promotion_piece, flag);
-                        assert_eq!(mv.destination(), dst_square);
-                        assert_eq!(mv.source(), src_square);
-                        assert_eq!(mv.promotion(), promotion_piece);
-                        assert_eq!(mv.flag(), flag);
-                    }
+                    let mv = Move::new(src_square, dst_square, flag);
+                    assert_eq!(mv.destination(), dst_square);
+                    assert_eq!(mv.source(), src_square);
+                    assert_eq!(mv.flag(), flag);
                 }
             }
         }

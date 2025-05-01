@@ -6,7 +6,6 @@ impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.
     pub fn san(
         &self,
-        moved_piece: Piece,
         disambiguation_str: &str,
         is_check: bool,
         is_checkmate: bool,
@@ -14,50 +13,44 @@ impl Move {
     ) -> String {
         let dst_square = self.destination();
         let flag = self.flag();
+        
+        let move_str = match flag {
+            MoveFlag::ShortCastling => "O-O".to_string(),
+            MoveFlag::LongCastling => "O-O-O".to_string(),
+            _ => {
+                let src_square = self.source();
 
-        let move_str = if flag == MoveFlag::Castling {
-            match dst_square.file() {
-                6 => "O-O".to_string(),
-                2 => "O-O-O".to_string(),
-                _ => panic!("Invalid castling move"),
+                let piece_str = match flag.moved_piece() {
+                    Piece::Null => panic!("Invalid piece type"),
+                    Piece::Pawn => {
+                        if is_capture {
+                            src_square.file_char().to_string()
+                        } else {
+                            "".to_string()
+                        }
+                    },
+                    piece => piece.uppercase_ascii().to_string()
+                };
+
+                let capture_str = if is_capture { "x" } else { "" };
+
+                let promotion_str = if flag.is_promotion() {
+                    format!("={}", self.promotion().uppercase_ascii())
+                } else {
+                    "".to_string()
+                };
+
+                format!(
+                    "{}{}{}{}{}",
+                    piece_str,
+                    disambiguation_str,
+                    capture_str,
+                    dst_square.to_string(),
+                    promotion_str
+                )
             }
-        } else {
-            let src_square = self.source();
-            let promotion = self.promotion();
-
-            let piece_str = match moved_piece {
-                Piece::Pawn => {
-                    if is_capture {
-                        src_square.file_char().to_string()
-                    } else {
-                        "".to_string()
-                    }
-                }
-                Piece::Knight => "N".to_string(),
-                Piece::Bishop => "B".to_string(),
-                Piece::Rook => "R".to_string(),
-                Piece::Queen => "Q".to_string(),
-                Piece::King => "K".to_string(),
-                _ => panic!("Invalid piece type"),
-            };
-
-            let capture_str = if is_capture { "x" } else { "" };
-
-            let promotion_str = if flag == MoveFlag::Promotion {
-                format!("={}", promotion.uppercase_ascii())
-            } else {
-                "".to_string()
-            };
-
-            format!(
-                "{}{}{}{}{}",
-                piece_str,
-                disambiguation_str,
-                capture_str,
-                dst_square.to_string(),
-                promotion_str
-            )
         };
+
 
         let check_or_checkmate_str = if is_checkmate {
             "#"

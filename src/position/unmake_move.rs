@@ -89,10 +89,10 @@ impl Position {
             .move_color(self.side_to_move.other(), src_square, dst_square);
 
         match mv.flag() {
-            MoveFlag::NormalMove => self.unprocess_normal(dst_square, src_square),
-            MoveFlag::Promotion => self.unprocess_promotion(dst_square, src_square, mv.promotion()),
+            flag if flag.is_promotion() => self.unprocess_promotion(dst_square, src_square, mv.promotion()),
             MoveFlag::EnPassant => self.unprocess_en_passant(dst_square, src_square),
-            MoveFlag::Castling => self.unprocess_castling(dst_square, src_square),
+            flag if flag.is_castling() => self.unprocess_castling(dst_square, src_square),
+            _ => self.unprocess_normal(dst_square, src_square),
         }
 
         // update data members

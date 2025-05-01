@@ -1,4 +1,4 @@
-use crate::r#move::{Move, MoveFlag};
+use crate::r#move::{Move};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
@@ -6,6 +6,7 @@ use crate::position::Position;
 use logos::Lexer;
 use regex::Regex;
 use static_init::dynamic;
+use crate::MoveFlag;
 
 /// The regex pattern for a castling move.
 /// Capturing groups:
@@ -28,12 +29,11 @@ pub struct PgnCastlingMove {
 
 impl PgnMove for PgnCastlingMove {
     fn matches_move(&self, mv: Move, _initial_state: &Position) -> bool {
-        let flag = mv.flag();
-        if flag != MoveFlag::Castling || self.is_kingside != (mv.destination().file() == 6) {
-            return false;
+        match mv.flag() {
+            MoveFlag::ShortCastling => self.is_kingside,
+            MoveFlag::LongCastling => !self.is_kingside,
+            _ => false
         }
-
-        true
     }
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo {
@@ -177,7 +177,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-0");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex);
-        assert_eq!(castling_move.is_err(), true);
+        assert!(castling_move.is_err());
     }
 
     #[test]
@@ -193,16 +193,14 @@ mod tests {
         };
         let state = Position::initial();
         let kingside_castling_move =
-            Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
+            Move::new(Square::E8, Square::G8, MoveFlag::ShortCastling);
         let queenside_castling_move =
-            Move::new_non_promotion(Square::E8, Square::C8, MoveFlag::Castling);
-        assert_eq!(
-            castling_move.matches_move(kingside_castling_move, &state),
-            true
+            Move::new(Square::E8, Square::C8, MoveFlag::LongCastling);
+        assert!(
+            castling_move.matches_move(kingside_castling_move, &state)
         );
-        assert_eq!(
-            castling_move.matches_move(queenside_castling_move, &state),
-            false
+        assert!(
+            castling_move.matches_move(queenside_castling_move, &state)
         );
     }
 }

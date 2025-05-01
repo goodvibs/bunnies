@@ -43,15 +43,10 @@ impl PgnMove for PgnNonCastlingMove {
     fn matches_move(&self, mv: Move, initial_state: &Position) -> bool {
         let dst = mv.destination();
         let src = mv.source();
-        let flag = mv.flag();
-        let promotion = match flag {
-            MoveFlag::Promotion => mv.promotion(),
-            _ => Piece::Null,
-        };
 
         if self.to != dst {
             return false;
-        } else if self.promoted_to != promotion {
+        } else if self.promoted_to != mv.promotion() {
             return false;
         } else if self.piece_moved != initial_state.board.piece_at(src) {
             return false;
@@ -363,7 +358,7 @@ mod tests {
             },
         };
 
-        let actual_move = Move::new_non_promotion(Square::F3, Square::D4, MoveFlag::NormalMove);
+        let actual_move = Move::new(Square::F3, Square::D4, MoveFlag::KnightMove);
 
         assert!(knight_move.matches_move(actual_move, &state));
 
