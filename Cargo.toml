@@ -36,6 +36,12 @@ debug = false
 debug-assertions = false
 lto = true
 
+[profile.profiling]
+inherits = "release"
+debug = true
+lto = false
+codegen-units = 16
+
 [[test]]
 name = "perft"
 
