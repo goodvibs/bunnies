@@ -40,7 +40,7 @@ lto = true
 inherits = "release"
 debug = true
 lto = false
-codegen-units = 16
+codegen-units = 256
 
 [[test]]
 name = "perft"
