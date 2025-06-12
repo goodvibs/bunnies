@@ -6,26 +6,31 @@ use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Position {
+pub struct Position<const MAX_CONTEXTS: usize> {
     pub board: Board,
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context: *mut PositionContext,
+    pub contexts: [PositionContext; MAX_CONTEXTS],
+    pub context_idx: usize,
 }
 
-impl Position {
+impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
     /// Creates an initial state with the standard starting position.
-    pub fn initial() -> Position {
+    pub fn initial() -> Position<MAX_CONTEXTS> {
         let board = Board::initial();
-        let mut context = PositionContext::initial();
+        let mut context = PositionContext::blank();
+        context.castling_rights = 0b00001111;
         context.zobrist_hash = board.zobrist_hash;
+        let mut contexts = [const { PositionContext::blank() }; MAX_CONTEXTS];
+        contexts[0] = context;
         let mut res = Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Box::into_raw(Box::new(context)),
+            contexts,
+            context_idx: 0,
         };
         res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
@@ -33,17 +38,30 @@ impl Position {
         res
     }
 
-    /// Gets the fullmove number of the position. 1-based.
-    pub const fn get_fullmove(&self) -> u16 {
-        self.halfmove / 2 + 1
-    }
-
     pub fn context(&self) -> &PositionContext {
-        unsafe { &(*self.context) }
+        &self.contexts[self.context_idx]
     }
 
     pub fn mut_context(&mut self) -> &mut PositionContext {
-        unsafe { &mut (*self.context) }
+        &mut self.contexts[self.context_idx]
+    }
+
+    pub fn push_context(&mut self, context: PositionContext) {
+        assert!(self.context_idx + 1 <= MAX_CONTEXTS);
+        assert_ne!(self.contexts[self.context_idx].zobrist_hash, 0);
+
+        self.contexts[self.context_idx] = context;
+    }
+
+    pub fn pop_context(&mut self) {
+        assert!(self.context_idx > 0);
+
+        self.context_idx -= 1;
+    }
+
+    /// Gets the fullmove number of the position. 1-based.
+    pub const fn get_fullmove(&self) -> u16 {
+        self.halfmove / 2 + 1
     }
 
     pub fn update_pins_and_checks(&mut self) {
@@ -107,12 +125,6 @@ impl Position {
     pub fn update_fifty_move_rule(&mut self) {
         if self.context().halfmove_clock < 100 {
             self.result = GameResult::FiftyMoveRule;
-        }
-    }
-
-    pub fn update_threefold_repetition(&mut self) {
-        if self.context().has_threefold_repetition_occurred() {
-            self.result = GameResult::ThreefoldRepetition;
         }
     }
 
@@ -207,7 +219,7 @@ mod state_tests {
 
     #[test]
     fn test_initial_state() {
-        let state = Position::initial();
+        let state = Position::<1>::initial();
         assert_eq!(state.side_to_move, Color::White);
         assert_eq!(state.halfmove, 0);
         assert_eq!(state.result, GameResult::None);
@@ -216,7 +228,7 @@ mod state_tests {
 
     #[test]
     fn test_get_fullmove() {
-        let mut state = Position::initial();
+        let mut state = Position::<1>::initial();
 
         assert_eq!(state.get_fullmove(), 1); // Initial position
 

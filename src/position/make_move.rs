@@ -12,7 +12,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
 use crate::position::context::PositionContext;
 
-impl Position {
+impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
     fn process_promotion(
         &mut self,
         dst_square: Square,
@@ -38,8 +38,7 @@ impl Position {
 
         let moved_piece = self.board.piece_at(src_square);
         assert_ne!(moved_piece, Piece::Null);
-        self.board
-            .move_piece(moved_piece, dst_square, src_square);
+        self.board.move_piece(moved_piece, dst_square, src_square);
         new_context.process_normal_disregarding_capture(
             ColoredPiece::new(self.side_to_move, moved_piece),
             dst_square,
@@ -57,10 +56,8 @@ impl Position {
         let captured_piece = self.board.piece_at(dst_square);
         if captured_piece != Piece::Null {
             self.board.remove_piece_at(captured_piece, dst_square);
-            new_context.process_capture(
-                ColoredPiece::new(opposite_color, captured_piece),
-                dst_mask,
-            );
+            new_context
+                .process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_mask);
         }
     }
 
@@ -79,8 +76,7 @@ impl Position {
 
         self.board
             .remove_color_at(opposite_color, en_passant_capture_square);
-        self.board
-            .move_piece(Piece::Pawn, dst_square, src_square);
+        self.board.move_piece(Piece::Pawn, dst_square, src_square);
         self.board
             .remove_piece_at(Piece::Pawn, en_passant_capture_square);
 
@@ -95,8 +91,7 @@ impl Position {
     ) {
         let dst_mask = dst_square.mask();
 
-        self.board
-            .move_piece(Piece::King, dst_square, src_square);
+        self.board.move_piece(Piece::King, dst_square, src_square);
 
         let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize] != 0;
 
@@ -125,7 +120,9 @@ impl Position {
         let src_square = mv.source();
         let dst_square = mv.destination();
 
-        let mut new_context = unsafe { PositionContext::new_with_previous(self.context) };
+        let mut new_context = PositionContext::blank();
+        new_context.halfmove_clock = self.context().halfmove_clock + 1;
+        new_context.castling_rights = self.context().castling_rights;
 
         self.board
             .move_color(self.side_to_move, dst_square, src_square);
@@ -146,7 +143,7 @@ impl Position {
         // update data members
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.other();
-        self.context = Box::into_raw(Box::new(new_context));
+        self.push_context(new_context);
 
         self.update_pins_and_checks();
     }
@@ -170,9 +167,7 @@ impl PositionContext {
             Piece::Pawn => {
                 self.process_normal_pawn_move_disregarding_capture(dst_square, src_square)
             }
-            Piece::King => {
-                self.process_normal_king_move_disregarding_capture(moved_piece_color)
-            }
+            Piece::King => self.process_normal_king_move_disregarding_capture(moved_piece_color),
             Piece::Rook => {
                 self.process_normal_rook_move_disregarding_capture(moved_piece_color, src_square)
             }
