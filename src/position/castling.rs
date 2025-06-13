@@ -2,7 +2,7 @@ use crate::masks::{STARTING_KING_ROOK_GAP_LONG, STARTING_KING_ROOK_GAP_SHORT};
 use crate::position::Position;
 use crate::{Bitboard, Color, Piece, Square};
 
-impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
+impl Position {
     /// Returns true if the current side to move can legally castle short.
     /// Else, returns false.
     pub fn can_legally_castle_short(&self) -> bool {

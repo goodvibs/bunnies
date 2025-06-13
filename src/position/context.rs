@@ -6,12 +6,9 @@ use crate::Piece;
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct PositionContext {
-    // copied from previous and then possibly modified
     pub halfmove_clock: u8,
     pub double_pawn_push: i8, // file of double pawn push, if any, else -1
     pub castling_rights: u8,  // 0, 0, 0, 0, wk, wq, bk, bq
-
-    // updated after every move
     pub captured_piece: Piece,
     pub zobrist_hash: Bitboard,
     pub pinned: Bitboard,

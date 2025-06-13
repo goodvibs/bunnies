@@ -6,31 +6,28 @@ use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
 
 /// A struct containing all the information needed to represent a position in a chess game.
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Position<const MAX_CONTEXTS: usize> {
+pub struct Position {
     pub board: Board,
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub contexts: [PositionContext; MAX_CONTEXTS],
-    pub context_idx: usize,
+    pub context_history: Vec<PositionContext>,
 }
 
-impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
+impl Position {
     /// Creates an initial state with the standard starting position.
-    pub fn initial() -> Position<MAX_CONTEXTS> {
+    pub fn initial() -> Position {
         let board = Board::initial();
         let mut context = PositionContext::blank();
         context.castling_rights = 0b00001111;
         context.zobrist_hash = board.zobrist_hash;
-        let mut contexts = [const { PositionContext::blank() }; MAX_CONTEXTS];
-        contexts[0] = context;
+        let contexts = vec![context];
         let mut res = Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            contexts,
-            context_idx: 0,
+            context_history: contexts,
         };
         res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
@@ -39,24 +36,23 @@ impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
     }
 
     pub fn context(&self) -> &PositionContext {
-        &self.contexts[self.context_idx]
+        assert!(!self.context_history.is_empty());
+        self.context_history.last().unwrap()
     }
 
     pub fn mut_context(&mut self) -> &mut PositionContext {
-        &mut self.contexts[self.context_idx]
+        assert!(!self.context_history.is_empty());
+        self.context_history.last_mut().unwrap()
     }
 
     pub fn push_context(&mut self, context: PositionContext) {
-        assert!(self.context_idx + 1 <= MAX_CONTEXTS);
-        assert_ne!(self.contexts[self.context_idx].zobrist_hash, 0);
-
-        self.contexts[self.context_idx] = context;
+        assert_ne!(self.context().zobrist_hash, 0);
+        self.context_history.push(context);
     }
 
-    pub fn pop_context(&mut self) {
-        assert!(self.context_idx > 0);
-
-        self.context_idx -= 1;
+    pub fn pop_context(&mut self) -> PositionContext {
+        assert!(!self.context_history.is_empty());
+        self.context_history.pop().unwrap()
     }
 
     /// Gets the fullmove number of the position. 1-based.
@@ -219,7 +215,7 @@ mod state_tests {
 
     #[test]
     fn test_initial_state() {
-        let state = Position::<1>::initial();
+        let state = Position::initial();
         assert_eq!(state.side_to_move, Color::White);
         assert_eq!(state.halfmove, 0);
         assert_eq!(state.result, GameResult::None);
@@ -228,7 +224,7 @@ mod state_tests {
 
     #[test]
     fn test_get_fullmove() {
-        let mut state = Position::<1>::initial();
+        let mut state = Position::initial();
 
         assert_eq!(state.get_fullmove(), 1); // Initial position
 

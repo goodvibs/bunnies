@@ -12,7 +12,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::position::Position;
 use crate::position::context::PositionContext;
 
-impl<const MAX_CONTEXTS: usize> Position<MAX_CONTEXTS> {
+impl Position {
     fn process_promotion(
         &mut self,
         dst_square: Square,
