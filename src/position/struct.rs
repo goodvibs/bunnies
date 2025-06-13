@@ -11,21 +11,23 @@ pub struct Position {
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context: *mut PositionContext,
+    pub context_history: Vec<PositionContext>,
 }
 
 impl Position {
     /// Creates an initial state with the standard starting position.
     pub fn initial() -> Position {
         let board = Board::initial();
-        let mut context = PositionContext::initial();
+        let mut context = PositionContext::blank();
+        context.castling_rights = 0b00001111;
         context.zobrist_hash = board.zobrist_hash;
+        let contexts = vec![context];
         let mut res = Position {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context: Box::into_raw(Box::new(context)),
+            context_history: contexts,
         };
         res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
@@ -33,17 +35,29 @@ impl Position {
         res
     }
 
-    /// Gets the fullmove number of the position. 1-based.
-    pub const fn get_fullmove(&self) -> u16 {
-        self.halfmove / 2 + 1
-    }
-
     pub fn context(&self) -> &PositionContext {
-        unsafe { &(*self.context) }
+        assert!(!self.context_history.is_empty());
+        self.context_history.last().unwrap()
     }
 
     pub fn mut_context(&mut self) -> &mut PositionContext {
-        unsafe { &mut (*self.context) }
+        assert!(!self.context_history.is_empty());
+        self.context_history.last_mut().unwrap()
+    }
+
+    pub fn push_context(&mut self, context: PositionContext) {
+        assert_ne!(self.context().zobrist_hash, 0);
+        self.context_history.push(context);
+    }
+
+    pub fn pop_context(&mut self) -> PositionContext {
+        assert!(!self.context_history.is_empty());
+        self.context_history.pop().unwrap()
+    }
+
+    /// Gets the fullmove number of the position. 1-based.
+    pub const fn get_fullmove(&self) -> u16 {
+        self.halfmove / 2 + 1
     }
 
     pub fn update_pins_and_checks(&mut self) {
@@ -107,12 +121,6 @@ impl Position {
     pub fn update_fifty_move_rule(&mut self) {
         if self.context().halfmove_clock < 100 {
             self.result = GameResult::FiftyMoveRule;
-        }
-    }
-
-    pub fn update_threefold_repetition(&mut self) {
-        if self.context().has_threefold_repetition_occurred() {
-            self.result = GameResult::ThreefoldRepetition;
         }
     }
 

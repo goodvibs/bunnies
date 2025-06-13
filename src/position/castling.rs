@@ -21,16 +21,12 @@ impl Position {
 
     /// Returns whether the current side to move has short castling rights.
     pub fn has_castling_rights_short(&self) -> bool {
-        unsafe {
-            (*self.context).castling_rights & (0b00001000 >> (self.side_to_move as u8 * 2)) != 0
-        }
+        self.context().castling_rights & (0b00001000 >> (self.side_to_move as u8 * 2)) != 0
     }
 
     /// Returns whether the current side to move has long castling rights.
     pub fn has_castling_rights_long(&self) -> bool {
-        unsafe {
-            (*self.context).castling_rights & (0b00000100 >> (self.side_to_move as u8 * 2)) != 0
-        }
+        self.context().castling_rights & (0b00000100 >> (self.side_to_move as u8 * 2)) != 0
     }
 
     /// Returns true if the current side to move has no pieces between the king and the rook for short castling.

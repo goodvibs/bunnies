@@ -9,12 +9,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::position::{GameResult, Position};
 
 impl Position {
-    fn unprocess_promotion(
-        &mut self,
-        dst_square: Square,
-        src_square: Square,
-        promotion: Piece,
-    ) {
+    fn unprocess_promotion(&mut self, dst_square: Square, src_square: Square, promotion: Piece) {
         self.board.remove_piece_at(promotion, dst_square); // remove promoted piece
         self.board.put_piece_at(Piece::Pawn, src_square); // put pawn back
 
@@ -23,15 +18,14 @@ impl Position {
 
     fn unprocess_normal(&mut self, dst_square: Square, src_square: Square) {
         let moved_piece = self.board.piece_at(dst_square); // get moved piece
-        self.board
-            .move_piece(moved_piece, src_square, dst_square); // move piece back
+        self.board.move_piece(moved_piece, src_square, dst_square); // move piece back
 
         self.unprocess_possible_capture(dst_square); // add possible captured piece back
     }
 
     fn unprocess_possible_capture(&mut self, dst_square: Square) {
         // remove captured piece and get captured piece type
-        let captured_piece = unsafe { (*self.context).captured_piece };
+        let captured_piece = self.context().captured_piece;
         if captured_piece != Piece::Null {
             // piece was captured
             self.board.put_color_at(self.side_to_move, dst_square); // put captured color back
@@ -45,8 +39,7 @@ impl Position {
             Color::Black => unsafe { Square::from(dst_square as u8 + 8) },
         };
 
-        self.board
-            .move_piece(Piece::Pawn, src_square, dst_square); // move pawn back
+        self.board.move_piece(Piece::Pawn, src_square, dst_square); // move pawn back
         self.board
             .put_color_at(self.side_to_move, en_passant_capture_square); // put captured color back
         self.board
@@ -56,8 +49,7 @@ impl Position {
     fn unprocess_castling(&mut self, dst_square: Square, src_square: Square) {
         let dst_mask = dst_square.mask();
 
-        self.board
-            .move_piece(Piece::King, src_square, dst_square); // move king back
+        self.board.move_piece(Piece::King, src_square, dst_square); // move king back
 
         let is_king_side =
             dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move.other() as usize] != 0;
@@ -98,9 +90,7 @@ impl Position {
         // update data members
         self.halfmove -= 1;
         self.side_to_move = self.side_to_move.other();
-        let old_context = unsafe { (*self.context).previous.expect("No previous context") };
-        let _ = unsafe { Box::from_raw(self.context) };
-        self.context = old_context;
+        let _ = self.context_history.pop().unwrap();
         self.result = GameResult::None;
     }
 }

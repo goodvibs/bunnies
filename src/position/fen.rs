@@ -170,7 +170,7 @@ impl Position {
                 let zobrist_hash = board.zobrist_hash;
                 let halfmove =
                     (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = PositionContext::new_without_previous();
+                let mut context = PositionContext::blank();
                 context.castling_rights = castling_rights;
                 context.zobrist_hash = zobrist_hash;
                 context.double_pawn_push = double_pawn_push;
@@ -181,7 +181,7 @@ impl Position {
                     side_to_move,
                     halfmove,
                     result: GameResult::None,
-                    context: Box::into_raw(Box::new(context)),
+                    context_history: vec![context],
                 };
 
                 if state.is_unequivocally_valid() {
