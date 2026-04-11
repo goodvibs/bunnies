@@ -3,7 +3,7 @@
 use crate::position::board::Board;
 use crate::{Bitboard, Piece};
 use crate::{BitboardUtils, Square};
-use rand::Rng;
+use rand::RngExt;
 use static_init::dynamic;
 
 /// A table of random bitboards for each piece type on each square.
