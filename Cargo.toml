@@ -11,10 +11,8 @@ keywords = ["chess", "fast", "move", "gen", "engine"]
 categories = ["games", "mathematics"]
 
 [dependencies]
-rand = "0.10.1"
 indexmap = "2.14.0"
 fastrand = "2.4.1"
-static_init = "1.0.4"
 logos = "0.16.1"
 regex = "1.12.3"
 

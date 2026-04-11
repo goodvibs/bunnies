@@ -4,10 +4,10 @@ use crate::attacks::magic::initializer::MagicAttacksInitializer;
 use crate::attacks::magic::magic_info::MagicInfo;
 use crate::attacks::magic::relevant_mask::{BISHOP_RELEVANT_MASKS, ROOK_RELEVANT_MASKS};
 use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-use static_init::dynamic;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
+use std::sync::LazyLock;
 
 /// The size of the attack table for rooks
 const ROOK_ATTACK_TABLE_SIZE: usize =
@@ -16,8 +16,7 @@ const ROOK_ATTACK_TABLE_SIZE: usize =
 const BISHOP_ATTACK_TABLE_SIZE: usize =
     4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
-#[dynamic]
-pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
+pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
     MagicAttacksLookup::load_or_generate("data/magic/rook_magic_attacks_lookup.bin", || {
         MagicAttacksInitializer::new()
             .with_seed(3141592653)
@@ -27,10 +26,10 @@ pub static ROOK_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
                 ROOK_ATTACK_TABLE_SIZE,
             )
     })
-    .unwrap();
+    .expect("rook magic table load or generate")
+});
 
-#[dynamic]
-pub static BISHOP_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
+pub static BISHOP_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
     MagicAttacksLookup::load_or_generate("data/magic/bishop_magic_attacks_lookup.bin", || {
         MagicAttacksInitializer::new().with_seed(0).init_for_piece(
             &BISHOP_RELEVANT_MASKS,
@@ -38,7 +37,8 @@ pub static BISHOP_MAGIC_ATTACKS_LOOKUP: MagicAttacksLookup =
             BISHOP_ATTACK_TABLE_SIZE,
         )
     })
-    .unwrap();
+    .expect("bishop magic table load or generate")
+});
 
 /// Object that stores all magic-related information for a sliding piece and provides a method to get the attack mask for a given square and occupied mask
 pub struct MagicAttacksLookup {

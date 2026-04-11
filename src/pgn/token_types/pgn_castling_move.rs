@@ -5,7 +5,7 @@ use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::position::Position;
 use logos::Lexer;
 use regex::Regex;
-use static_init::dynamic;
+use std::sync::LazyLock;
 
 /// The regex pattern for a castling move.
 /// Capturing groups:
@@ -17,8 +17,8 @@ use static_init::dynamic;
 /// 5. NAG
 const CASTLING_MOVE_REGEX: &str = r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?";
 
-#[dynamic]
-static COMPILED_CASTLING_MOVE_REGEX: Regex = Regex::new(CASTLING_MOVE_REGEX).unwrap();
+static COMPILED_CASTLING_MOVE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(CASTLING_MOVE_REGEX).unwrap());
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnCastlingMove {

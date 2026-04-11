@@ -2,7 +2,7 @@ use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
-use static_init::dynamic;
+use std::sync::LazyLock;
 
 /// Regex for parsing PGN tags.
 /// Capturing groups:
@@ -11,8 +11,7 @@ use static_init::dynamic;
 /// 2. Tag value (inside quotes)
 const TAG_REGEX: &str = r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#;
 
-#[dynamic]
-static COMPILED_TAG_REGEX: Regex = Regex::new(TAG_REGEX).unwrap();
+static COMPILED_TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(TAG_REGEX).unwrap());
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnTag {

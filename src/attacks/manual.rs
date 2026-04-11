@@ -7,7 +7,7 @@ use crate::masks::*;
 use std::cmp;
 
 /// Returns a bitboard with all squares attacked by knights indicated by the bits in `knights_mask`
-pub fn multi_knight_attacks(knights_mask: Bitboard) -> Bitboard {
+pub const fn multi_knight_attacks(knights_mask: Bitboard) -> Bitboard {
     (knights_mask << 17 & !FILE_H)
         | (knights_mask << 15 & !FILE_A)
         | (knights_mask << 10 & !FILES_GH)
@@ -19,7 +19,7 @@ pub fn multi_knight_attacks(knights_mask: Bitboard) -> Bitboard {
 }
 
 /// Returns a bitboard with all squares attacked by kings indicated by the bits in `kings_mask`
-pub fn multi_king_attacks(kings_mask: Bitboard) -> Bitboard {
+pub const fn multi_king_attacks(kings_mask: Bitboard) -> Bitboard {
     (kings_mask << 9 & !FILE_H)
         | (kings_mask << 8)
         | (kings_mask << 7 & !FILE_A)

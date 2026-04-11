@@ -1,9 +1,9 @@
+use crate::square::same_line;
 use crate::Square;
 use crate::utilities::{
     BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator, QueenLikeMoveDirection,
     SquarePairsToMasks,
 };
-use static_init::dynamic;
 
 /// A type alias for a bitboard. A bitboard is a 64-bit unsigned integer that represents an aspect of board state.
 /// Each bit represents a square on the board, with the most significant bit representing A8 and the least significant bit representing H1.
@@ -51,55 +51,90 @@ impl BitboardUtils for Bitboard {
     }
 }
 
-#[dynamic]
-static MASK_BETWEEN_LOOKUP: SquarePairsToMasks = SquarePairsToMasks::init(calc_between);
-
-fn calc_between(sq1: Square, sq2: Square) -> Bitboard {
-    if sq1 == sq2 || !sq1.is_on_same_line_as(sq2) {
+const fn calc_between(sq1: Square, sq2: Square) -> Bitboard {
+    if sq1 as u8 == sq2 as u8 || !same_line(sq1, sq2) {
         0
     } else {
-        let mut mask = 0;
-        let direction = unsafe { QueenLikeMoveDirection::lookup_unchecked(sq1, sq2) };
+        let mut dist = 0;
+        let direction = QueenLikeMoveDirection::calc(sq1, sq2, &mut dist);
+        let mut mask: Bitboard = 0;
         let mut current = sq1;
-        while let Some(next) = current.at(direction) {
-            if next == sq2 {
-                break;
+        loop {
+            match current.at(direction) {
+                None => break,
+                Some(next) => {
+                    if next as u8 == sq2 as u8 {
+                        break;
+                    }
+                    mask |= next.mask();
+                    current = next;
+                }
             }
-            mask |= next.mask();
-            current = next;
         }
         mask
     }
 }
 
-#[dynamic]
-static EDGE_TO_EDGE_RAY_LOOKUP: SquarePairsToMasks =
-    SquarePairsToMasks::init(calc_edge_to_edge_ray);
-
-fn calc_edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
-    if sq1 == sq2 || !sq1.is_on_same_line_as(sq2) {
+const fn calc_edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
+    if sq1 as u8 == sq2 as u8 || !same_line(sq1, sq2) {
         0
     } else {
-        let mut mask = 0;
-        let direction = unsafe { QueenLikeMoveDirection::lookup_unchecked(sq1, sq2) };
-
+        let mut dist = 0;
+        let direction = QueenLikeMoveDirection::calc(sq1, sq2, &mut dist);
+        let mut mask = sq1.mask();
         let mut current = sq1;
-        while let Some(next) = current.at(direction) {
-            mask |= next.mask();
-            current = next;
+        loop {
+            match current.at(direction) {
+                None => break,
+                Some(next) => {
+                    mask |= next.mask();
+                    current = next;
+                }
+            }
         }
-
         current = sq1;
-        while let Some(next) = current.at(direction.opposite()) {
-            mask |= next.mask();
-            current = next;
+        loop {
+            match current.at(direction.opposite()) {
+                None => break,
+                Some(next) => {
+                    mask |= next.mask();
+                    current = next;
+                }
+            }
         }
-
-        mask |= sq1.mask();
-
         mask
     }
 }
+
+const MASK_BETWEEN_DATA: [Bitboard; 64 * 64] = {
+    let mut arr = [0u64; 64 * 64];
+    let mut i = 0usize;
+    while i < 64 * 64 {
+        let sq1 = unsafe { Square::from((i / 64) as u8) };
+        let sq2 = unsafe { Square::from((i % 64) as u8) };
+        arr[i] = calc_between(sq1, sq2);
+        i += 1;
+    }
+    arr
+};
+
+const EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
+    let mut arr = [0u64; 64 * 64];
+    let mut i = 0usize;
+    while i < 64 * 64 {
+        let sq1 = unsafe { Square::from((i / 64) as u8) };
+        let sq2 = unsafe { Square::from((i % 64) as u8) };
+        arr[i] = calc_edge_to_edge_ray(sq1, sq2);
+        i += 1;
+    }
+    arr
+};
+
+static MASK_BETWEEN_LOOKUP: SquarePairsToMasks =
+    SquarePairsToMasks::from_array(MASK_BETWEEN_DATA);
+
+static EDGE_TO_EDGE_RAY_LOOKUP: SquarePairsToMasks =
+    SquarePairsToMasks::from_array(EDGE_TO_EDGE_RAY_DATA);
 
 #[cfg(test)]
 mod tests {

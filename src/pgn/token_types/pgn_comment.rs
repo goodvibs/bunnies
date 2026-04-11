@@ -2,7 +2,7 @@ use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
-use static_init::dynamic;
+use std::sync::LazyLock;
 
 /// The regex pattern for a comment.
 /// Capturing groups:
@@ -10,8 +10,8 @@ use static_init::dynamic;
 /// 1. The content of the comment
 const COMMENT_REGEX: &str = r"\{(.*)\}";
 
-#[dynamic]
-static COMPILED_COMMENT_REGEX: Regex = Regex::new(COMMENT_REGEX).unwrap();
+static COMPILED_COMMENT_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(COMMENT_REGEX).unwrap());
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PgnComment {

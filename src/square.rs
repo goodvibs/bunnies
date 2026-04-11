@@ -1,7 +1,6 @@
 use crate::Bitboard;
 use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
 use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks, SquaresTwoToOneMapping};
-use static_init::dynamic;
 use std::fmt::Display;
 
 #[repr(u8)]
@@ -344,47 +343,100 @@ impl Square {
     ];
 }
 
+const fn ascending_diagonal_mask_impl(square: Square) -> Bitboard {
+    let mask = square.mask();
+    let mut i = 0;
+    while i < 15 {
+        if DIAGONALS_BR_TO_TL[i] & mask != 0 {
+            return DIAGONALS_BR_TO_TL[i];
+        }
+        i += 1;
+    }
+    0
+}
+
+const fn descending_diagonal_mask_impl(square: Square) -> Bitboard {
+    let mask = square.mask();
+    let mut i = 0;
+    while i < 15 {
+        if DIAGONALS_BL_TO_TR[i] & mask != 0 {
+            return DIAGONALS_BL_TO_TR[i];
+        }
+        i += 1;
+    }
+    0
+}
+
+const fn diagonals_union_impl(square: Square) -> Bitboard {
+    ascending_diagonal_mask_impl(square) | descending_diagonal_mask_impl(square)
+}
+
+/// Whether `sq2` lies on a rank, file, or diagonal through `sq1` (compile-time friendly).
+pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
+    (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
+}
+
+const ASCENDING_DIAGONAL_DATA: [Bitboard; 64] = {
+    let mut arr = [0u64; 64];
+    let mut i = 0u8;
+    while i < 64 {
+        arr[i as usize] = ascending_diagonal_mask_impl(unsafe { Square::from(i) });
+        i += 1;
+    }
+    arr
+};
+
+const DESCENDING_DIAGONAL_DATA: [Bitboard; 64] = {
+    let mut arr = [0u64; 64];
+    let mut i = 0u8;
+    while i < 64 {
+        arr[i as usize] = descending_diagonal_mask_impl(unsafe { Square::from(i) });
+        i += 1;
+    }
+    arr
+};
+
+const SQUARES_ON_SAME_DIAGONAL_DATA: [bool; 64 * 64] = {
+    let mut arr = [false; 64 * 64];
+    let mut i = 0usize;
+    while i < 64 * 64 {
+        let s1 = unsafe { Square::from((i / 64) as u8) };
+        let s2 = unsafe { Square::from((i % 64) as u8) };
+        arr[i] = diagonals_union_impl(s1) & s2.mask() != 0;
+        i += 1;
+    }
+    arr
+};
+
+const SQUARES_ON_SAME_LINE_DATA: [bool; 64 * 64] = {
+    let mut arr = [false; 64 * 64];
+    let mut i = 0usize;
+    while i < 64 * 64 {
+        let s1 = unsafe { Square::from((i / 64) as u8) };
+        let s2 = unsafe { Square::from((i % 64) as u8) };
+        arr[i] = same_line(s1, s2);
+        i += 1;
+    }
+    arr
+};
+
+static ASCENDING_DIAGONAL_LOOKUP: SquaresToMasks =
+    SquaresToMasks::from_array(ASCENDING_DIAGONAL_DATA);
+
+static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks =
+    SquaresToMasks::from_array(DESCENDING_DIAGONAL_DATA);
+
+static SQUARES_ON_SAME_DIAGONAL_LOOKUP: SquaresTwoToOneMapping<bool> =
+    SquaresTwoToOneMapping::from_array(SQUARES_ON_SAME_DIAGONAL_DATA);
+
+static SQUARES_ON_SAME_LINE_LOOKUP: SquaresTwoToOneMapping<bool> =
+    SquaresTwoToOneMapping::from_array(SQUARES_ON_SAME_LINE_DATA);
+
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.algebraic())
     }
 }
-
-#[dynamic]
-static ASCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square| {
-    let mask = square.mask();
-    for diagonal in DIAGONALS_BR_TO_TL {
-        if diagonal & mask != 0 {
-            return diagonal;
-        }
-    }
-    0
-});
-
-#[dynamic]
-static DESCENDING_DIAGONAL_LOOKUP: SquaresToMasks = SquaresToMasks::init(|square| {
-    let mask = square.mask();
-    for diagonal in DIAGONALS_BL_TO_TR {
-        if diagonal & mask != 0 {
-            return diagonal;
-        }
-    }
-    0
-});
-
-#[dynamic]
-static SQUARES_ON_SAME_DIAGONAL_LOOKUP: SquaresTwoToOneMapping<bool> =
-    SquaresTwoToOneMapping::init(|sq1, sq2| {
-        let sq1_diagonals = sq1.diagonals_mask();
-        sq1_diagonals & sq2.mask() != 0
-    });
-
-#[dynamic]
-static SQUARES_ON_SAME_LINE_LOOKUP: SquaresTwoToOneMapping<bool> =
-    SquaresTwoToOneMapping::init(|sq1, sq2| {
-        let sq1_rays = sq1.orthogonals_and_diagonals_mask();
-        sq1_rays & sq2.mask() != 0
-    });
 
 #[cfg(test)]
 mod tests {

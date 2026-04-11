@@ -7,7 +7,7 @@ use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::position::Position;
 use logos::Lexer;
 use regex::Regex;
-use static_init::dynamic;
+use std::sync::LazyLock;
 
 /// Regex for parsing non-castling moves.
 /// Capturing groups:
@@ -25,8 +25,8 @@ use static_init::dynamic;
 const NON_CASTLING_MOVE_REGEX: &str =
     r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
 
-#[dynamic]
-static COMPILED_NON_CASTLING_MOVE_REGEX: Regex = Regex::new(NON_CASTLING_MOVE_REGEX).unwrap();
+static COMPILED_NON_CASTLING_MOVE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(NON_CASTLING_MOVE_REGEX).unwrap());
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnNonCastlingMove {

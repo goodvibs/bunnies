@@ -1,6 +1,6 @@
+use crate::square::same_line;
 use crate::Square;
 use crate::utilities::SquaresTwoToOneMapping;
-use static_init::dynamic;
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -241,22 +241,36 @@ impl KnightMoveDirection {
     }
 }
 
-#[dynamic]
-static MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> =
-    SquaresTwoToOneMapping::init(|src_square, dst_square| {
-        if src_square.is_on_same_line_as(dst_square) {
-            let direction = QueenLikeMoveDirection::calc(src_square, dst_square, &mut 0);
-
-            UnifiedMoveDirection::from_queen_like(direction)
-        } else {
-            let direction = KnightMoveDirection::calc(src_square, dst_square);
-
-            match direction {
-                Some(direction) => UnifiedMoveDirection::from_knight_like(direction),
-                None => UnifiedMoveDirection::NULL,
-            }
+const fn unified_move_direction_at(
+    src_square: Square,
+    dst_square: Square,
+) -> UnifiedMoveDirection {
+    if same_line(src_square, dst_square) {
+        let mut _d = 0;
+        let direction = QueenLikeMoveDirection::calc(src_square, dst_square, &mut _d);
+        UnifiedMoveDirection::from_queen_like(direction)
+    } else {
+        match KnightMoveDirection::calc(src_square, dst_square) {
+            Some(direction) => UnifiedMoveDirection::from_knight_like(direction),
+            None => UnifiedMoveDirection::NULL,
         }
-    });
+    }
+}
+
+const MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
+    let mut arr = [UnifiedMoveDirection::NULL; 64 * 64];
+    let mut i = 0usize;
+    while i < 64 * 64 {
+        let src_square = unsafe { Square::from((i / 64) as u8) };
+        let dst_square = unsafe { Square::from((i % 64) as u8) };
+        arr[i] = unified_move_direction_at(src_square, dst_square);
+        i += 1;
+    }
+    arr
+};
+
+static MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> =
+    SquaresTwoToOneMapping::from_array(MOVE_DIRECTION_DATA);
 
 #[cfg(test)]
 mod tests {

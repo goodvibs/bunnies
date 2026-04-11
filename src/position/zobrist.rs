@@ -3,24 +3,28 @@
 use crate::position::board::Board;
 use crate::{Bitboard, Piece};
 use crate::{BitboardUtils, Square};
-use rand::RngExt;
-use static_init::dynamic;
 
-/// A table of random bitboards for each piece type on each square.
-#[dynamic]
-static ZOBRIST_TABLE: [[Bitboard; 12]; 64] = generate_zobrist_table();
-
-/// Generates a table of random bitboards for each piece type on each square.
-fn generate_zobrist_table() -> [[Bitboard; 12]; 64] {
-    let mut rng = rand::rng();
-    let mut zobrist: [[Bitboard; 12]; 64] = [[0; 12]; 64];
-    for i in 0..64 {
-        for j in 0..12 {
-            zobrist[i][j] = rng.random_range(1..u64::MAX);
+/// Fixed pseudo-random table (const-evaluated). Keys are stable across runs and builds.
+const fn zobrist_table() -> [[Bitboard; 12]; 64] {
+    let mut zobrist = [[0u64; 12]; 64];
+    let mut x: u64 = 0x243F_6A88_85A3_08D3;
+    let mut i = 0;
+    while i < 64 {
+        let mut j = 0;
+        while j < 12 {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            let v = x.rotate_left(((i * 13 + j * 7) % 64) as u32);
+            zobrist[i][j] = if v == 0 { 1 } else { v };
+            j += 1;
         }
+        i += 1;
     }
     zobrist
 }
+
+static ZOBRIST_TABLE: [[Bitboard; 12]; 64] = zobrist_table();
 
 /// Gets the Zobrist hash for a piece on a square.
 pub fn get_piece_zobrist_hash(square: Square, piece_type: Piece) -> Bitboard {

@@ -2,12 +2,12 @@ use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use logos::Lexer;
 use regex::Regex;
-use static_init::dynamic;
+use std::sync::LazyLock;
 
 const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
 
-#[dynamic]
-static COMPILED_MOVE_NUMBER_REGEX: Regex = Regex::new(MOVE_NUMBER_REGEX).unwrap();
+static COMPILED_MOVE_NUMBER_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(MOVE_NUMBER_REGEX).unwrap());
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PgnMoveNumber {
