@@ -14,21 +14,22 @@ use crate::pgn::token_types::PgnTag;
 use crate::position::Position;
 use logos::{Lexer, Logos};
 
-/// The main parser for PGN strings.
-pub struct PgnParser<'a> {
+/// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
+/// while parsing (must fit the longest half-move path in the game, including variations).
+pub struct PgnParser<'a, const N: usize> {
     pub lexer: Lexer<'a, PgnToken>,
     pub parse_state: PgnParsingState,
     pub constructed_object: PgnObject,
-    buffered_position_manager: PgnBufferedPositionBrancher,
+    buffered_position_manager: PgnBufferedPositionBrancher<N>,
 }
 
-impl<'a> PgnParser<'a> {
-    pub fn new(pgn: &str) -> PgnParser {
+impl<'a, const N: usize> PgnParser<'a, N> {
+    pub fn new(pgn: &str) -> PgnParser<'_, N> {
         let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager =
-            PgnBufferedPositionBrancher::new(&current_node, Position::initial());
+            PgnBufferedPositionBrancher::new(&current_node, Position::<N>::initial());
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,
@@ -190,7 +191,9 @@ impl<'a> PgnParser<'a> {
                 if let Some(matched_move) = matched_move {
                     let new_state = {
                         let mut state = current_state.clone();
-                        state.make_move(matched_move);
+                        state
+                            .make_move(matched_move)
+                            .map_err(|_| PgnParsingError::ContextStackFull)?;
                         state
                     };
                     let move_data = PgnMoveData {

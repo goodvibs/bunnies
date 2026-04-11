@@ -63,7 +63,7 @@ impl Move {
         unsafe { MoveFlag::from(flag_int) }
     }
 
-    pub fn is_capture(&self, initial_state: &Position) -> bool {
+    pub fn is_capture<const N: usize>(&self, initial_state: &Position<N>) -> bool {
         match self.flag() {
             MoveFlag::NormalMove | MoveFlag::Promotion => {
                 initial_state.board.is_occupied_at(self.destination())

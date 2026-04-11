@@ -1,33 +1,82 @@
-//! Contains the State struct, which is the main struct for representing a position in a chess game.
+//! Contains [`Position`], the main struct for representing a position in a chess game.
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::position::{Board, GameResult, PositionContext};
 use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
+use std::fmt;
 
-/// A struct containing all the information needed to represent a position in a chess game.
-#[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Position {
+/// Error from [`Position::make_move`] when the context stack is full.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PositionError {
+    ContextStackFull,
+}
+
+/// Chess position with a fixed-size context stack of capacity `N` (root plus at most `N - 1` plies).
+///
+/// `N` must be at least **1**. Choose `N` at compile time so the deepest `make_move` chain you use
+/// (search depth, PGN main line length, etc.) never exceeds `N` slots (including the root context).
+#[derive(Clone)]
+pub struct Position<const N: usize> {
     pub board: Board,
     pub side_to_move: Color,
     pub halfmove: u16,
     pub result: GameResult,
-    pub context_history: Vec<PositionContext>,
+    pub(crate) contexts: [PositionContext; N],
+    pub(crate) context_len: usize,
 }
 
-impl Position {
+impl<const N: usize> fmt::Debug for Position<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Position")
+            .field("board", &self.board)
+            .field("side_to_move", &self.side_to_move)
+            .field("halfmove", &self.halfmove)
+            .field("result", &self.result)
+            .field("contexts", &&self.contexts[..self.context_len])
+            .finish()
+    }
+}
+
+impl<const N: usize> PartialEq for Position<N> {
+    fn eq(&self, other: &Self) -> bool {
+        self.board == other.board
+            && self.side_to_move == other.side_to_move
+            && self.halfmove == other.halfmove
+            && self.result == other.result
+            && self.context_len == other.context_len
+            && self.contexts[..self.context_len] == other.contexts[..other.context_len]
+    }
+}
+
+impl<const N: usize> Eq for Position<N> {}
+
+impl<const N: usize> Position<N> {
+    /// Active context stack entries (root at index 0, current at `len - 1`).
+    pub fn context_slice(&self) -> &[PositionContext] {
+        &self.contexts[..self.context_len]
+    }
+
+    /// Number of contexts on the stack (always >= 1 when valid).
+    pub fn context_len(&self) -> usize {
+        self.context_len
+    }
+
     /// Creates an initial state with the standard starting position.
-    pub fn initial() -> Position {
+    pub fn initial() -> Self {
+        assert!(N >= 1, "Position context stack capacity N must be at least 1");
         let board = Board::initial();
         let mut context = PositionContext::blank();
         context.castling_rights = 0b00001111;
         context.zobrist_hash = board.zobrist_hash;
-        let contexts = vec![context];
-        let mut res = Position {
+        let mut contexts = [PositionContext::blank(); N];
+        contexts[0] = context;
+        let mut res = Self {
             board,
             side_to_move: Color::White,
             halfmove: 0,
             result: GameResult::None,
-            context_history: contexts,
+            contexts,
+            context_len: 1,
         };
         res.update_pins_and_checks();
         assert!(res.is_unequivocally_valid());
@@ -36,23 +85,35 @@ impl Position {
     }
 
     pub fn context(&self) -> &PositionContext {
-        assert!(!self.context_history.is_empty());
-        self.context_history.last().unwrap()
+        debug_assert!(self.context_len > 0);
+        &self.contexts[self.context_len - 1]
     }
 
     pub fn mut_context(&mut self) -> &mut PositionContext {
-        assert!(!self.context_history.is_empty());
-        self.context_history.last_mut().unwrap()
+        debug_assert!(self.context_len > 0);
+        &mut self.contexts[self.context_len - 1]
     }
 
-    pub fn push_context(&mut self, context: PositionContext) {
+    pub fn try_push_context(&mut self, context: PositionContext) -> Result<(), PositionError> {
         assert_ne!(self.context().zobrist_hash, 0);
-        self.context_history.push(context);
+        if self.context_len >= N {
+            return Err(PositionError::ContextStackFull);
+        }
+        self.contexts[self.context_len] = context;
+        self.context_len += 1;
+        Ok(())
     }
 
     pub fn pop_context(&mut self) -> PositionContext {
-        assert!(!self.context_history.is_empty());
-        self.context_history.pop().unwrap()
+        assert!(self.context_len > 1);
+        let popped = self.contexts[self.context_len - 1];
+        self.context_len -= 1;
+        popped
+    }
+
+    pub(crate) fn decrement_context_stack_for_unmake(&mut self) {
+        debug_assert!(self.context_len > 1);
+        self.context_len -= 1;
     }
 
     /// Gets the fullmove number of the position. 1-based.
@@ -195,19 +256,6 @@ impl Position {
     }
 }
 
-// impl Drop for State {
-//     fn drop(&mut self) {
-//         unsafe {
-//             let mut context_ptr = self.context;
-//             while let Some(previous) = (*context_ptr).previous {
-//                 let _ = Box::from_raw(context_ptr);
-//                 context_ptr = previous;
-//             }
-//             // let _ = Box::from_raw(context_ptr);
-//         }
-//     }
-// }
-
 #[cfg(test)]
 mod state_tests {
     use crate::Color;
@@ -215,7 +263,7 @@ mod state_tests {
 
     #[test]
     fn test_initial_state() {
-        let state = Position::initial();
+        let state = Position::<1>::initial();
         assert_eq!(state.side_to_move, Color::White);
         assert_eq!(state.halfmove, 0);
         assert_eq!(state.result, GameResult::None);
@@ -224,7 +272,7 @@ mod state_tests {
 
     #[test]
     fn test_get_fullmove() {
-        let mut state = Position::initial();
+        let mut state = Position::<1>::initial();
 
         assert_eq!(state.get_fullmove(), 1); // Initial position
 
@@ -239,5 +287,16 @@ mod state_tests {
 
         state.halfmove = 10;
         assert_eq!(state.get_fullmove(), 6); // After 10 halfmoves
+    }
+
+    #[test]
+    fn test_context_stack_full_returns_error() {
+        use crate::position::PositionError;
+        let mut pos = Position::<2>::initial();
+        let mv = pos.moves().into_iter().next().expect("at least one legal move");
+        pos.make_move(mv).unwrap();
+        assert_eq!(pos.context_len(), 2);
+        let mv2 = pos.moves().into_iter().next().expect("at least one legal move");
+        assert_eq!(pos.make_move(mv2), Err(PositionError::ContextStackFull));
     }
 }

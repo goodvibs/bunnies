@@ -5,7 +5,7 @@ use crate::masks::{
 use crate::position::Position;
 use crate::{Bitboard, Color, Piece, Square};
 
-impl Position {
+impl<const N: usize> Position<N> {
     /// Rigorous check for whether the current positional information is consistent and valid.
     pub fn is_unequivocally_valid(&self) -> bool {
         self.board.is_unequivocally_valid()

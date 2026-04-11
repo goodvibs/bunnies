@@ -5,16 +5,16 @@ use crate::position::Position;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub struct PgnBufferedPositionBrancher {
-    pub current_and_previous: PgnBufferedPositionContext,
-    pub stack: Vec<PgnBufferedPositionContext>,
+pub struct PgnBufferedPositionBrancher<const N: usize> {
+    pub current_and_previous: PgnBufferedPositionContext<N>,
+    pub stack: Vec<PgnBufferedPositionContext<N>>,
 }
 
-impl PgnBufferedPositionBrancher {
+impl<const N: usize> PgnBufferedPositionBrancher<N> {
     pub fn new(
         root_node: &Rc<RefCell<MoveTreeNode>>,
-        initial_state: Position,
-    ) -> PgnBufferedPositionBrancher {
+        initial_state: Position<N>,
+    ) -> PgnBufferedPositionBrancher<N> {
         PgnBufferedPositionBrancher {
             current_and_previous: PgnBufferedPositionContext {
                 current: PgnPositionContext {

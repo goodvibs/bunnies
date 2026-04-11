@@ -11,6 +11,8 @@ pub enum PgnParsingError {
     UnexpectedToken(String),
     UnexpectedEndOfInput(String),
     LexingError(String),
+    /// Position context stack was full when applying a move: use a larger `N` on [`PgnParser<N>`](crate::pgn::PgnParser) / [`Position<N>`](crate::position::Position) so the longest half-move path fits.
+    ContextStackFull,
 }
 
 impl Display for PgnParsingError {

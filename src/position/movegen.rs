@@ -16,7 +16,7 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
         .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
 }
 
-impl Position {
+impl<const N: usize> Position<N> {
     /**
      * Adds all legal non-en-passant pawn capture moves to the provided moves vector.
      *
@@ -469,12 +469,12 @@ mod tests {
     use crate::{Move, MoveFlag, Piece, Position, Square};
     use std::collections::HashSet;
 
-    fn expected_moves_test<const N: usize>(
+    fn expected_moves_test<const M: usize>(
         fen: &str,
-        include_move: fn(Move, &Position) -> bool,
-        expected_moves: [Move; N],
+        include_move: fn(Move, &Position<1>) -> bool,
+        expected_moves: [Move; M],
     ) {
-        let pos = Position::from_fen(fen).unwrap();
+        let pos = Position::<1>::from_fen(fen).unwrap();
         let moves: Vec<Move> = pos
             .moves()
             .into_iter()
@@ -490,7 +490,9 @@ mod tests {
     #[test]
     fn test_knight_movegen() {
         let is_knight_move =
-            |mv: Move, pos: &Position| pos.current_side_knights() & mv.source().mask() != 0;
+            |mv: Move, pos: &Position<1>| {
+                pos.current_side_knights() & mv.source().mask() != 0
+            };
 
         expected_moves_test(
             "r5k1/pP1n2np/Q7/bbpnp1R1/Np6/1B6/RPPP2P1/4K1N1 b - - 5 12",
@@ -516,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_sliding_piece_movegen() {
-        let is_sliding_piece_move = |mv: Move, pos: &Position| {
+        let is_sliding_piece_move = |mv: Move, pos: &Position<1>| {
             (pos.current_side_bishops() | pos.current_side_rooks() | pos.current_side_queens())
                 & mv.source().mask()
                 != 0
@@ -566,7 +568,7 @@ mod tests {
 
     #[test]
     fn test_white_pawn_push_movegen() {
-        let is_pawn_push = |mv: Move, pos: &Position| {
+        let is_pawn_push = |mv: Move, pos: &Position<1>| {
             pos.current_side_pawns() & mv.source().mask() != 0
                 && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
         };
@@ -593,7 +595,7 @@ mod tests {
 
     #[test]
     fn test_white_non_ep_pawn_capture_movegen() {
-        let is_non_ep_pawn_capture = |mv: Move, pos: &Position| {
+        let is_non_ep_pawn_capture = |mv: Move, pos: &Position<1>| {
             pos.current_side_pawns() & mv.source().mask() != 0
                 && mv.flag() != MoveFlag::EnPassant
                 && (mv.source() as i8 - mv.destination() as i8) % 8 != 0
@@ -625,7 +627,9 @@ mod tests {
 
     #[test]
     fn test_en_passant_movegen() {
-        let is_en_passant = |mv: Move, _: &Position| mv.flag() == MoveFlag::EnPassant;
+        let is_en_passant = |mv: Move, _: &Position<1>| {
+            mv.flag() == MoveFlag::EnPassant
+        };
 
         expected_moves_test(
             "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
@@ -670,7 +674,7 @@ mod tests {
 
     #[test]
     fn test_king_movegen() {
-        let is_king_move = |mv: Move, pos: &Position| {
+        let is_king_move = |mv: Move, pos: &Position<1>| {
             mv.flag() == MoveFlag::NormalMove && pos.current_side_king() & mv.source().mask() != 0
         };
 
@@ -698,7 +702,9 @@ mod tests {
 
     #[test]
     fn test_white_castling_movegen() {
-        let is_castling_move = |mv: Move, _: &Position| mv.flag() == MoveFlag::Castling;
+        let is_castling_move = |mv: Move, _: &Position<1>| {
+            mv.flag() == MoveFlag::Castling
+        };
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",

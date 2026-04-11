@@ -40,7 +40,7 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move(&self, mv: Move, initial_state: &Position) -> bool {
+    fn matches_move<const N: usize>(&self, mv: Move, initial_state: &Position<N>) -> bool {
         let dst = mv.destination();
         let src = mv.source();
         let flag = mv.flag();
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn test_matches_move() {
         let state =
-            Position::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
+            Position::<1>::from_fen("r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
                 .unwrap();
 
         // Test knight move

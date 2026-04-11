@@ -9,10 +9,10 @@ use crate::masks::{
     STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
 };
 use crate::r#move::{Move, MoveFlag};
-use crate::position::Position;
 use crate::position::context::PositionContext;
+use crate::position::{Position, PositionError};
 
-impl Position {
+impl<const N: usize> Position<N> {
     fn process_promotion(
         &mut self,
         dst_square: Square,
@@ -116,7 +116,13 @@ impl Position {
     /// Applies a move without checking if it is valid or legal.
     /// All make_move calls with valid (not malformed) moves
     /// should be fully able to be undone by unmake_move.
-    pub fn make_move(&mut self, mv: Move) {
+    ///
+    /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
+    pub fn make_move(&mut self, mv: Move) -> Result<(), PositionError> {
+        if self.context_len() >= N {
+            return Err(PositionError::ContextStackFull);
+        }
+
         let src_square = mv.source();
         let dst_square = mv.destination();
 
@@ -143,9 +149,10 @@ impl Position {
         // update data members
         self.halfmove += 1;
         self.side_to_move = self.side_to_move.other();
-        self.push_context(new_context);
+        self.try_push_context(new_context)?;
 
         self.update_pins_and_checks();
+        Ok(())
     }
 }
 

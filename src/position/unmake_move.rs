@@ -8,7 +8,7 @@ use crate::masks::STARTING_KING_ROOK_GAP_SHORT;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::{GameResult, Position};
 
-impl Position {
+impl<const N: usize> Position<N> {
     fn unprocess_promotion(&mut self, dst_square: Square, src_square: Square, promotion: Piece) {
         self.board.remove_piece_at(promotion, dst_square); // remove promoted piece
         self.board.put_piece_at(Piece::Pawn, src_square); // put pawn back
@@ -90,7 +90,7 @@ impl Position {
         // update data members
         self.halfmove -= 1;
         self.side_to_move = self.side_to_move.other();
-        let _ = self.context_history.pop().unwrap();
+        self.decrement_context_stack_for_unmake();
         self.result = GameResult::None;
     }
 }

@@ -3,7 +3,6 @@ use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::position::Position;
 use indexmap::IndexMap;
 use std::cell::RefCell;
-use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 
 /// Represents a parsed PGN string.
@@ -33,13 +32,18 @@ impl PgnObject {
     }
 
     /// Returns a PGN string representation, rendered with the given configuration.
-    pub fn render(&self, include_variations: bool, config: PgnRenderingConfig) -> String {
+    /// `N` must match the [`Position<N>`] capacity used when parsing (longest line must fit).
+    pub fn render<const N: usize>(
+        &self,
+        include_variations: bool,
+        config: PgnRenderingConfig,
+    ) -> String {
         let mut result = String::new();
         for (key, value) in self.tags.iter() {
             result.push_str(&format!("[{} \"{}\"]\n", key, value));
         }
-        result.push_str(&self.tree_root.borrow().render(
-            Position::initial(),
+        result.push_str(&self.tree_root.borrow().render::<N>(
+            Position::<N>::initial(),
             &[],
             include_variations,
             config,
@@ -47,11 +51,5 @@ impl PgnObject {
             false,
         ));
         result
-    }
-}
-
-impl Display for PgnObject {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.render(true, PgnRenderingConfig::default()))
     }
 }

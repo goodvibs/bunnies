@@ -4,7 +4,7 @@ use regex::Match;
 use std::fmt::Debug;
 
 pub trait PgnMove: Debug {
-    fn matches_move(&self, mv: Move, from_state: &Position) -> bool;
+    fn matches_move<const N: usize>(&self, mv: Move, from_state: &Position<N>) -> bool;
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 

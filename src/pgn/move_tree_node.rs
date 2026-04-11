@@ -53,9 +53,9 @@ impl MoveTreeNode {
             .collect()
     }
 
-    pub(crate) fn render(
+    pub(crate) fn render<const N: usize>(
         &self,
-        mut state: Position,
+        mut state: Position<N>,
         last_continuations: &[Rc<RefCell<MoveTreeNode>>],
         include_variations: bool,
         config: PgnRenderingConfig,
@@ -65,7 +65,7 @@ impl MoveTreeNode {
         let rendered_last_continuations = {
             let mut result = String::new();
             for continuation in last_continuations {
-                let rendered_continuation = &continuation.borrow().render(
+                let rendered_continuation = &continuation.borrow().render::<N>(
                     state.clone(),
                     &[],
                     include_variations,
@@ -138,7 +138,9 @@ impl MoveTreeNode {
                     state.board.piece_at(mv_dest) != Piece::Null
                 }
             };
-            state.make_move(mv); // if attacks_mask is 0, then it will be filled in automatically
+            state
+                .make_move(mv)
+                .expect("context stack capacity exceeded during PGN render");
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {
@@ -188,7 +190,7 @@ impl MoveTreeNode {
                 true => self.get_alternative_continuations(),
                 false => Vec::with_capacity(0),
             };
-            let rendered_main_continuation = main_continuation.borrow().render(
+            let rendered_main_continuation = main_continuation.borrow().render::<N>(
                 state,
                 &alternative_continuations,
                 include_variations,
