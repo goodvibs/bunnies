@@ -19,20 +19,17 @@ regex = "1.12.3"
 [dev-dependencies]
 criterion = "0.5.1"
 
+[profile.test]
+opt-level = 3
+
 [profile.release]
 opt-level = 3
 debug = false
 debug-assertions = false
 lto = true
 
-[profile.test]
-opt-level = 3
-
 [profile.bench]
-opt-level = 3
-debug = false
-debug-assertions = false
-lto = true
+inherits = "release"
 
 [profile.profiling]
 inherits = "release"
