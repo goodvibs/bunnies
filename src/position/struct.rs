@@ -63,7 +63,10 @@ impl<const N: usize> Position<N> {
 
     /// Creates an initial state with the standard starting position.
     pub fn initial() -> Self {
-        assert!(N >= 1, "Position context stack capacity N must be at least 1");
+        assert!(
+            N >= 1,
+            "Position context stack capacity N must be at least 1"
+        );
         let board = Board::initial();
         let mut context = PositionContext::blank();
         context.castling_rights = 0b00001111;
@@ -293,10 +296,18 @@ mod state_tests {
     fn test_context_stack_full_returns_error() {
         use crate::position::PositionError;
         let mut pos = Position::<2>::initial();
-        let mv = pos.moves().into_iter().next().expect("at least one legal move");
+        let mv = pos
+            .moves()
+            .into_iter()
+            .next()
+            .expect("at least one legal move");
         pos.make_move(mv).unwrap();
         assert_eq!(pos.context_len(), 2);
-        let mv2 = pos.moves().into_iter().next().expect("at least one legal move");
+        let mv2 = pos
+            .moves()
+            .into_iter()
+            .next()
+            .expect("at least one legal move");
         assert_eq!(pos.make_move(mv2), Err(PositionError::ContextStackFull));
     }
 }

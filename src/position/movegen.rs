@@ -405,11 +405,7 @@ impl<const N: usize> Position<N> {
                     possible_non_king_dsts,
                     &mut moves,
                 );
-                self.add_legal_sliding_piece_moves(
-                    Piece::Rook,
-                    possible_non_king_dsts,
-                    &mut moves,
-                );
+                self.add_legal_sliding_piece_moves(Piece::Rook, possible_non_king_dsts, &mut moves);
                 self.add_legal_sliding_piece_moves(
                     Piece::Queen,
                     possible_non_king_dsts,
@@ -420,10 +416,7 @@ impl<const N: usize> Position<N> {
             }
             checkers if checkers.count_ones() == 1 => {
                 let checker_square = unsafe { Square::from_bitboard(checkers) };
-                let is_checker_a_slider = self
-                    .board
-                    .piece_at(checker_square)
-                    .is_sliding_piece();
+                let is_checker_a_slider = self.board.piece_at(checker_square).is_sliding_piece();
 
                 if is_checker_a_slider {
                     possible_non_king_dsts &= checkers
@@ -443,11 +436,7 @@ impl<const N: usize> Position<N> {
                     possible_non_king_dsts,
                     &mut moves,
                 );
-                self.add_legal_sliding_piece_moves(
-                    Piece::Rook,
-                    possible_non_king_dsts,
-                    &mut moves,
-                );
+                self.add_legal_sliding_piece_moves(Piece::Rook, possible_non_king_dsts, &mut moves);
                 self.add_legal_sliding_piece_moves(
                     Piece::Queen,
                     possible_non_king_dsts,
@@ -490,9 +479,7 @@ mod tests {
     #[test]
     fn test_knight_movegen() {
         let is_knight_move =
-            |mv: Move, pos: &Position<1>| {
-                pos.current_side_knights() & mv.source().mask() != 0
-            };
+            |mv: Move, pos: &Position<1>| pos.current_side_knights() & mv.source().mask() != 0;
 
         expected_moves_test(
             "r5k1/pP1n2np/Q7/bbpnp1R1/Np6/1B6/RPPP2P1/4K1N1 b - - 5 12",
@@ -627,9 +614,7 @@ mod tests {
 
     #[test]
     fn test_en_passant_movegen() {
-        let is_en_passant = |mv: Move, _: &Position<1>| {
-            mv.flag() == MoveFlag::EnPassant
-        };
+        let is_en_passant = |mv: Move, _: &Position<1>| mv.flag() == MoveFlag::EnPassant;
 
         expected_moves_test(
             "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
@@ -702,9 +687,7 @@ mod tests {
 
     #[test]
     fn test_white_castling_movegen() {
-        let is_castling_move = |mv: Move, _: &Position<1>| {
-            mv.flag() == MoveFlag::Castling
-        };
+        let is_castling_move = |mv: Move, _: &Position<1>| mv.flag() == MoveFlag::Castling;
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",

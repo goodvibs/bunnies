@@ -18,15 +18,15 @@ impl Board {
         }
 
         for color_int in Color::White as u8..Color::Black as u8 + 1 {
-            let bishops = self.piece_masks[Piece::Bishop as usize]
-                & self.color_masks[color_int as usize];
+            let bishops =
+                self.piece_masks[Piece::Bishop as usize] & self.color_masks[color_int as usize];
             let num_bishops = bishops.count_ones();
             if num_bishops > 1 {
                 return false;
             }
 
-            let knights = self.piece_masks[Piece::Knight as usize]
-                & self.color_masks[color_int as usize];
+            let knights =
+                self.piece_masks[Piece::Knight as usize] & self.color_masks[color_int as usize];
             let num_knights = knights.count_ones();
 
             if use_uscf_rules && num_knights == 2 && num_bishops == 0 {

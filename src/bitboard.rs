@@ -1,5 +1,5 @@
-use crate::square::same_line;
 use crate::Square;
+use crate::square::same_line;
 use crate::utilities::{
     BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator, QueenLikeMoveDirection,
     SquarePairsToMasks,
@@ -130,8 +130,7 @@ const EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
     arr
 };
 
-static MASK_BETWEEN_LOOKUP: SquarePairsToMasks =
-    SquarePairsToMasks::from_array(MASK_BETWEEN_DATA);
+static MASK_BETWEEN_LOOKUP: SquarePairsToMasks = SquarePairsToMasks::from_array(MASK_BETWEEN_DATA);
 
 static EDGE_TO_EDGE_RAY_LOOKUP: SquarePairsToMasks =
     SquarePairsToMasks::from_array(EDGE_TO_EDGE_RAY_DATA);

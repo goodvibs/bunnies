@@ -1,5 +1,5 @@
-use crate::square::same_line;
 use crate::Square;
+use crate::square::same_line;
 use crate::utilities::SquaresTwoToOneMapping;
 
 #[repr(transparent)]
@@ -241,10 +241,7 @@ impl KnightMoveDirection {
     }
 }
 
-const fn unified_move_direction_at(
-    src_square: Square,
-    dst_square: Square,
-) -> UnifiedMoveDirection {
+const fn unified_move_direction_at(src_square: Square, dst_square: Square) -> UnifiedMoveDirection {
     if same_line(src_square, dst_square) {
         let mut _d = 0;
         let direction = QueenLikeMoveDirection::calc(src_square, dst_square, &mut _d);

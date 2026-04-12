@@ -131,14 +131,8 @@ mod tests {
         assert_eq!(ColoredPiece::WhitePawn.piece(), Piece::Pawn);
         assert_eq!(ColoredPiece::BlackPawn.piece(), Piece::Pawn);
 
-        assert_eq!(
-            ColoredPiece::from_ascii('P'),
-            ColoredPiece::WhitePawn
-        );
-        assert_eq!(
-            ColoredPiece::from_ascii('p'),
-            ColoredPiece::BlackPawn
-        );
+        assert_eq!(ColoredPiece::from_ascii('P'), ColoredPiece::WhitePawn);
+        assert_eq!(ColoredPiece::from_ascii('p'), ColoredPiece::BlackPawn);
         assert_eq!(ColoredPiece::from_ascii(' '), ColoredPiece::NoPiece);
 
         assert_eq!(ColoredPiece::WhitePawn.ascii(), 'P');

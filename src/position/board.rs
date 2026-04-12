@@ -279,12 +279,7 @@ impl Board {
     /// Moves `piece_type` from `src_square` to `dst_square`.
     /// Does not update color.
     /// Updates the zobrist hash.
-    pub fn move_piece(
-        &mut self,
-        piece_type: Piece,
-        dst_square: Square,
-        src_square: Square,
-    ) {
+    pub fn move_piece(&mut self, piece_type: Piece, dst_square: Square, src_square: Square) {
         let dst_mask = dst_square.mask();
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;

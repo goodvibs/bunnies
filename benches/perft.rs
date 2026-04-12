@@ -31,8 +31,7 @@ fn bench_kiwipete(c: &mut Criterion) {
 }
 
 fn bench_position_3(c: &mut Criterion) {
-    let state =
-        Position::<6>::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
+    let state = Position::<6>::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
     let mut group = c.benchmark_group("Position 3");
 
     let expected_nodes = 674624; // perft(5) for Position 3
@@ -45,10 +44,9 @@ fn bench_position_3(c: &mut Criterion) {
 }
 
 fn bench_position_4(c: &mut Criterion) {
-    let state = Position::<5>::from_fen(
-        "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
-    )
-    .unwrap();
+    let state =
+        Position::<5>::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1")
+            .unwrap();
     let mut group = c.benchmark_group("Position 4");
 
     let expected_nodes = 422333; // perft(4) for Position 4
@@ -61,10 +59,9 @@ fn bench_position_4(c: &mut Criterion) {
 }
 
 fn bench_position_5(c: &mut Criterion) {
-    let state = Position::<4>::from_fen(
-        "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-    )
-    .unwrap();
+    let state =
+        Position::<4>::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+            .unwrap();
     let mut group = c.benchmark_group("Position 5");
 
     let expected_nodes = 62379; // perft(3) for Position 5

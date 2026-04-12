@@ -141,13 +141,8 @@ impl Piece {
     ];
 
     /// An array of all Pieces representing promotion pieces (4 in total).
-    pub const PROMOTION_PIECES: [Piece; 4] = [
-        Piece::Knight,
-        Piece::Bishop,
-        Piece::Rook,
-        Piece::Queen,
-    ];
+    pub const PROMOTION_PIECES: [Piece; 4] =
+        [Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen];
 
-    pub const SLIDING_PIECES: [Piece; 3] =
-        [Piece::Bishop, Piece::Rook, Piece::Queen];
+    pub const SLIDING_PIECES: [Piece; 3] = [Piece::Bishop, Piece::Rook, Piece::Queen];
 }
