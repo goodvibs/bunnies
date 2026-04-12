@@ -1,47 +1,23 @@
-use bunnies::Position;
+include!(concat!(env!("CARGO_MANIFEST_DIR"), "/perft_case.rs"));
 
-fn run_perft_test<const N: usize>(state: Position<N>, depth: u8, expected_nodes: u64) {
-    let nodes = state.perft(depth);
-    assert_eq!(
-        nodes, expected_nodes,
-        "Expected {} nodes at depth {}, but got {}",
-        expected_nodes, depth, nodes
-    );
+macro_rules! define_perft_tests {
+    ($($name:ident => ($case:expr, $depth:literal);)+) => {
+        $(
+            #[test]
+            fn $name() {
+                const CONTEXTS_CAPACITY: usize = $depth + 1;
+                let pos = ($case).position::<CONTEXTS_CAPACITY>();
+                let nodes_observed = pos.perft($depth);
+                ($case).verify_perft($depth, nodes_observed);
+            }
+        )+
+    };
 }
 
-#[test]
-fn test_initial_position() {
-    let initial_state = Position::<7>::initial();
-    run_perft_test(initial_state, 6, 119060324);
-}
-
-#[test]
-fn test_kiwipete() {
-    let state = Position::<6>::from_fen(
-        "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-    )
-    .unwrap();
-    run_perft_test(state, 5, 193690690);
-}
-
-#[test]
-fn test_position_3() {
-    let state = Position::<8>::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap();
-    run_perft_test(state, 7, 178633661);
-}
-
-#[test]
-fn test_position_4() {
-    let state =
-        Position::<6>::from_fen("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1")
-            .unwrap();
-    run_perft_test(state, 5, 15833292);
-}
-
-#[test]
-fn test_position_5() {
-    let state =
-        Position::<6>::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
-            .unwrap();
-    run_perft_test(state, 5, 89941194);
+define_perft_tests! {
+    test_perft_initial_position => (PerftCase::Initial, 6);
+    test_perft_kiwipete => (PerftCase::Kiwipete, 5);
+    test_perft_position_3 => (PerftCase::Position3, 7);
+    test_perft_position_4 => (PerftCase::Position4, 5);
+    test_perft_position_5 => (PerftCase::Position5, 5);
 }
