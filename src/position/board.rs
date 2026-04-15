@@ -18,7 +18,7 @@ pub struct Board {
 
 impl Board {
     /// The board for the initial position.
-    pub fn initial() -> Board {
+    pub const fn initial() -> Board {
         Board {
             piece_masks: [
                 STARTING_ALL,
@@ -53,11 +53,11 @@ impl Board {
         self.piece_mask(Piece::ALL_PIECES)
     }
 
-    fn diagonal_sliders(&self) -> Bitboard {
+    pub(crate) const fn diagonal_sliders(&self) -> Bitboard {
         self.piece_mask(Piece::Bishop) | self.piece_mask(Piece::Queen)
     }
 
-    fn orthogonal_sliders(&self) -> Bitboard {
+    pub(crate) const fn orthogonal_sliders(&self) -> Bitboard {
         self.piece_mask(Piece::Rook) | self.piece_mask(Piece::Queen)
     }
 
@@ -184,20 +184,20 @@ impl Board {
     }
 
     /// Populates a square with `color`, but no piece type.
-    pub fn put_color_at(&mut self, color: Color, square: Square) {
+    pub const fn put_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] |= mask;
     }
 
     /// Populates a square with `piece_type`, but no color.
-    pub fn put_piece_at(&mut self, piece_type: Piece, square: Square) {
+    pub const fn put_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] |= mask;
         self.piece_masks[Piece::ALL_PIECES as usize] |= mask;
     }
 
     /// Populates a square with `colored_piece`.
-    pub fn put_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
+    pub const fn put_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
         let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
@@ -206,20 +206,20 @@ impl Board {
     }
 
     /// Removes `color` from a square, but not piece type.
-    pub fn remove_color_at(&mut self, color: Color, square: Square) {
+    pub const fn remove_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] &= !mask;
     }
 
     /// Removes `piece_type` from a square, but not color.
-    pub fn remove_piece_at(&mut self, piece_type: Piece, square: Square) {
+    pub const fn remove_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] &= !mask;
         self.piece_masks[Piece::ALL_PIECES as usize] &= !mask;
     }
 
     /// Removes `colored_piece` from a square.
-    pub fn remove_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
+    pub const fn remove_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
         let piece_type = colored_piece.piece();
         let color = colored_piece.color();
 
@@ -229,7 +229,7 @@ impl Board {
 
     /// Moves `piece_type` from `src_square` to `dst_square`.
     /// Does not update color.
-    pub fn move_piece(&mut self, piece_type: Piece, dst_square: Square, src_square: Square) {
+    pub const fn move_piece(&mut self, piece_type: Piece, dst_square: Square, src_square: Square) {
         let dst_mask = dst_square.mask();
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;
@@ -240,7 +240,7 @@ impl Board {
 
     /// Moves `color` from `src_square` to `dst_square`.
     /// Does not update color.
-    pub fn move_color(&mut self, color: Color, dst_square: Square, src_square: Square) {
+    pub const fn move_color(&mut self, color: Color, dst_square: Square, src_square: Square) {
         let dst_mask = dst_square.mask();
         let src_mask = src_square.mask();
         let src_dst_mask = src_mask | dst_mask;
@@ -249,7 +249,7 @@ impl Board {
     }
 
     /// Moves a `colored_piece` from `src_square` to `dst_square`.
-    pub fn move_colored_piece(
+    pub const fn move_colored_piece(
         &mut self,
         colored_piece: ColoredPiece,
         dst_square: Square,
@@ -263,36 +263,50 @@ impl Board {
     }
 
     /// Returns the piece type at `square`.
-    pub fn piece_at(&self, square: Square) -> Piece {
+    pub const fn piece_at(&self, square: Square) -> Piece {
         let mask = square.mask();
-        for piece_type in Piece::PIECES {
-            if self.piece_masks[piece_type as usize] & mask != 0 {
-                return piece_type;
-            }
+        // Explicit order (must match `Piece::PIECES`); `for` is not const-compatible here yet.
+        if self.piece_masks[Piece::Pawn as usize] & mask != 0 {
+            return Piece::Pawn;
+        }
+        if self.piece_masks[Piece::Knight as usize] & mask != 0 {
+            return Piece::Knight;
+        }
+        if self.piece_masks[Piece::Bishop as usize] & mask != 0 {
+            return Piece::Bishop;
+        }
+        if self.piece_masks[Piece::Rook as usize] & mask != 0 {
+            return Piece::Rook;
+        }
+        if self.piece_masks[Piece::Queen as usize] & mask != 0 {
+            return Piece::Queen;
+        }
+        if self.piece_masks[Piece::King as usize] & mask != 0 {
+            return Piece::King;
         }
         Piece::Null
     }
 
-    pub fn is_occupied_at(&self, square: Square) -> bool {
+    pub const fn is_occupied_at(&self, square: Square) -> bool {
         let mask = square.mask();
         self.piece_masks[Piece::ALL_PIECES as usize] & mask != 0
     }
 
     /// Returns the color at `square`.
-    pub fn color_at(&self, square: Square) -> Color {
+    pub const fn color_at(&self, square: Square) -> Color {
         let mask = square.mask();
         Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
     }
 
     /// Returns the colored piece at `square`.
-    pub fn get_colored_piece_at(&self, square: Square) -> ColoredPiece {
+    pub const fn get_colored_piece_at(&self, square: Square) -> ColoredPiece {
         let piece_type = self.piece_at(square);
         let color = self.color_at(square);
         ColoredPiece::new(color, piece_type)
     }
 
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).
-    pub fn is_consistent(&self) -> bool {
+    pub const fn is_consistent(&self) -> bool {
         let white_bb = self.color_masks[Color::White as usize];
         let black_bb = self.color_masks[Color::Black as usize];
         if white_bb & black_bb != 0 {
@@ -307,7 +321,9 @@ impl Board {
 
         let mut all_occupancy_bb_reconstructed: Bitboard = 0;
 
-        for piece in Piece::PIECES {
+        let mut i = 0;
+        while i < Piece::PIECES.len() {
+            let piece = Piece::PIECES[i];
             let piece_bb = self.piece_masks[piece as usize];
 
             if piece_bb & all_occupancy_bb != piece_bb {
@@ -322,6 +338,7 @@ impl Board {
                 return false;
             }
             all_occupancy_bb_reconstructed |= piece_bb;
+            i += 1;
         }
 
         all_occupancy_bb_reconstructed == all_occupancy_bb
@@ -336,7 +353,7 @@ impl Board {
     }
 
     /// Rigorous check for the validity and consistency of the board.
-    pub fn is_unequivocally_valid(&self) -> bool {
+    pub const fn is_unequivocally_valid(&self) -> bool {
         self.has_valid_kings() && self.is_consistent()
     }
 
@@ -367,5 +384,23 @@ impl Board {
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.unicode_charboard().to_string())
+    }
+}
+
+#[cfg(test)]
+mod const_eval_smoke_tests {
+    use crate::Board;
+    use crate::Piece;
+    use crate::Square;
+
+    /// Compile-time use of `const fn` board API (fails to compile if a link breaks).
+    const INITIAL: Board = Board::initial();
+    const E1_HAS_PIECE: bool = INITIAL.is_occupied_at(Square::E1);
+
+    #[test]
+    fn initial_board_const_matches_runtime() {
+        assert_eq!(INITIAL, Board::initial());
+        assert!(E1_HAS_PIECE);
+        assert_eq!(INITIAL.piece_at(Square::E1), Piece::King);
     }
 }
