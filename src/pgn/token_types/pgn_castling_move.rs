@@ -1,3 +1,4 @@
+use crate::Flank;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
@@ -22,14 +23,18 @@ static COMPILED_CASTLING_MOVE_REGEX: LazyLock<Regex> =
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PgnCastlingMove {
-    pub is_kingside: bool,
+    pub flank: Flank,
     pub common_move_info: PgnCommonMoveInfo,
 }
 
 impl PgnMove for PgnCastlingMove {
     fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &Position<N>) -> bool {
         let flag = mv.flag();
-        if flag != MoveFlag::Castling || self.is_kingside != (mv.destination().file() == 6) {
+        let matches_flank = match self.flank {
+            Flank::Kingside => mv.destination().file() == 6,
+            Flank::Queenside => mv.destination().file() == 2,
+        };
+        if flag != MoveFlag::Castling || !matches_flank {
             return false;
         }
 
@@ -45,7 +50,10 @@ impl PgnMove for PgnCastlingMove {
     }
 
     fn render(&self, include_annotation: bool, include_nag: bool) -> String {
-        let castling = if self.is_kingside { "O-O" } else { "O-O-O" };
+        let castling = match self.flank {
+            Flank::Kingside => "O-O",
+            Flank::Queenside => "O-O-O",
+        };
 
         let ending = self
             .common_move_info
@@ -59,14 +67,18 @@ impl ParsablePgnToken for PgnCastlingMove {
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError> {
         let text = lex.slice();
         if let Some(captures) = COMPILED_CASTLING_MOVE_REGEX.captures(text) {
-            let is_kingside = captures.get(2).is_some();
+            let flank = if captures.get(2).is_some() {
+                Flank::Kingside
+            } else {
+                Flank::Queenside
+            };
 
             let check_or_checkmate = captures.get(3);
             let annotation = captures.get(4);
             let nag = captures.get(5);
 
             Ok(PgnCastlingMove {
-                is_kingside,
+                flank,
                 common_move_info: PgnCommonMoveInfo::from(check_or_checkmate, annotation, nag),
             })
         } else {
@@ -90,7 +102,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, true);
+        assert_eq!(castling_move.flank, Flank::Kingside);
         assert_eq!(castling_move.get_common_move_info().is_check, false);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -102,7 +114,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O-O");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, false);
+        assert_eq!(castling_move.flank, Flank::Queenside);
         assert_eq!(castling_move.get_common_move_info().is_check, false);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -114,7 +126,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O+");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, true);
+        assert_eq!(castling_move.flank, Flank::Kingside);
         assert_eq!(castling_move.get_common_move_info().is_check, true);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -126,7 +138,7 @@ mod tests {
         let mut lex = PgnToken::lexer("0-0-0#");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, false);
+        assert_eq!(castling_move.flank, Flank::Queenside);
         assert_eq!(castling_move.get_common_move_info().is_check, true);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, true);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -138,7 +150,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O!?");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, true);
+        assert_eq!(castling_move.flank, Flank::Kingside);
         assert_eq!(castling_move.get_common_move_info().is_check, false);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
         assert_eq!(
@@ -153,7 +165,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O-O $1");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, false);
+        assert_eq!(castling_move.flank, Flank::Queenside);
         assert_eq!(castling_move.get_common_move_info().is_check, false);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, false);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -165,7 +177,7 @@ mod tests {
         let mut lex = PgnToken::lexer("O-O# $1");
         lex.next();
         let castling_move = PgnCastlingMove::parse(&mut lex).unwrap();
-        assert_eq!(castling_move.is_kingside, true);
+        assert_eq!(castling_move.flank, Flank::Kingside);
         assert_eq!(castling_move.get_common_move_info().is_check, true);
         assert_eq!(castling_move.get_common_move_info().is_checkmate, true);
         assert_eq!(castling_move.get_common_move_info().annotation, None);
@@ -183,7 +195,7 @@ mod tests {
     #[test]
     fn test_matches_move() {
         let castling_move = PgnCastlingMove {
-            is_kingside: true,
+            flank: Flank::Kingside,
             common_move_info: PgnCommonMoveInfo {
                 is_check: false,
                 is_checkmate: false,

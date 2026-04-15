@@ -3,11 +3,10 @@
 use crate::Bitboard;
 use crate::Color;
 use crate::ColoredPiece;
+use crate::Flank;
 use crate::Piece;
 use crate::Square;
-use crate::masks::{
-    STARTING_KING_ROOK_GAP_SHORT, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK,
-};
+use crate::masks::{STARTING_KING_ROOK_GAP, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
 use crate::position::{Position, PositionError};
@@ -93,15 +92,22 @@ impl<const N: usize> Position<N> {
 
         self.board.move_piece(Piece::King, dst_square, src_square);
 
-        let is_king_side = dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move as usize] != 0;
-
-        let rook_src_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 3) },
-            false => unsafe { Square::from(src_square as u8 - 4) },
+        let flank = if dst_mask
+            & STARTING_KING_ROOK_GAP[self.side_to_move as usize][Flank::Kingside as usize]
+            != 0
+        {
+            Flank::Kingside
+        } else {
+            Flank::Queenside
         };
-        let rook_dst_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 1) },
-            false => unsafe { Square::from(src_square as u8 - 1) },
+
+        let (rook_src_square, rook_dst_square) = match flank {
+            Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {
+                Square::from(src_square as u8 + 1)
+            }),
+            Flank::Queenside => (unsafe { Square::from(src_square as u8 - 4) }, unsafe {
+                Square::from(src_square as u8 - 1)
+            }),
         };
 
         self.board.move_colored_piece(
@@ -144,7 +150,7 @@ impl<const N: usize> Position<N> {
             MoveFlag::Castling => self.process_castling(dst_square, src_square, &mut new_context),
         }
 
-        new_context.zobrist_hash = self.board.zobrist_hash;
+        new_context.zobrist_hash = crate::calc_zobrist_hash(&self.board);
 
         // update data members
         self.halfmove += 1;
@@ -194,8 +200,8 @@ impl PositionContext {
     }
 
     fn process_normal_king_move_disregarding_capture(&mut self, moved_piece_color: Color) {
-        let castling_color_adjustment = calc_castling_color_adjustment(moved_piece_color);
-        self.castling_rights &= !(0b00001100 >> castling_color_adjustment);
+        self.castling_rights &= !(Flank::Kingside.rights_mask(moved_piece_color)
+            | Flank::Queenside.rights_mask(moved_piece_color));
     }
 
     fn process_normal_rook_move_disregarding_capture(
@@ -204,15 +210,12 @@ impl PositionContext {
         src_square: Square,
     ) {
         let src_mask = src_square.mask();
-        let castling_color_adjustment = calc_castling_color_adjustment(moved_piece_color);
 
-        let is_king_side = src_mask & (1u64 << (moved_piece_color as u64 * 7 * 8));
-        let is_queen_side = src_mask & (0b10000000u64 << (moved_piece_color as u64 * 7 * 8));
-        let king_side_mask = (is_king_side != 0) as u8 * (0b00001000 >> castling_color_adjustment);
-        let queen_side_mask =
-            (is_queen_side != 0) as u8 * (0b00000100 >> castling_color_adjustment);
-
-        self.castling_rights &= !(king_side_mask | queen_side_mask);
+        if src_mask & STARTING_KING_SIDE_ROOK[moved_piece_color as usize] != 0 {
+            self.castling_rights &= !Flank::Kingside.rights_mask(moved_piece_color);
+        } else if src_mask & STARTING_QUEEN_SIDE_ROOK[moved_piece_color as usize] != 0 {
+            self.castling_rights &= !Flank::Queenside.rights_mask(moved_piece_color);
+        }
     }
 
     fn process_en_passant(&mut self) {
@@ -221,9 +224,9 @@ impl PositionContext {
     }
 
     fn process_castling(&mut self, color: Color) {
-        let right_shift = calc_castling_color_adjustment(color) as u8;
         self.halfmove_clock = 0;
-        self.castling_rights &= !(0b00001100 >> right_shift);
+        self.castling_rights &=
+            !(Flank::Kingside.rights_mask(color) | Flank::Queenside.rights_mask(color));
     }
 
     fn process_capture(&mut self, captured_colored_piece: ColoredPiece, dst_mask: Bitboard) {
@@ -235,18 +238,13 @@ impl PositionContext {
         if captured_piece == Piece::Rook {
             let king_side_rook_mask = STARTING_KING_SIDE_ROOK[captured_color as usize];
             let queen_side_rook_mask = STARTING_QUEEN_SIDE_ROOK[captured_color as usize];
-            let right_shift = calc_castling_color_adjustment(captured_color) as u8;
             if dst_mask & king_side_rook_mask != 0 {
-                self.castling_rights &= !(0b00001000 >> right_shift);
+                self.castling_rights &= !Flank::Kingside.rights_mask(captured_color);
             } else if dst_mask & queen_side_rook_mask != 0 {
-                self.castling_rights &= !(0b00000100 >> right_shift);
+                self.castling_rights &= !Flank::Queenside.rights_mask(captured_color);
             }
         }
     }
-}
-
-const fn calc_castling_color_adjustment(color: Color) -> usize {
-    (color as usize) << 1
 }
 
 const fn is_double_pawn_push(dst_square: Square, src_square: Square) -> bool {

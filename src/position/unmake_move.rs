@@ -2,9 +2,10 @@
 
 use crate::Color;
 use crate::ColoredPiece;
+use crate::Flank;
 use crate::Piece;
 use crate::Square;
-use crate::masks::STARTING_KING_ROOK_GAP_SHORT;
+use crate::masks::STARTING_KING_ROOK_GAP;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::{GameResult, Position};
 
@@ -51,16 +52,21 @@ impl<const N: usize> Position<N> {
 
         self.board.move_piece(Piece::King, src_square, dst_square); // move king back
 
-        let is_king_side =
-            dst_mask & STARTING_KING_ROOK_GAP_SHORT[self.side_to_move.other() as usize] != 0;
+        let caster = self.side_to_move.other();
+        let flank =
+            if dst_mask & STARTING_KING_ROOK_GAP[caster as usize][Flank::Kingside as usize] != 0 {
+                Flank::Kingside
+            } else {
+                Flank::Queenside
+            };
 
-        let rook_src_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 3) },
-            false => unsafe { Square::from(src_square as u8 - 4) },
-        };
-        let rook_dst_square = match is_king_side {
-            true => unsafe { Square::from(src_square as u8 + 1) },
-            false => unsafe { Square::from(src_square as u8 - 1) },
+        let (rook_src_square, rook_dst_square) = match flank {
+            Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {
+                Square::from(src_square as u8 + 1)
+            }),
+            Flank::Queenside => (unsafe { Square::from(src_square as u8 - 4) }, unsafe {
+                Square::from(src_square as u8 - 1)
+            }),
         };
 
         self.board.move_colored_piece(

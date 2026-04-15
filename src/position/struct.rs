@@ -70,7 +70,7 @@ impl<const N: usize> Position<N> {
         let board = Board::initial();
         let mut context = PositionContext::blank();
         context.castling_rights = 0b00001111;
-        context.zobrist_hash = board.zobrist_hash;
+        context.zobrist_hash = crate::calc_zobrist_hash(&board);
         let mut contexts = [PositionContext::blank(); N];
         contexts[0] = context;
         let mut res = Self {
@@ -98,7 +98,6 @@ impl<const N: usize> Position<N> {
     }
 
     pub fn try_push_context(&mut self, context: PositionContext) -> Result<(), PositionError> {
-        assert_ne!(self.context().zobrist_hash, 0);
         if self.context_len >= N {
             return Err(PositionError::ContextStackFull);
         }
@@ -125,7 +124,10 @@ impl<const N: usize> Position<N> {
     }
 
     pub fn update_pins_and_checks(&mut self) {
-        let current_side_king = self.current_side_king();
+        let stm = self.side_to_move;
+        let opp = stm.other();
+
+        let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
 
         if current_side_king.count_ones() != 1 {
             return;
@@ -136,10 +138,15 @@ impl<const N: usize> Position<N> {
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
 
-        let relevant_diagonal_attackers =
-            (self.opposite_side_bishops() | self.opposite_side_queens()) & relevant_diagonals;
-        let relevant_orthogonal_attackers =
-            (self.opposite_side_rooks() | self.opposite_side_queens()) & relevant_orthogonals;
+        let opp_bb = self.board.color_mask(opp);
+        let relevant_diagonal_attackers = (self.board.piece_mask(Piece::Bishop)
+            | self.board.piece_mask(Piece::Queen))
+            & opp_bb
+            & relevant_diagonals;
+        let relevant_orthogonal_attackers = (self.board.piece_mask(Piece::Rook)
+            | self.board.piece_mask(Piece::Queen))
+            & opp_bb
+            & relevant_orthogonals;
         let relevant_sliding_attackers =
             relevant_diagonal_attackers | relevant_orthogonal_attackers;
 
@@ -158,11 +165,14 @@ impl<const N: usize> Position<N> {
             }
         }
 
-        pinned &= self.current_side_pieces();
+        pinned &= self.board.color_mask(stm);
 
-        checkers |= single_knight_attacks(current_side_king_square) & self.opposite_side_knights();
-        checkers |=
-            multi_pawn_attacks(current_side_king, self.side_to_move) & self.opposite_side_pawns();
+        checkers |= single_knight_attacks(current_side_king_square)
+            & self.board.piece_mask(Piece::Knight)
+            & opp_bb;
+        checkers |= multi_pawn_attacks(current_side_king, stm)
+            & self.board.piece_mask(Piece::Pawn)
+            & opp_bb;
 
         let context = self.mut_context();
         context.pinned = pinned;
@@ -186,62 +196,6 @@ impl<const N: usize> Position<N> {
         if self.context().halfmove_clock < 100 {
             self.result = GameResult::FiftyMoveRule;
         }
-    }
-
-    pub const fn current_side_pieces(&self) -> Bitboard {
-        self.board.color_masks[self.side_to_move as usize]
-    }
-
-    pub const fn current_side_pawns(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Pawn as usize] & self.current_side_pieces()
-    }
-
-    pub const fn current_side_knights(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Knight as usize] & self.current_side_pieces()
-    }
-
-    pub const fn current_side_bishops(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Bishop as usize] & self.current_side_pieces()
-    }
-
-    pub const fn current_side_rooks(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Rook as usize] & self.current_side_pieces()
-    }
-
-    pub const fn current_side_queens(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Queen as usize] & self.current_side_pieces()
-    }
-
-    pub const fn current_side_king(&self) -> Bitboard {
-        self.board.piece_masks[Piece::King as usize] & self.current_side_pieces()
-    }
-
-    pub const fn opposite_side_pieces(&self) -> Bitboard {
-        self.board.color_masks[self.side_to_move.other() as usize]
-    }
-
-    pub const fn opposite_side_pawns(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Pawn as usize] & self.opposite_side_pieces()
-    }
-
-    pub const fn opposite_side_knights(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Knight as usize] & self.opposite_side_pieces()
-    }
-
-    pub const fn opposite_side_bishops(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Bishop as usize] & self.opposite_side_pieces()
-    }
-
-    pub const fn opposite_side_rooks(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Rook as usize] & self.opposite_side_pieces()
-    }
-
-    pub const fn opposite_side_queens(&self) -> Bitboard {
-        self.board.piece_masks[Piece::Queen as usize] & self.opposite_side_pieces()
-    }
-
-    pub const fn opposite_side_king(&self) -> Bitboard {
-        self.board.piece_masks[Piece::King as usize] & self.opposite_side_pieces()
     }
 
     pub const fn current_side_promotion_rank(&self) -> u8 {

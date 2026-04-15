@@ -59,6 +59,18 @@ pub fn single_queen_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitb
         | magic::magic_single_rook_attacks(src_square, occupied_mask)
 }
 
+/// Attack squares for a non-pawn piece on `from` (pawns excluded; `Piece::Null`/`Pawn` must not be passed).
+pub fn non_pawn_piece_attacks(from: Square, occupied_mask: Bitboard, piece: Piece) -> Bitboard {
+    match piece {
+        Piece::Knight => single_knight_attacks(from),
+        Piece::Bishop => single_bishop_attacks(from, occupied_mask),
+        Piece::Rook => single_rook_attacks(from, occupied_mask),
+        Piece::Queen => single_queen_attacks(from, occupied_mask),
+        Piece::King => single_king_attacks(from),
+        Piece::Pawn | Piece::Null => unreachable!(),
+    }
+}
+
 /// Returns an attack mask encoding all squares attacked by `piece` on `src_square`,
 /// with `occupied_mask` as the mask of occupied squares
 pub fn sliding_piece_attacks(

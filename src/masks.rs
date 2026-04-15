@@ -36,6 +36,12 @@ pub const STARTING_KING_ROOK_GAP_SHORT: [Bitboard; 2] =
 pub const STARTING_KING_ROOK_GAP_LONG: [Bitboard; 2] =
     [STARTING_WK_WR_GAP_LONG, STARTING_BK_BR_GAP_LONG];
 
+/// `[color][flank]` gap between king and rook in the starting position (`crate::Flank`).
+pub const STARTING_KING_ROOK_GAP: [[Bitboard; 2]; 2] = [
+    [STARTING_WK_WR_GAP_SHORT, STARTING_WK_WR_GAP_LONG],
+    [STARTING_BK_BR_GAP_SHORT, STARTING_BK_BR_GAP_LONG],
+];
+
 pub const FILES: [Bitboard; 8] = [
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 ];

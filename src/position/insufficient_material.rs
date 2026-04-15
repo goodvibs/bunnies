@@ -9,31 +9,29 @@ impl Board {
     /// A king and knight
     /// A king and two knights, only if the other side is a lone king
     pub fn are_both_sides_insufficient_material(&self, use_uscf_rules: bool) -> bool {
-        if self.piece_masks[Piece::Pawn as usize]
-            | self.piece_masks[Piece::Rook as usize]
-            | self.piece_masks[Piece::Queen as usize]
+        if self.piece_mask(Piece::Pawn)
+            | self.piece_mask(Piece::Rook)
+            | self.piece_mask(Piece::Queen)
             != 0
         {
             return false;
         }
 
         for color_int in Color::White as u8..Color::Black as u8 + 1 {
-            let bishops =
-                self.piece_masks[Piece::Bishop as usize] & self.color_masks[color_int as usize];
+            let color = Color::from_is_black(color_int != 0);
+            let bishops = self.piece_mask(Piece::Bishop) & self.color_mask(color);
             let num_bishops = bishops.count_ones();
             if num_bishops > 1 {
                 return false;
             }
 
-            let knights =
-                self.piece_masks[Piece::Knight as usize] & self.color_masks[color_int as usize];
+            let knights = self.piece_mask(Piece::Knight) & self.color_mask(color);
             let num_knights = knights.count_ones();
 
             if use_uscf_rules && num_knights == 2 && num_bishops == 0 {
                 // king and two knights
-                let opposite_side_bb =
-                    self.color_masks[Color::from_is_black(color_int != 0).other() as usize];
-                let all_occupancy = self.piece_masks[Piece::ALL_PIECES as usize];
+                let opposite_side_bb = self.color_mask(color.other());
+                let all_occupancy = self.piece_mask(Piece::ALL_PIECES);
                 let opposite_side_is_lone_king =
                     (opposite_side_bb & all_occupancy).count_ones() == 1;
                 return opposite_side_is_lone_king;

@@ -3,7 +3,7 @@ use crate::masks::{
     STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
 };
 use crate::position::Position;
-use crate::{Bitboard, Color, Piece, Square};
+use crate::{Bitboard, Color, Flank, Piece, Square};
 
 impl<const N: usize> Position<N> {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -22,14 +22,16 @@ impl<const N: usize> Position<N> {
         self.board.has_valid_kings() && !self.is_opposite_side_in_check()
     }
 
-    /// Checks if the zobrist hash in the board is consistent with the zobrist hash in the context.
+    /// Checks if the zobrist hash in the context matches the board piece placement hash.
     pub fn is_zobrist_consistent(&self) -> bool {
-        self.board.zobrist_hash == self.context().zobrist_hash
+        self.context().zobrist_hash == crate::calc_zobrist_hash(&self.board)
     }
 
     pub fn is_opposite_side_in_check(&self) -> bool {
+        let opp = self.side_to_move.other();
+        let opp_king = self.board.piece_mask(Piece::King) & self.board.color_mask(opp);
         self.board.is_square_attacked(
-            unsafe { Square::from_bitboard(self.opposite_side_king()) },
+            unsafe { Square::from_bitboard(opp_king) },
             self.side_to_move,
         )
     }
@@ -49,40 +51,53 @@ impl<const N: usize> Position<N> {
     pub fn has_valid_castling_rights(&self) -> bool {
         let context = self.context();
 
-        let kings_bb = self.board.piece_masks[Piece::King as usize];
-        let rooks_bb = self.board.piece_masks[Piece::Rook as usize];
+        let kings_bb = self.board.piece_mask(Piece::King);
+        let rooks_bb = self.board.piece_mask(Piece::Rook);
 
-        let white_bb = self.board.color_masks[Color::White as usize];
-        let black_bb = self.board.color_masks[Color::Black as usize];
+        let white_bb = self.board.color_mask(Color::White);
+        let black_bb = self.board.color_mask(Color::Black);
 
         let is_white_king_in_place = (kings_bb & white_bb & STARTING_WK) != 0;
         let is_black_king_in_place = (kings_bb & black_bb & STARTING_BK) != 0;
 
-        if !is_white_king_in_place && context.castling_rights & 0b00001100 != 0 {
+        let white_castle =
+            Flank::Kingside.rights_mask(Color::White) | Flank::Queenside.rights_mask(Color::White);
+        let black_castle =
+            Flank::Kingside.rights_mask(Color::Black) | Flank::Queenside.rights_mask(Color::Black);
+
+        if !is_white_king_in_place && context.castling_rights & white_castle != 0 {
             return false;
         }
 
-        if !is_black_king_in_place && context.castling_rights & 0b00000011 != 0 {
+        if !is_black_king_in_place && context.castling_rights & black_castle != 0 {
             return false;
         }
 
         let is_white_king_side_rook_in_place = (rooks_bb & white_bb & STARTING_KING_SIDE_WR) != 0;
-        if !is_white_king_side_rook_in_place && (context.castling_rights & 0b00001000) != 0 {
+        if !is_white_king_side_rook_in_place
+            && (context.castling_rights & Flank::Kingside.rights_mask(Color::White)) != 0
+        {
             return false;
         }
 
         let is_white_queen_side_rook_in_place = (rooks_bb & white_bb & STARTING_QUEEN_SIDE_WR) != 0;
-        if !is_white_queen_side_rook_in_place && (context.castling_rights & 0b00000100) != 0 {
+        if !is_white_queen_side_rook_in_place
+            && (context.castling_rights & Flank::Queenside.rights_mask(Color::White)) != 0
+        {
             return false;
         }
 
         let is_black_king_side_rook_in_place = (rooks_bb & black_bb & STARTING_KING_SIDE_BR) != 0;
-        if !is_black_king_side_rook_in_place && (context.castling_rights & 0b00000010) != 0 {
+        if !is_black_king_side_rook_in_place
+            && (context.castling_rights & Flank::Kingside.rights_mask(Color::Black)) != 0
+        {
             return false;
         }
 
         let is_black_queen_side_rook_in_place = (rooks_bb & black_bb & STARTING_QUEEN_SIDE_BR) != 0;
-        if !is_black_queen_side_rook_in_place && (context.castling_rights & 0b00000001) != 0 {
+        if !is_black_queen_side_rook_in_place
+            && (context.castling_rights & Flank::Queenside.rights_mask(Color::Black)) != 0
+        {
             return false;
         }
 
@@ -99,8 +114,8 @@ impl<const N: usize> Position<N> {
                     return false;
                 }
                 let color_just_moved = self.side_to_move.other();
-                let pawns_bb = self.board.piece_masks[Piece::Pawn as usize];
-                let colored_pawns_bb = pawns_bb & self.board.color_masks[color_just_moved as usize];
+                let pawns_bb = self.board.piece_mask(Piece::Pawn);
+                let colored_pawns_bb = pawns_bb & self.board.color_mask(color_just_moved);
                 let file_mask = FILES[file as usize];
                 let rank_mask = RANK_4 << (color_just_moved as Bitboard * 8); // 4 for white, 5 for black
                 colored_pawns_bb & file_mask & rank_mask != 0

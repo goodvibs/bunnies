@@ -57,6 +57,7 @@ pub enum PgnToken {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Flank;
     use crate::Piece;
     use crate::Square;
 
@@ -188,7 +189,9 @@ mod tests {
         assert!(
             matches!(lexer.next(), Some(Ok(PgnToken::MoveNumber(num))) if num.fullmove_number == 5)
         );
-        assert!(matches!(lexer.next(), Some(Ok(PgnToken::CastlingMove(mv))) if mv.is_kingside));
+        assert!(
+            matches!(lexer.next(), Some(Ok(PgnToken::CastlingMove(mv))) if mv.flank == Flank::Kingside)
+        );
 
         // Result
         assert!(matches!(lexer.next(), Some(Ok(PgnToken::Incomplete))));

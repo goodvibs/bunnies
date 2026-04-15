@@ -169,7 +169,7 @@ impl<const N: usize> Position<N> {
                 let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
                 let board = parse_fen_board(fen_board)?;
 
-                let zobrist_hash = board.zobrist_hash;
+                let zobrist_hash = crate::calc_zobrist_hash(&board);
                 let halfmove =
                     (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
                 let mut context = PositionContext::blank();
