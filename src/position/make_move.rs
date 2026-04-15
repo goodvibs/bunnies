@@ -96,14 +96,12 @@ impl<const N: usize> Position<N> {
 
         self.board.move_piece(Piece::King, dst_square, src_square);
 
-        let flank = if dst_mask
-            & STARTING_KING_ROOK_GAP[STM as usize][Flank::Kingside as usize]
-            != 0
-        {
-            Flank::Kingside
-        } else {
-            Flank::Queenside
-        };
+        let flank =
+            if dst_mask & STARTING_KING_ROOK_GAP[STM as usize][Flank::Kingside as usize] != 0 {
+                Flank::Kingside
+            } else {
+                Flank::Queenside
+            };
 
         let (rook_src_square, rook_dst_square) = match flank {
             Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {
@@ -169,7 +167,7 @@ impl<const N: usize> Position<N> {
             }
         }
 
-        new_context.zobrist_hash = crate::calc_zobrist_hash(&self.board);
+        // new_context.zobrist_hash = crate::calc_zobrist_hash(&self.board);
 
         // update data members
         self.halfmove += 1;
