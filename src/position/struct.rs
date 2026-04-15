@@ -5,10 +5,12 @@ use crate::position::{Board, GameResult, PositionContext};
 use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
 use std::fmt;
 
-/// Error from [`Position::make_move`] when the context stack is full.
+/// Error from [`Position::make_move`] / [`Position::make_move_for`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PositionError {
     ContextStackFull,
+    /// The const-generic side `STM` does not match [`Position::side_to_move`].
+    WrongSideToMove,
 }
 
 /// Chess position with a fixed-size context stack of capacity `N` (root plus at most `N - 1` plies).
@@ -264,5 +266,30 @@ mod state_tests {
             .next()
             .expect("at least one legal move");
         assert_eq!(pos.make_move(mv2), Err(PositionError::ContextStackFull));
+    }
+
+    #[test]
+    fn test_make_move_for_wrong_side_returns_error() {
+        use crate::position::PositionError;
+        let mut pos = Position::<8>::initial();
+        let mv = pos
+            .moves()
+            .into_iter()
+            .next()
+            .expect("at least one legal move");
+        assert_eq!(
+            pos.make_move_for::<{ Color::Black }>(mv),
+            Err(PositionError::WrongSideToMove)
+        );
+        pos.make_move(mv).unwrap();
+        let mv2 = pos
+            .moves()
+            .into_iter()
+            .next()
+            .expect("at least one legal move");
+        assert_eq!(
+            pos.make_move_for::<{ Color::White }>(mv2),
+            Err(PositionError::WrongSideToMove)
+        );
     }
 }
