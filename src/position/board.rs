@@ -45,6 +45,11 @@ impl Board {
         self.piece_masks[piece_type as usize]
     }
 
+    /// Bitboard of squares occupied by piece type `P` (const-generic; requires `Piece: ConstParamTy`).
+    pub const fn piece_mask_for<const P: Piece>(&self) -> Bitboard {
+        self.piece_masks[P as usize]
+    }
+
     pub const fn color_mask(&self, color: Color) -> Bitboard {
         self.color_masks[color as usize]
     }
@@ -263,26 +268,19 @@ impl Board {
     }
 
     /// Returns the piece type at `square`.
+    ///
+    /// Uses an indexed loop: `for` over `Piece::PIECES` in `const fn` still needs `const` `Iterator` /
+    /// `IntoIterator` for array iterators (see rust#87575, rust#92476); until then this matches a
+    /// `for` over `Piece::PIECES` in source order.
     pub const fn piece_at(&self, square: Square) -> Piece {
         let mask = square.mask();
-        // Explicit order (must match `Piece::PIECES`); `for` is not const-compatible here yet.
-        if self.piece_masks[Piece::Pawn as usize] & mask != 0 {
-            return Piece::Pawn;
-        }
-        if self.piece_masks[Piece::Knight as usize] & mask != 0 {
-            return Piece::Knight;
-        }
-        if self.piece_masks[Piece::Bishop as usize] & mask != 0 {
-            return Piece::Bishop;
-        }
-        if self.piece_masks[Piece::Rook as usize] & mask != 0 {
-            return Piece::Rook;
-        }
-        if self.piece_masks[Piece::Queen as usize] & mask != 0 {
-            return Piece::Queen;
-        }
-        if self.piece_masks[Piece::King as usize] & mask != 0 {
-            return Piece::King;
+        let mut i = 0;
+        while i < Piece::PIECES.len() {
+            let piece_type = Piece::PIECES[i];
+            if self.piece_masks[piece_type as usize] & mask != 0 {
+                return piece_type;
+            }
+            i += 1;
         }
         Piece::Null
     }
@@ -321,6 +319,8 @@ impl Board {
 
         let mut all_occupancy_bb_reconstructed: Bitboard = 0;
 
+        // Same rationale as `piece_at`: `for` over arrays in `const fn` is not yet usable on this
+        // toolchain (const `IntoIterator` for `[T; N]`).
         let mut i = 0;
         while i < Piece::PIECES.len() {
             let piece = Piece::PIECES[i];
@@ -396,11 +396,13 @@ mod const_eval_smoke_tests {
     /// Compile-time use of `const fn` board API (fails to compile if a link breaks).
     const INITIAL: Board = Board::initial();
     const E1_HAS_PIECE: bool = INITIAL.is_occupied_at(Square::E1);
+    const PAWN_MASK: crate::Bitboard = INITIAL.piece_mask_for::<{ Piece::Pawn }>();
 
     #[test]
     fn initial_board_const_matches_runtime() {
         assert_eq!(INITIAL, Board::initial());
         assert!(E1_HAS_PIECE);
         assert_eq!(INITIAL.piece_at(Square::E1), Piece::King);
+        assert_eq!(PAWN_MASK, INITIAL.piece_mask(Piece::Pawn));
     }
 }

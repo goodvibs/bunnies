@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
 /// Represents a piece on the board.
 /// Includes Null, Pawn, Knight, Bishop, Rook, Queen, and King.
 /// The values are 0, 1, 2, 3, 4, 5, and 6 respectively.
