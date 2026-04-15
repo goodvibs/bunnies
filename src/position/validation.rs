@@ -29,7 +29,7 @@ impl<const N: usize> Position<N> {
 
     pub fn is_opposite_side_in_check(&self) -> bool {
         let opp = self.side_to_move.other();
-        let opp_king = self.board.piece_mask(Piece::King) & self.board.color_mask(opp);
+        let opp_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(opp);
         self.board.is_square_attacked(
             unsafe { Square::from_bitboard(opp_king) },
             self.side_to_move,
@@ -51,11 +51,11 @@ impl<const N: usize> Position<N> {
     pub fn has_valid_castling_rights(&self) -> bool {
         let context = self.context();
 
-        let kings_bb = self.board.piece_mask(Piece::King);
-        let rooks_bb = self.board.piece_mask(Piece::Rook);
+        let kings_bb = self.board.piece_mask::<{ Piece::King }>();
+        let rooks_bb = self.board.piece_mask::<{ Piece::Rook }>();
 
-        let white_bb = self.board.color_mask(Color::White);
-        let black_bb = self.board.color_mask(Color::Black);
+        let white_bb = self.board.color_mask::<{ Color::White }>();
+        let black_bb = self.board.color_mask::<{ Color::Black }>();
 
         let is_white_king_in_place = (kings_bb & white_bb & STARTING_WK) != 0;
         let is_black_king_in_place = (kings_bb & black_bb & STARTING_BK) != 0;
@@ -114,8 +114,8 @@ impl<const N: usize> Position<N> {
                     return false;
                 }
                 let color_just_moved = self.side_to_move.other();
-                let pawns_bb = self.board.piece_mask(Piece::Pawn);
-                let colored_pawns_bb = pawns_bb & self.board.color_mask(color_just_moved);
+                let pawns_bb = self.board.piece_mask::<{ Piece::Pawn }>();
+                let colored_pawns_bb = pawns_bb & self.board.color_mask_at(color_just_moved);
                 let file_mask = FILES[file as usize];
                 let rank_mask = RANK_4 << (color_just_moved as Bitboard * 8); // 4 for white, 5 for black
                 colored_pawns_bb & file_mask & rank_mask != 0

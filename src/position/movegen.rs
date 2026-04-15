@@ -30,12 +30,12 @@ impl<const N: usize> Position<N> {
      */
     fn add_legal_non_ep_pawn_captures(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
         let stm = self.side_to_move;
-        let opposite_side_pieces = self.board.color_mask(stm.other());
+        let opposite_side_pieces = self.board.color_mask_at(stm.other());
 
         let promotion_rank = self.current_side_promotion_rank();
 
-        let current_side_pawns = self.board.piece_mask(Piece::Pawn) & self.board.color_mask(stm);
-        let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
+        let current_side_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         for src in current_side_pawns.iter_set_bits_as_masks() {
             let src_square = unsafe { Square::from_bitboard(src) };
@@ -107,8 +107,8 @@ impl<const N: usize> Position<N> {
     fn add_legal_en_passants(&self, moves: &mut Vec<Move>) {
         let stm = self.side_to_move;
         let double_pawn_push = self.context().double_pawn_push;
-        let current_side_pawns = self.board.piece_mask(Piece::Pawn) & self.board.color_mask(stm);
-        let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
+        let current_side_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         if double_pawn_push != -1 {
             let capture_square = self.get_en_passant_capture_square(double_pawn_push);
@@ -203,11 +203,11 @@ impl<const N: usize> Position<N> {
         let stm = self.side_to_move;
         let occupied_mask = self.board.pieces();
 
-        let mut movable_pawns = self.board.piece_mask(Piece::Pawn) & self.board.color_mask(stm);
+        let mut movable_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
 
         let pinned_pawns = self.context().pinned & movable_pawns;
         if pinned_pawns != 0 {
-            let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
+            let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
             let current_side_king_file = unsafe { Square::from_bitboard(current_side_king) }.file();
 
             for pinned_pawn_square in pinned_pawns.iter_set_bits_as_squares() {
@@ -260,8 +260,8 @@ impl<const N: usize> Position<N> {
      */
     fn add_legal_knight_moves(&self, possible_dsts: Bitboard, moves: &mut Vec<Move>) {
         let stm = self.side_to_move;
-        let movable_knights = self.board.piece_mask(Piece::Knight)
-            & self.board.color_mask(stm)
+        let movable_knights = self.board.piece_mask::<{ Piece::Knight }>()
+            & self.board.color_mask_at(stm)
             & !self.context().pinned;
 
         for src_square in movable_knights.iter_set_bits_as_squares() {
@@ -297,9 +297,9 @@ impl<const N: usize> Position<N> {
     ) {
         let stm = self.side_to_move;
         let all_occupancy_bb = self.board.pieces();
-        let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
+        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
-        let piece_mask = self.board.piece_mask(piece) & self.board.color_mask(stm);
+        let piece_mask = self.board.piece_mask_at(piece) & self.board.color_mask_at(stm);
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
@@ -333,9 +333,9 @@ impl<const N: usize> Position<N> {
      */
     fn add_legal_king_moves(&self, moves: &mut Vec<Move>) {
         let stm = self.side_to_move;
-        let current_side_mask = self.board.color_mask(stm);
+        let current_side_mask = self.board.color_mask_at(stm);
 
-        let king_src_bb = self.board.piece_mask(Piece::King) & current_side_mask;
+        let king_src_bb = self.board.piece_mask::<{ Piece::King }>() & current_side_mask;
         let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
 
         let king_attacks = single_king_attacks(king_src_square);
@@ -397,7 +397,7 @@ impl<const N: usize> Position<N> {
     pub fn moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(35);
 
-        let mut possible_non_king_dsts = !self.board.color_mask(self.side_to_move);
+        let mut possible_non_king_dsts = !self.board.color_mask_at(self.side_to_move);
 
         match self.context().checkers {
             0 => {
@@ -424,7 +424,7 @@ impl<const N: usize> Position<N> {
                 let is_checker_a_slider = self.board.piece_at(checker_square).is_sliding_piece();
 
                 let current_side_king =
-                    self.board.piece_mask(Piece::King) & self.board.color_mask(self.side_to_move);
+                    self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(self.side_to_move);
 
                 if is_checker_a_slider {
                     possible_non_king_dsts &= checkers
@@ -487,8 +487,8 @@ mod tests {
     #[test]
     fn test_knight_movegen() {
         let is_knight_move = |mv: Move, pos: &Position<1>| {
-            pos.board.piece_mask(Piece::Knight)
-                & pos.board.color_mask(pos.side_to_move)
+            pos.board.piece_mask::<{ Piece::Knight }>()
+                & pos.board.color_mask_at(pos.side_to_move)
                 & mv.source().mask()
                 != 0
         };
@@ -519,10 +519,10 @@ mod tests {
     fn test_sliding_piece_movegen() {
         let is_sliding_piece_move = |mv: Move, pos: &Position<1>| {
             let stm = pos.side_to_move;
-            let cur = pos.board.color_mask(stm);
-            (pos.board.piece_mask(Piece::Bishop)
-                | pos.board.piece_mask(Piece::Rook)
-                | pos.board.piece_mask(Piece::Queen))
+            let cur = pos.board.color_mask_at(stm);
+            (pos.board.piece_mask::<{ Piece::Bishop }>()
+                | pos.board.piece_mask::<{ Piece::Rook }>()
+                | pos.board.piece_mask::<{ Piece::Queen }>())
                 & cur
                 & mv.source().mask()
                 != 0
@@ -573,8 +573,8 @@ mod tests {
     #[test]
     fn test_white_pawn_push_movegen() {
         let is_pawn_push = |mv: Move, pos: &Position<1>| {
-            pos.board.piece_mask(Piece::Pawn)
-                & pos.board.color_mask(pos.side_to_move)
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(pos.side_to_move)
                 & mv.source().mask()
                 != 0
                 && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
@@ -603,8 +603,8 @@ mod tests {
     #[test]
     fn test_white_non_ep_pawn_capture_movegen() {
         let is_non_ep_pawn_capture = |mv: Move, pos: &Position<1>| {
-            pos.board.piece_mask(Piece::Pawn)
-                & pos.board.color_mask(pos.side_to_move)
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(pos.side_to_move)
                 & mv.source().mask()
                 != 0
                 && mv.flag() != MoveFlag::EnPassant
@@ -684,8 +684,8 @@ mod tests {
     fn test_king_movegen() {
         let is_king_move = |mv: Move, pos: &Position<1>| {
             mv.flag() == MoveFlag::NormalMove
-                && pos.board.piece_mask(Piece::King)
-                    & pos.board.color_mask(pos.side_to_move)
+                && pos.board.piece_mask::<{ Piece::King }>()
+                    & pos.board.color_mask_at(pos.side_to_move)
                     & mv.source().mask()
                     != 0
         };

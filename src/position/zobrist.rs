@@ -35,7 +35,7 @@ pub fn get_piece_zobrist_hash(square: Square, piece_type: Piece) -> Bitboard {
 pub fn calc_zobrist_hash(board: &Board) -> Bitboard {
     let mut hash: Bitboard = 0;
     for piece_type in Piece::PIECES {
-        let pieces_mask = board.piece_mask(piece_type);
+        let pieces_mask = board.piece_mask_at(piece_type);
         for square in pieces_mask.iter_set_bits_as_squares() {
             hash ^= get_piece_zobrist_hash(square, piece_type);
         }

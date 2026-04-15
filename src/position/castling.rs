@@ -11,7 +11,7 @@ impl<const N: usize> Position<N> {
     /// Returns true if there are no pieces between king and rook on `flank`.
     const fn has_castling_space(&self, flank: Flank) -> bool {
         STARTING_KING_ROOK_GAP[self.side_to_move as usize][flank as usize]
-            & self.board.piece_mask(Piece::ALL_PIECES)
+            & self.board.piece_mask::<{ Piece::ALL_PIECES }>()
             == 0
     }
 

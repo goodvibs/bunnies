@@ -127,7 +127,8 @@ impl<const N: usize> Position<N> {
         let stm = self.side_to_move;
         let opp = stm.other();
 
-        let current_side_king = self.board.piece_mask(Piece::King) & self.board.color_mask(stm);
+        let current_side_king = self.board.piece_mask::<{ Piece::King }>()
+            & self.board.color_mask_at(stm);
 
         if current_side_king.count_ones() != 1 {
             return;
@@ -138,13 +139,13 @@ impl<const N: usize> Position<N> {
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
 
-        let opp_bb = self.board.color_mask(opp);
-        let relevant_diagonal_attackers = (self.board.piece_mask(Piece::Bishop)
-            | self.board.piece_mask(Piece::Queen))
+        let opp_bb = self.board.color_mask_at(opp);
+        let relevant_diagonal_attackers = (self.board.piece_mask::<{ Piece::Bishop }>()
+            | self.board.piece_mask::<{ Piece::Queen }>())
             & opp_bb
             & relevant_diagonals;
-        let relevant_orthogonal_attackers = (self.board.piece_mask(Piece::Rook)
-            | self.board.piece_mask(Piece::Queen))
+        let relevant_orthogonal_attackers = (self.board.piece_mask::<{ Piece::Rook }>()
+            | self.board.piece_mask::<{ Piece::Queen }>())
             & opp_bb
             & relevant_orthogonals;
         let relevant_sliding_attackers =
@@ -165,13 +166,13 @@ impl<const N: usize> Position<N> {
             }
         }
 
-        pinned &= self.board.color_mask(stm);
+        pinned &= self.board.color_mask_at(stm);
 
         checkers |= single_knight_attacks(current_side_king_square)
-            & self.board.piece_mask(Piece::Knight)
+            & self.board.piece_mask::<{ Piece::Knight }>()
             & opp_bb;
         checkers |= multi_pawn_attacks(current_side_king, stm)
-            & self.board.piece_mask(Piece::Pawn)
+            & self.board.piece_mask::<{ Piece::Pawn }>()
             & opp_bb;
 
         let context = self.mut_context();

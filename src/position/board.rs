@@ -41,29 +41,34 @@ impl Board {
         }
     }
 
-    pub const fn piece_mask(&self, piece_type: Piece) -> Bitboard {
-        self.piece_masks[piece_type as usize]
-    }
-
-    /// Bitboard of squares occupied by piece type `P` (const-generic; requires `Piece: ConstParamTy`).
-    pub const fn piece_mask_for<const P: Piece>(&self) -> Bitboard {
+    pub const fn piece_mask<const P: Piece>(&self) -> Bitboard {
         self.piece_masks[P as usize]
     }
 
-    pub const fn color_mask(&self, color: Color) -> Bitboard {
+    /// When the piece type is only known at runtime (e.g. loop variable), use this instead of [`Self::piece_mask`].
+    pub const fn piece_mask_at(&self, piece_type: Piece) -> Bitboard {
+        self.piece_masks[piece_type as usize]
+    }
+
+    pub const fn color_mask<const C: Color>(&self) -> Bitboard {
+        self.color_masks[C as usize]
+    }
+
+    /// When the color is only known at runtime, use this instead of [`Self::color_mask`].
+    pub const fn color_mask_at(&self, color: Color) -> Bitboard {
         self.color_masks[color as usize]
     }
 
     pub const fn pieces(&self) -> Bitboard {
-        self.piece_mask(Piece::ALL_PIECES)
+        self.piece_mask::<{ Piece::ALL_PIECES }>()
     }
 
     pub(crate) const fn diagonal_sliders(&self) -> Bitboard {
-        self.piece_mask(Piece::Bishop) | self.piece_mask(Piece::Queen)
+        self.piece_mask::<{ Piece::Bishop }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
     pub(crate) const fn orthogonal_sliders(&self) -> Bitboard {
-        self.piece_mask(Piece::Rook) | self.piece_mask(Piece::Queen)
+        self.piece_mask::<{ Piece::Rook }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
     /// True if any sliding attacker in `attackers` sees `square` along a ray with `occupied` blockers.
@@ -94,12 +99,12 @@ impl Board {
     }
 
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
-        let attackers = self.color_mask(by_color);
+        let attackers = self.color_mask_at(by_color);
 
-        if (multi_pawn_attacks(mask, by_color.other()) & self.piece_mask(Piece::Pawn) & attackers
+        if (multi_pawn_attacks(mask, by_color.other()) & self.piece_mask::<{ Piece::Pawn }>() & attackers
             != 0)
-            || (multi_knight_attacks(mask) & self.piece_mask(Piece::Knight) & attackers != 0)
-            || (multi_king_attacks(mask) & self.piece_mask(Piece::King) & attackers != 0)
+            || (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
         } else {
@@ -113,14 +118,14 @@ impl Board {
     }
 
     pub fn is_square_attacked(&self, square: Square, by_color: Color) -> bool {
-        let attackers = self.color_mask(by_color);
+        let attackers = self.color_mask_at(by_color);
 
         if (multi_pawn_attacks(square.mask(), by_color.other())
-            & self.piece_mask(Piece::Pawn)
+            & self.piece_mask::<{ Piece::Pawn }>()
             & attackers
             != 0)
-            || (single_knight_attacks(square) & self.piece_mask(Piece::Knight) & attackers != 0)
-            || (single_king_attacks(square) & self.piece_mask(Piece::King) & attackers != 0)
+            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
         } else {
@@ -134,14 +139,14 @@ impl Board {
         by_color: Color,
         king_move_src_dst: Bitboard,
     ) -> bool {
-        let attackers = self.color_mask(by_color) & !king_move_src_dst;
+        let attackers = self.color_mask_at(by_color) & !king_move_src_dst;
 
         if (multi_pawn_attacks(square.mask(), by_color.other())
-            & self.piece_mask(Piece::Pawn)
+            & self.piece_mask::<{ Piece::Pawn }>()
             & attackers
             != 0)
-            || (single_knight_attacks(square) & self.piece_mask(Piece::Knight) & attackers != 0)
-            || (single_king_attacks(square) & self.piece_mask(Piece::King) & attackers != 0)
+            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
         } else {
@@ -151,36 +156,36 @@ impl Board {
     }
 
     pub fn calc_attacks(&self, by_color: Color) -> Bitboard {
-        let attacking_color_mask = self.color_mask(by_color);
+        let attacking_color_mask = self.color_mask_at(by_color);
         let occupied_mask = self.pieces();
 
-        let queens_mask = self.piece_mask(Piece::Queen);
+        let queens_mask = self.piece_mask::<{ Piece::Queen }>();
 
         let mut attacks = multi_pawn_attacks(
-            self.piece_mask(Piece::Pawn) & attacking_color_mask,
+            self.piece_mask::<{ Piece::Pawn }>() & attacking_color_mask,
             by_color,
         );
 
         for src_square in
-            (self.piece_mask(Piece::Knight) & attacking_color_mask).iter_set_bits_as_squares()
+            (self.piece_mask::<{ Piece::Knight }>() & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= non_pawn_piece_attacks(src_square, occupied_mask, Piece::Knight);
         }
 
-        for src_square in ((self.piece_mask(Piece::Bishop) | queens_mask) & attacking_color_mask)
+        for src_square in ((self.piece_mask::<{ Piece::Bishop }>() | queens_mask) & attacking_color_mask)
             .iter_set_bits_as_squares()
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in ((self.piece_mask(Piece::Rook) | queens_mask) & attacking_color_mask)
+        for src_square in ((self.piece_mask::<{ Piece::Rook }>() | queens_mask) & attacking_color_mask)
             .iter_set_bits_as_squares()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);
         }
 
         for src_square in
-            (self.piece_mask(Piece::King) & attacking_color_mask).iter_set_bits_as_squares()
+            (self.piece_mask::<{ Piece::King }>() & attacking_color_mask).iter_set_bits_as_squares()
         {
             attacks |= non_pawn_piece_attacks(src_square, occupied_mask, Piece::King);
         }
@@ -396,13 +401,13 @@ mod const_eval_smoke_tests {
     /// Compile-time use of `const fn` board API (fails to compile if a link breaks).
     const INITIAL: Board = Board::initial();
     const E1_HAS_PIECE: bool = INITIAL.is_occupied_at(Square::E1);
-    const PAWN_MASK: crate::Bitboard = INITIAL.piece_mask_for::<{ Piece::Pawn }>();
+    const PAWN_MASK: crate::Bitboard = INITIAL.piece_mask::<{ Piece::Pawn }>();
 
     #[test]
     fn initial_board_const_matches_runtime() {
         assert_eq!(INITIAL, Board::initial());
         assert!(E1_HAS_PIECE);
         assert_eq!(INITIAL.piece_at(Square::E1), Piece::King);
-        assert_eq!(PAWN_MASK, INITIAL.piece_mask(Piece::Pawn));
+        assert_eq!(PAWN_MASK, INITIAL.piece_mask::<{ Piece::Pawn }>());
     }
 }
