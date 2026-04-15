@@ -4,7 +4,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::position::Position;
+use crate::position::TypedPosition;
 use logos::Lexer;
 use regex::Regex;
 use std::sync::LazyLock;
@@ -40,7 +40,7 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move<const N: usize>(&self, mv: Move, initial_state: &Position<N>) -> bool {
+    fn matches_move<const N: usize>(&self, mv: Move, initial_state: &TypedPosition<N>) -> bool {
         let dst = mv.destination();
         let src = mv.source();
         let flag = mv.flag();
@@ -53,7 +53,7 @@ impl PgnMove for PgnNonCastlingMove {
             return false;
         } else if self.promoted_to != promotion {
             return false;
-        } else if self.piece_moved != initial_state.board.piece_at(src) {
+        } else if self.piece_moved != initial_state.board().piece_at(src) {
             return false;
         } else if self.is_capture != mv.is_capture(initial_state) {
             return false;
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = Position::<1>::from_fen(
+        let state = TypedPosition::<1>::from_fen(
             "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
         )
         .unwrap();

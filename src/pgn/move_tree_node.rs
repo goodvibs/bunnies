@@ -3,7 +3,7 @@ use crate::Piece;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::position::{GameResult, Position};
+use crate::position::{GameResult, TypedPosition};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -55,7 +55,7 @@ impl MoveTreeNode {
 
     pub(crate) fn render<const N: usize>(
         &self,
-        mut state: Position<N>,
+        mut state: TypedPosition<N>,
         last_continuations: &[Rc<RefCell<MoveTreeNode>>],
         include_variations: bool,
         config: PgnRenderingConfig,
@@ -82,8 +82,8 @@ impl MoveTreeNode {
             let mv = move_data.mv;
             let mv_source = mv.source();
             let mv_dest = mv.destination();
-            let moved_piece = state.board.piece_at(mv_source);
-            let side_to_move = state.side_to_move;
+            let moved_piece = state.board().piece_at(mv_source);
+            let side_to_move = state.side_to_move();
 
             // Add move number for white's move or at the start of a variation
             let move_number_str = if side_to_move == Color::White {
@@ -105,7 +105,7 @@ impl MoveTreeNode {
                         .iter()
                         .filter(|m| {
                             m.destination() == mv_dest
-                                && state.board.piece_at(m.source()) == moved_piece
+                                && state.board().piece_at(m.source()) == moved_piece
                         })
                         .cloned()
                         .collect::<Vec<Move>>();
@@ -135,10 +135,10 @@ impl MoveTreeNode {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
                 MoveFlag::NormalMove | MoveFlag::Promotion => {
-                    state.board.piece_at(mv_dest) != Piece::Null
+                    state.board().piece_at(mv_dest) != Piece::Null
                 }
             };
-            state
+            state = state
                 .make_move(mv)
                 .expect("context stack capacity exceeded during PGN render");
             let is_check = state.is_current_side_in_check();
@@ -147,7 +147,7 @@ impl MoveTreeNode {
                     let all_moves = state.moves();
                     let is_checkmate = all_moves.is_empty();
                     if is_checkmate {
-                        state.result = GameResult::Checkmate;
+                        *state.result_mut() = GameResult::Checkmate;
                     }
                     is_checkmate
                 }

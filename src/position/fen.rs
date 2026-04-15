@@ -1,7 +1,10 @@
 use crate::Color;
 use crate::ColoredPiece;
 use crate::Square;
-use crate::position::{Board, GameResult, Position, PositionContext};
+use crate::position::{
+    BlackToMove, Board, GameResult, Position, PositionContext, TypedPosition, WhiteToMove,
+};
+use std::marker::PhantomData;
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -144,78 +147,94 @@ fn parse_fen_board(fen_board: &str) -> Result<Board, FenParseError> {
     Ok(board)
 }
 
-impl<const N: usize> Position<N> {
-    /// Parses a FEN string. Requires `N >= 1` (enforced at compile time for typical use;
-    /// `Position<0>` cannot be constructed this way).
-    pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
-        let fen_parts: Vec<&str> = fen.split_ascii_whitespace().collect();
-        if fen_parts.len() != 6 {
-            return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
-        }
+/// Parses a FEN string into [`TypedPosition`]. Requires `N >= 1`.
+pub(crate) fn parse_fen_to_typed_position<const N: usize>(
+    fen: &str,
+) -> Result<TypedPosition<N>, FenParseError> {
+    let fen_parts: Vec<&str> = fen.split_ascii_whitespace().collect();
+    if fen_parts.len() != 6 {
+        return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
+    }
 
-        match fen_parts[..] {
-            [
-                fen_board,
-                fen_side_to_move,
-                fen_castling_rights,
-                fen_en_passant_target,
-                fen_halfmove_clock,
-                fen_fullmove_number,
-            ] => {
-                let side_to_move = parse_side_to_move(fen_side_to_move)?;
-                let castling_rights = parse_castling_rights(fen_castling_rights)?;
-                let double_pawn_push = parse_en_passant_target(fen_en_passant_target)?;
-                let halfmove_clock = parse_fen_halfmove_clock(fen_halfmove_clock)?;
-                let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
-                let board = parse_fen_board(fen_board)?;
+    match fen_parts[..] {
+        [
+            fen_board,
+            fen_side_to_move,
+            fen_castling_rights,
+            fen_en_passant_target,
+            fen_halfmove_clock,
+            fen_fullmove_number,
+        ] => {
+            let side_to_move = parse_side_to_move(fen_side_to_move)?;
+            let castling_rights = parse_castling_rights(fen_castling_rights)?;
+            let double_pawn_push = parse_en_passant_target(fen_en_passant_target)?;
+            let halfmove_clock = parse_fen_halfmove_clock(fen_halfmove_clock)?;
+            let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
+            let board = parse_fen_board(fen_board)?;
 
-                let zobrist_hash = crate::calc_zobrist_hash(&board);
-                let halfmove =
-                    (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-                let mut context = PositionContext::blank();
-                context.castling_rights = castling_rights;
-                context.zobrist_hash = zobrist_hash;
-                context.double_pawn_push = double_pawn_push;
-                context.halfmove_clock = halfmove_clock;
+            let zobrist_hash = crate::calc_zobrist_hash(&board);
+            let halfmove =
+                (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
+            let mut context = PositionContext::blank();
+            context.castling_rights = castling_rights;
+            context.zobrist_hash = zobrist_hash;
+            context.double_pawn_push = double_pawn_push;
+            context.halfmove_clock = halfmove_clock;
 
-                let mut contexts = [PositionContext::blank(); N];
-                contexts[0] = context;
-                let mut state = Position {
-                    board,
-                    side_to_move,
-                    halfmove,
-                    result: GameResult::None,
-                    contexts,
-                    context_len: 1,
-                };
+            let mut contexts = [PositionContext::blank(); N];
+            contexts[0] = context;
 
-                if state.is_unequivocally_valid() {
-                    state.update_pins_and_checks();
-
-                    Ok(state)
-                } else {
-                    Err(FenParseError::InvalidPosition(fen.to_string()))
+            match side_to_move {
+                Color::White => {
+                    let mut state = Position {
+                        board,
+                        halfmove,
+                        result: GameResult::None,
+                        contexts,
+                        context_len: 1,
+                        _marker: PhantomData::<WhiteToMove>,
+                    };
+                    if state.is_unequivocally_valid() {
+                        state.update_pins_and_checks();
+                        Ok(TypedPosition::White(state))
+                    } else {
+                        Err(FenParseError::InvalidPosition(fen.to_string()))
+                    }
+                }
+                Color::Black => {
+                    let mut state = Position {
+                        board,
+                        halfmove,
+                        result: GameResult::None,
+                        contexts,
+                        context_len: 1,
+                        _marker: PhantomData::<BlackToMove>,
+                    };
+                    if state.is_unequivocally_valid() {
+                        state.update_pins_and_checks();
+                        Ok(TypedPosition::Black(state))
+                    } else {
+                        Err(FenParseError::InvalidPosition(fen.to_string()))
+                    }
                 }
             }
-            _ => Err(FenParseError::InvalidFieldCount(fen_parts.len())),
         }
+        _ => Err(FenParseError::InvalidFieldCount(fen_parts.len())),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::position::Position;
 
     #[test]
     fn test_from_fen() {
         let fen = "8/1P1n1B2/5P2/4pkNp/1PQ4K/p2p2P1/8/3R1N2 w - - 0 1";
-        let state_result = Position::<1>::from_fen(fen);
+        let state_result = TypedPosition::<1>::from_fen(fen);
         assert!(state_result.is_ok());
-        // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 36 18";
-        let state_result = Position::<1>::from_fen(fen);
+        let state_result = TypedPosition::<1>::from_fen(fen);
         assert!(state_result.is_err());
         assert_eq!(
             state_result.err().unwrap(),
@@ -223,18 +242,15 @@ mod tests {
         );
 
         let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 35 18";
-        let state_result = Position::<1>::from_fen(fen);
+        let state_result = TypedPosition::<1>::from_fen(fen);
         assert!(state_result.is_ok(), "{:?}", state_result);
-        // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "r3k3/P3P3/1B3q2/N3P2P/R6N/8/np2b2p/1K3n2 w q - 100 96";
-        let state_result = Position::<1>::from_fen(fen);
+        let state_result = TypedPosition::<1>::from_fen(fen);
         assert!(state_result.is_ok());
-        // assert_eq!(state_result.unwrap().to_fen(), fen);
 
         let fen = "nb4K1/2N4p/8/3P1rk1/1r2P3/5p2/3P1Q2/B2R1b2 b - - 0 1";
-        let state_result = Position::<1>::from_fen(fen);
+        let state_result = TypedPosition::<1>::from_fen(fen);
         assert!(state_result.is_ok());
-        // assert_eq!(state_result.unwrap().to_fen(), fen);
     }
 }

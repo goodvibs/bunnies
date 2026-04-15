@@ -2,10 +2,10 @@ use crate::masks::{
     FILES, RANK_4, STARTING_BK, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR,
     STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
 };
-use crate::position::Position;
+use crate::position::{Position, SideState};
 use crate::{Bitboard, Color, Flank, Piece, Square};
 
-impl<const N: usize> Position<N> {
+impl<const N: usize, S: SideState> Position<N, S> {
     /// Rigorous check for whether the current positional information is consistent and valid.
     pub fn is_unequivocally_valid(&self) -> bool {
         self.board.is_unequivocally_valid()
@@ -28,11 +28,11 @@ impl<const N: usize> Position<N> {
     }
 
     pub fn is_opposite_side_in_check(&self) -> bool {
-        let opp = self.side_to_move.other();
+        let opp = S::STM.other();
         let opp_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(opp);
         self.board.is_square_attacked(
             unsafe { Square::from_bitboard(opp_king) },
-            self.side_to_move,
+            S::STM,
         )
     }
 
@@ -44,7 +44,7 @@ impl<const N: usize> Position<N> {
 
     /// Checks if the side to move is consistent with the halfmove counter.
     pub fn has_valid_side_to_move(&self) -> bool {
-        self.halfmove % 2 == self.side_to_move as u16
+        self.halfmove % 2 == S::STM as u16
     }
 
     /// Checks if the castling rights are consistent with the position of the rooks and kings.
@@ -113,7 +113,7 @@ impl<const N: usize> Position<N> {
                 if self.halfmove < 1 {
                     return false;
                 }
-                let color_just_moved = self.side_to_move.other();
+                let color_just_moved = S::STM.other();
                 let pawns_bb = self.board.piece_mask::<{ Piece::Pawn }>();
                 let colored_pawns_bb = pawns_bb & self.board.color_mask_at(color_just_moved);
                 let file_mask = FILES[file as usize];

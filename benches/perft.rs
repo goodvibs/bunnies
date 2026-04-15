@@ -13,7 +13,10 @@ macro_rules! define_perft_benches {
                 let nodes = ($case).nodes_at_depth($depth);
                 group.throughput(Throughput::Elements(nodes));
                 group.bench_function(BenchmarkId::new(stringify!($name), $depth), |b| {
-                    b.iter(|| black_box(&pos).perft(black_box($depth)))
+                    b.iter(|| {
+                        let mut p = pos.clone();
+                        black_box(p.perft(black_box($depth)))
+                    })
                 });
                 group.finish();
             }

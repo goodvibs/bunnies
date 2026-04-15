@@ -11,7 +11,7 @@ use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
-use crate::position::Position;
+use crate::position::{Position, TypedPosition, WhiteToMove};
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
@@ -29,7 +29,10 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager =
-            PgnBufferedPositionBrancher::new(&current_node, Position::<N>::initial());
+            PgnBufferedPositionBrancher::new(
+                &current_node,
+                TypedPosition::White(Position::<N, WhiteToMove>::initial()),
+            );
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,
@@ -166,7 +169,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                     .current_and_previous
                     .current
                     .state_after_move;
-                if !move_number_just_seen && current_state.side_to_move == Color::White {
+                if !move_number_just_seen && current_state.side_to_move() == Color::White {
                     return Err(PgnParsingError::UnexpectedToken(format!(
                         "Unexpected move token: {:?}",
                         pgn_move
@@ -189,13 +192,10 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 }
 
                 if let Some(matched_move) = matched_move {
-                    let new_state = {
-                        let mut state = current_state.clone();
-                        state
-                            .make_move(matched_move)
-                            .map_err(|_| PgnParsingError::ContextStackFull)?;
-                        state
-                    };
+                    let new_state = current_state
+                        .clone()
+                        .make_move(matched_move)
+                        .map_err(|_| PgnParsingError::ContextStackFull)?;
                     let move_data = PgnMoveData {
                         mv: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),

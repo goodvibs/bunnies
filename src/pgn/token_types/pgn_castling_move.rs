@@ -3,7 +3,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::position::Position;
+use crate::position::TypedPosition;
 use logos::Lexer;
 use regex::Regex;
 use std::sync::LazyLock;
@@ -28,7 +28,7 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &Position<N>) -> bool {
+    fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &TypedPosition<N>) -> bool {
         let flag = mv.flag();
         let matches_flank = match self.flank {
             Flank::Kingside => mv.destination().file() == 6,
@@ -94,7 +94,7 @@ mod tests {
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::position::Position;
+    use crate::position::{Position, TypedPosition, WhiteToMove};
     use logos::Logos;
 
     #[test]
@@ -203,7 +203,7 @@ mod tests {
                 nag: None,
             },
         };
-        let state = Position::<1>::initial();
+        let state = TypedPosition::White(Position::<1, WhiteToMove>::initial());
         let kingside_castling_move =
             Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
         let queenside_castling_move =

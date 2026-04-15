@@ -1,4 +1,4 @@
-use bunnies::Position;
+use bunnies::{Position, TypedPosition, WhiteToMove};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PerftCase {
@@ -20,22 +20,22 @@ impl PerftCase {
         }
     }
 
-    pub fn position<const N: usize>(self) -> Position<N> {
+    pub fn position<const N: usize>(self) -> TypedPosition<N> {
         match self {
-            PerftCase::Initial => Position::<N>::initial(),
-            PerftCase::Kiwipete => Position::<N>::from_fen(
+            PerftCase::Initial => TypedPosition::White(Position::<N, WhiteToMove>::initial()),
+            PerftCase::Kiwipete => TypedPosition::from_fen(
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
             )
             .unwrap(),
             PerftCase::Position3 => {
-                Position::<N>::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap()
+                TypedPosition::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1").unwrap()
             }
-            PerftCase::Position4 => Position::<N>::from_fen(
+            PerftCase::Position4 => TypedPosition::from_fen(
                 "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
             )
             .unwrap(),
             PerftCase::Position5 => {
-                Position::<N>::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+                TypedPosition::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
                     .unwrap()
             }
         }

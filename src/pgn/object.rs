@@ -1,6 +1,6 @@
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::position::Position;
+use crate::position::{Position, TypedPosition, WhiteToMove};
 use indexmap::IndexMap;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -43,7 +43,7 @@ impl PgnObject {
             result.push_str(&format!("[{} \"{}\"]\n", key, value));
         }
         result.push_str(&self.tree_root.borrow().render::<N>(
-            Position::<N>::initial(),
+            TypedPosition::White(Position::<N, WhiteToMove>::initial()),
             &[],
             include_variations,
             config,

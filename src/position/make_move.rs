@@ -1,4 +1,4 @@
-//! Contains the implementation of [`Position::make_move`] and [`Position::make_move_for`].
+//! Contains [`Position::make_move`].
 
 use crate::Bitboard;
 use crate::Color;
@@ -9,17 +9,19 @@ use crate::Square;
 use crate::masks::{STARTING_KING_ROOK_GAP, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
-use crate::position::{Position, PositionError};
+use crate::position::{Position, PositionError, SideState};
+use std::marker::PhantomData;
 
-impl<const N: usize> Position<N> {
-    fn process_promotion<const STM: Color>(
+impl<const N: usize, S: SideState> Position<N, S> {
+    fn process_promotion(
         &mut self,
+        stm: Color,
         dst_square: Square,
         src_square: Square,
         promotion: Piece,
         new_context: &mut PositionContext,
     ) {
-        self.process_possible_capture::<STM>(dst_square, new_context);
+        self.process_possible_capture(stm, dst_square, new_context);
 
         self.board.remove_piece_at(Piece::Pawn, src_square);
         self.board.put_piece_at(promotion, dst_square);
@@ -27,35 +29,36 @@ impl<const N: usize> Position<N> {
         new_context.process_promotion_disregarding_capture();
     }
 
-    fn process_normal<const STM: Color>(
+    fn process_normal(
         &mut self,
+        stm: Color,
         dst_square: Square,
         src_square: Square,
         new_context: &mut PositionContext,
     ) {
-        self.process_possible_capture::<STM>(dst_square, new_context);
+        self.process_possible_capture(stm, dst_square, new_context);
 
         let moved_piece = self.board.piece_at(src_square);
         assert_ne!(moved_piece, Piece::Null);
         self.board.move_piece(moved_piece, dst_square, src_square);
         new_context.process_normal_disregarding_capture(
-            ColoredPiece::new(STM, moved_piece),
+            ColoredPiece::new(stm, moved_piece),
             dst_square,
             src_square,
         );
     }
 
-    fn process_possible_capture<const STM: Color>(
+    fn process_possible_capture(
         &mut self,
+        stm: Color,
         dst_square: Square,
         new_context: &mut PositionContext,
     ) {
         let dst_mask = dst_square.mask();
-        let opposite_color = STM.other();
+        let opposite_color = stm.other();
 
         self.board.remove_color_at(opposite_color, dst_square);
 
-        // remove captured piece and get captured piece type
         let captured_piece = self.board.piece_at(dst_square);
         if captured_piece != Piece::Null {
             self.board.remove_piece_at(captured_piece, dst_square);
@@ -64,13 +67,14 @@ impl<const N: usize> Position<N> {
         }
     }
 
-    fn process_en_passant<const STM: Color>(
+    fn process_en_passant(
         &mut self,
+        stm: Color,
         dst_square: Square,
         src_square: Square,
         new_context: &mut PositionContext,
     ) {
-        let opposite_color = STM.other();
+        let opposite_color = stm.other();
 
         let en_passant_capture_square = match opposite_color {
             Color::White => unsafe { Square::from(dst_square as u8 - 8) },
@@ -86,8 +90,9 @@ impl<const N: usize> Position<N> {
         new_context.process_en_passant();
     }
 
-    fn process_castling<const STM: Color>(
+    fn process_castling(
         &mut self,
+        stm: Color,
         dst_square: Square,
         src_square: Square,
         new_context: &mut PositionContext,
@@ -97,7 +102,7 @@ impl<const N: usize> Position<N> {
         self.board.move_piece(Piece::King, dst_square, src_square);
 
         let flank =
-            if dst_mask & STARTING_KING_ROOK_GAP[STM as usize][Flank::Kingside as usize] != 0 {
+            if dst_mask & STARTING_KING_ROOK_GAP[stm as usize][Flank::Kingside as usize] != 0 {
                 Flank::Kingside
             } else {
                 Flank::Queenside
@@ -113,27 +118,18 @@ impl<const N: usize> Position<N> {
         };
 
         self.board.move_colored_piece(
-            ColoredPiece::new(STM, Piece::Rook),
+            ColoredPiece::new(stm, Piece::Rook),
             rook_dst_square,
             rook_src_square,
         );
 
-        new_context.process_castling(STM);
+        new_context.process_castling(stm);
     }
 
-    /// Applies a move for the given side to move `STM`, without checking if the move is valid or legal.
-    ///
-    /// Returns [`PositionError::WrongSideToMove`] if `STM` does not match [`Position::side_to_move`].
-    /// Use this when the side to move is known at compile time; otherwise use [`Self::make_move`].
-    ///
-    /// All `make_move_for` calls with valid (not malformed) moves should be fully undoable by
-    /// [`crate::position::Position::unmake_move`].
-    ///
-    /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    pub fn make_move_for<const STM: Color>(&mut self, mv: Move) -> Result<(), PositionError> {
-        if self.side_to_move as u8 != STM as u8 {
-            return Err(PositionError::WrongSideToMove);
-        }
+    /// Applies a move in place, updating board state for [`S::Other`](SideState::Other).
+    /// After this returns `Ok`, the memory must only be observed as `Position<N, S::Other>`.
+    pub(crate) fn make_move_in_place(&mut self, mv: Move) -> Result<(), PositionError> {
+        let stm = S::STM;
         if self.context_len() >= N {
             return Err(PositionError::ContextStackFull);
         }
@@ -145,14 +141,15 @@ impl<const N: usize> Position<N> {
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
-        self.board.move_color(STM, dst_square, src_square);
+        self.board.move_color(stm, dst_square, src_square);
 
         match mv.flag() {
             MoveFlag::NormalMove => {
-                self.process_normal::<{ STM }>(dst_square, src_square, &mut new_context);
+                self.process_normal(stm, dst_square, src_square, &mut new_context);
             }
             MoveFlag::Promotion => {
-                self.process_promotion::<{ STM }>(
+                self.process_promotion(
+                    stm,
                     dst_square,
                     src_square,
                     mv.promotion(),
@@ -160,38 +157,41 @@ impl<const N: usize> Position<N> {
                 );
             }
             MoveFlag::EnPassant => {
-                self.process_en_passant::<{ STM }>(dst_square, src_square, &mut new_context);
+                self.process_en_passant(stm, dst_square, src_square, &mut new_context);
             }
             MoveFlag::Castling => {
-                self.process_castling::<{ STM }>(dst_square, src_square, &mut new_context);
+                self.process_castling(stm, dst_square, src_square, &mut new_context);
             }
         }
 
-        // new_context.zobrist_hash = crate::calc_zobrist_hash(&self.board);
-
-        // update data members
         self.halfmove += 1;
-        self.side_to_move = STM.other();
         self.try_push_context(new_context)?;
+        self.update_pins_and_checks_for_stm(S::STM.other());
 
-        self.update_pins_and_checks();
         Ok(())
     }
 
     /// Applies a move without checking if it is valid or legal.
     ///
-    /// Dispatches to [`Self::make_move_for`] using the current [`Position::side_to_move`]. When the
-    /// side is known at compile time, calling [`Self::make_move_for`] directly can avoid the `match`.
-    ///
-    /// All `make_move` calls with valid (not malformed) moves should be fully able to be undone by
-    /// [`crate::position::Position::unmake_move`].
-    ///
     /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    pub fn make_move(&mut self, mv: Move) -> Result<(), PositionError> {
-        match self.side_to_move {
-            Color::White => self.make_move_for::<{ Color::White }>(mv),
-            Color::Black => self.make_move_for::<{ Color::Black }>(mv),
-        }
+    pub fn make_move(mut self, mv: Move) -> Result<Position<N, S::Other>, PositionError> {
+        self.make_move_in_place(mv)?;
+        let Position {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
+            ..
+        } = self;
+        Ok(Position::<N, S::Other> {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
+            _marker: PhantomData,
+        })
     }
 }
 
