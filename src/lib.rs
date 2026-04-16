@@ -1,6 +1,7 @@
 //! This crate requires a **nightly** Rust toolchain (see repository `rust-toolchain.toml`).
 #![feature(const_for)] // Reserved: `for` in `const fn` over arrays needs const `Iterator` (rust#87575).
 #![feature(adt_const_params)]
+#![feature(generic_const_exprs)]
 #![allow(incomplete_features)]
 #![allow(unused_features)] // `const_for` is not yet usable for our `Piece::PIECES` loops; see `Board::piece_at`.
 

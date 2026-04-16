@@ -13,8 +13,9 @@ impl Color {
         unsafe { std::mem::transmute::<bool, Color>(is_black) }
     }
 
-    /// Returns the other color.
-    pub const fn other(&self) -> Color {
+    /// Returns the other color. Takes `self` by value so [`Self::other`] is usable in const-generic
+    /// type positions (e.g. `Position<N, { STM.other() }>`).
+    pub const fn other(self) -> Color {
         match self {
             Color::White => Color::Black,
             Color::Black => Color::White,

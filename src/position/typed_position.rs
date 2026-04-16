@@ -1,10 +1,10 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
 use crate::Color;
+use crate::r#move::{Move, MoveList};
 use crate::position::{
     Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext, PositionError,
 };
-use crate::r#move::{Move, MoveList};
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
@@ -105,10 +105,22 @@ impl<const N: usize> TypedPosition<N> {
     }
 
     /// Applies a legal move and flips the side-to-move marker type.
+    ///
+    /// This uses [`Position::make_move_in_place`] plus [`Position::rebrand_stm`] instead of
+    /// [`Position::make_move`]. With `generic_const_exprs`, calling the generic
+    /// `make_move -> Position<N, { STM.other() }>` from this `match` does not satisfy
+    /// rustc’s const-generic inference (“unconstrained generic constant”), even when `STM` is fixed
+    /// by each arm; the in-place + rebrand sequence matches [`Position::make_move`] exactly.
     pub fn make_move(self, mv: Move) -> Result<Self, PositionError> {
         match self {
-            TypedPosition::White(p) => p.make_move(mv).map(TypedPosition::Black),
-            TypedPosition::Black(p) => p.make_move(mv).map(TypedPosition::White),
+            TypedPosition::White(mut p) => {
+                p.make_move_in_place(mv)?;
+                Ok(TypedPosition::Black(p.rebrand_stm::<{ Color::Black }>()))
+            }
+            TypedPosition::Black(mut p) => {
+                p.make_move_in_place(mv)?;
+                Ok(TypedPosition::White(p.rebrand_stm::<{ Color::White }>()))
+            }
         }
     }
 
@@ -137,18 +149,10 @@ impl<const N: usize> TypedPosition<N> {
     }
 
     #[inline]
-    pub fn perft(&self, depth: u8) -> u64 {
+    pub fn perft(&mut self, depth: u8) -> u64 {
         match self {
             TypedPosition::White(p) => p.perft(depth),
             TypedPosition::Black(p) => p.perft(depth),
-        }
-    }
-
-    #[inline]
-    pub fn perft_in_place(&mut self, depth: u8) -> u64 {
-        match self {
-            TypedPosition::White(p) => p.perft_in_place(depth),
-            TypedPosition::Black(p) => p.perft_in_place(depth),
         }
     }
 

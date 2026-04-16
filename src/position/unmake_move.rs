@@ -94,46 +94,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.result = GameResult::None;
     }
 
-}
-
-impl<const N: usize> Position<N, { Color::White }> {
     /// Undoes a move from State without checking if it is valid, legal, or even applied to the current position.
-    pub fn unmake_move(mut self, mv: Move) -> Position<N, { Color::Black }> {
+    pub fn unmake_move(mut self, mv: Move) -> Position<N, { STM.other() }> {
         self.unmake_move_in_place(mv);
-        let Position {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        } = self;
-        Position::<N, { Color::Black }> {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        }
+        self.rebrand_stm::<{ STM.other() }>()
     }
-}
 
-impl<const N: usize> Position<N, { Color::Black }> {
-    /// Undoes a move from State without checking if it is valid, legal, or even applied to the current position.
-    pub fn unmake_move(mut self, mv: Move) -> Position<N, { Color::White }> {
-        self.unmake_move_in_place(mv);
-        let Position {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        } = self;
-        Position::<N, { Color::White }> {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        }
-    }
 }

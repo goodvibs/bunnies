@@ -1,6 +1,6 @@
-use crate::position::Position;
-use crate::r#move::MoveList;
 use crate::Color;
+use crate::r#move::MoveList;
+use crate::position::Position;
 
 fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, depth: u8) -> u64 {
     if depth == 0 {
@@ -10,7 +10,8 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
     pos.generate_legal_moves(&mut moves);
     let mut total = 0u64;
     for &mv in moves.as_slice() {
-        pos.make_move_in_place(mv).expect("perft depth within context stack");
+        pos.make_move_in_place(mv)
+            .expect("perft depth within context stack");
         match STM {
             Color::White => {
                 // SAFETY: After `make_move_in_place`, board/context match `Position<N, { Color::Black }>`;
@@ -35,12 +36,7 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// [`Self::perft`] without cloning `self` first; reuses this `Position` (must be at the search root).
-    pub fn perft_in_place(&mut self, depth: u8) -> u64 {
+    pub fn perft(&mut self, depth: u8) -> u64 {
         count_nodes(self, depth)
-    }
-
-    pub fn perft(&self, depth: u8) -> u64 {
-        let mut clone = self.clone();
-        count_nodes(&mut clone, depth)
     }
 }

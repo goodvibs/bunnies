@@ -127,7 +127,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Applies a move in place, updating board state for the opponent.
     /// After this returns `Ok`, the layout matches the destination type of [`Position::make_move`]
-    /// (`Position<N, { Color::Black }>` when `STM` is white, and vice versa).
+    /// (`Position<N, { STM.other() }>`).
     pub(crate) fn make_move_in_place(&mut self, mv: Move) -> Result<(), PositionError> {
         let stm = STM;
         if self.context_len() >= N {
@@ -171,51 +171,17 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         Ok(())
     }
 
-}
-
-impl<const N: usize> Position<N, { Color::White }> {
     /// Applies a move without checking if it is valid or legal.
     ///
     /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    pub fn make_move(mut self, mv: Move) -> Result<Position<N, { Color::Black }>, PositionError> {
-        self.make_move_in_place(mv)?;
-        let Position {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        } = self;
-        Ok(Position::<N, { Color::Black }> {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        })
-    }
-}
-
-impl<const N: usize> Position<N, { Color::Black }> {
-    /// Applies a move without checking if it is valid or legal.
     ///
-    /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    pub fn make_move(mut self, mv: Move) -> Result<Position<N, { Color::White }>, PositionError> {
+    /// Flipped side is `Position<N, { STM.other() }>`.
+    pub fn make_move(
+        mut self,
+        mv: Move,
+    ) -> Result<Position<N, { STM.other() }>, PositionError> {
         self.make_move_in_place(mv)?;
-        let Position {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        } = self;
-        Ok(Position::<N, { Color::White }> {
-            board,
-            halfmove,
-            result,
-            contexts,
-            context_len,
-        })
+        Ok(self.rebrand_stm::<{ STM.other() }>())
     }
 }
 

@@ -57,6 +57,28 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         STM
     }
 
+    /// Builds a [`Position`] with a different const `STM` from the same fields (layout does not depend on `STM`).
+    ///
+    /// Only use when the underlying state already corresponds to side to move `NEXT` (for example after
+    /// `make_move_in_place` or `unmake_move_in_place`).
+    #[inline]
+    pub(crate) fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT> {
+        let Position {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
+        } = self;
+        Position {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
+        }
+    }
+
     /// Active context stack entries (root at index 0, current at `len - 1`).
     pub fn context_slice(&self) -> &[PositionContext] {
         &self.contexts[..self.context_len]

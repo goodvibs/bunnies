@@ -1,4 +1,4 @@
-use bunnies::{Color, Position, TypedPosition};
+use bunnies::{TypedPosition, INITIAL_FEN};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PerftCase {
@@ -22,7 +22,7 @@ impl PerftCase {
 
     pub fn position<const N: usize>(self) -> TypedPosition<N> {
         match self {
-            PerftCase::Initial => TypedPosition::White(Position::<N, { Color::White }>::initial()),
+            PerftCase::Initial => TypedPosition::<N>::from_fen(INITIAL_FEN).unwrap(),
             PerftCase::Kiwipete => TypedPosition::from_fen(
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
             )

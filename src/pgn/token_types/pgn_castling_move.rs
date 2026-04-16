@@ -94,8 +94,7 @@ mod tests {
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::position::{Position, TypedPosition};
-    use crate::Color;
+    use crate::position::{TypedPosition, INITIAL_FEN};
     use logos::Logos;
 
     #[test]
@@ -204,7 +203,7 @@ mod tests {
                 nag: None,
             },
         };
-        let state = TypedPosition::White(Position::<1, { Color::White }>::initial());
+        let state = TypedPosition::<1>::from_fen(INITIAL_FEN).unwrap();
         let kingside_castling_move =
             Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
         let queenside_castling_move =
