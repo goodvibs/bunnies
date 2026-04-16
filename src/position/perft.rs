@@ -1,7 +1,8 @@
+use crate::position::Position;
 use crate::r#move::MoveList;
-use crate::position::{Position, SideState};
+use crate::Color;
 
-fn count_nodes<const N: usize, S: SideState>(pos: &mut Position<N, S>, depth: u8) -> u64 {
+fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, depth: u8) -> u64 {
     if depth == 0 {
         return 1;
     }
@@ -9,22 +10,37 @@ fn count_nodes<const N: usize, S: SideState>(pos: &mut Position<N, S>, depth: u8
     pos.generate_legal_moves(&mut moves);
     let mut total = 0u64;
     for &mv in moves.as_slice() {
-        pos.make_move_in_place(mv)
-            .expect("perft depth within context stack");
-        // SAFETY: After `make_move_in_place`, board/context match `Position<N, S::Other>`; same
-        // memory as `pos` but we must not use `pos` as `&mut Position<N, S>` until `unmake_move_in_place`.
-        unsafe {
-            let child = &mut *std::ptr::from_mut(pos).cast::<Position<N, S::Other>>();
-            total += count_nodes(child, depth - 1);
-            child.unmake_move_in_place(mv);
+        pos.make_move_in_place(mv).expect("perft depth within context stack");
+        match STM {
+            Color::White => {
+                // SAFETY: After `make_move_in_place`, board/context match `Position<N, { Color::Black }>`;
+                // same memory as `pos` until `unmake_move_in_place`.
+                let child = unsafe {
+                    &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::Black }>>()
+                };
+                total += count_nodes(child, depth - 1);
+                child.unmake_move_in_place(mv);
+            }
+            Color::Black => {
+                let child = unsafe {
+                    &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::White }>>()
+                };
+                total += count_nodes(child, depth - 1);
+                child.unmake_move_in_place(mv);
+            }
         }
     }
     total
 }
 
-impl<const N: usize, S: SideState> Position<N, S> {
+impl<const N: usize, const STM: Color> Position<N, STM> {
     /// [`Self::perft`] without cloning `self` first; reuses this `Position` (must be at the search root).
-    pub fn perft(&mut self, depth: u8) -> u64 {
+    pub fn perft_in_place(&mut self, depth: u8) -> u64 {
         count_nodes(self, depth)
+    }
+
+    pub fn perft(&self, depth: u8) -> u64 {
+        let mut clone = self.clone();
+        count_nodes(&mut clone, depth)
     }
 }

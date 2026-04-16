@@ -1,17 +1,16 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
 use crate::Color;
-use crate::r#move::{Move, MoveList};
 use crate::position::{
-    BlackToMove, Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext,
-    PositionError, WhiteToMove,
+    Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext, PositionError,
 };
+use crate::r#move::{Move, MoveList};
 
-/// Chess position with side to move carried either as [`WhiteToMove`] or [`BlackToMove`].
+/// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
 pub enum TypedPosition<const N: usize> {
-    White(Position<N, WhiteToMove>),
-    Black(Position<N, BlackToMove>),
+    White(Position<N, { Color::White }>),
+    Black(Position<N, { Color::Black }>),
 }
 
 impl<const N: usize> Clone for TypedPosition<N> {
@@ -138,10 +137,18 @@ impl<const N: usize> TypedPosition<N> {
     }
 
     #[inline]
-    pub fn perft(&mut self, depth: u8) -> u64 {
+    pub fn perft(&self, depth: u8) -> u64 {
         match self {
             TypedPosition::White(p) => p.perft(depth),
             TypedPosition::Black(p) => p.perft(depth),
+        }
+    }
+
+    #[inline]
+    pub fn perft_in_place(&mut self, depth: u8) -> u64 {
+        match self {
+            TypedPosition::White(p) => p.perft_in_place(depth),
+            TypedPosition::Black(p) => p.perft_in_place(depth),
         }
     }
 

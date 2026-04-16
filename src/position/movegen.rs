@@ -8,7 +8,7 @@ use crate::attacks::{
 use crate::masks::{FILE_A, FILE_H, RANK_3, RANK_6};
 use crate::r#move::{Move, MoveFlag, MoveList};
 use crate::position::legal_gen_kind::LegalGenKind;
-use crate::position::{Position, SideState};
+use crate::position::Position;
 use crate::{Bitboard, Color, Flank};
 use crate::{BitboardUtils, Piece};
 
@@ -80,7 +80,7 @@ const fn castling_king_src_square_for(stm: Color) -> Square {
     }
 }
 
-impl<const N: usize, S: SideState> Position<N, S> {
+impl<const N: usize, const STM: Color> Position<N, STM> {
     /**
      * Adds all legal non-en-passant pawn capture moves to the provided moves vector.
      *
@@ -98,7 +98,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = S::STM;
+        let stm = STM;
         let opposite_side_pieces = self.board.color_mask_at(stm.other());
 
         let promotion_rank = self.current_side_promotion_rank();
@@ -145,7 +145,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_en_passants(&self, pinned_bb: Bitboard, moves: &mut MoveList) {
-        let stm = S::STM;
+        let stm = STM;
         let double_pawn_push = self.context().double_pawn_push;
         let current_side_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
         let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
@@ -216,7 +216,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = S::STM;
+        let stm = STM;
         let occupied_mask = self.board.pieces();
 
         let mut movable_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
@@ -280,7 +280,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = S::STM;
+        let stm = STM;
         let movable_knights = self.board.piece_mask::<{ Piece::Knight }>()
             & self.board.color_mask_at(stm)
             & !pinned_bb;
@@ -317,7 +317,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = S::STM;
+        let stm = STM;
         let all_occupancy_bb = self.board.pieces();
         let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
@@ -354,7 +354,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_king_moves(&self, moves: &mut MoveList) {
-        let stm = S::STM;
+        let stm = STM;
         let current_side_mask = self.board.color_mask_at(stm);
 
         let king_src_bb = self.board.piece_mask::<{ Piece::King }>() & current_side_mask;
@@ -391,7 +391,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_castling_moves(&self, moves: &mut MoveList) {
-        let king_src_square = castling_king_src_square_for(S::STM);
+        let king_src_square = castling_king_src_square_for(STM);
 
         for flank in Flank::ALL {
             if self.can_legally_castle(flank) {
@@ -413,7 +413,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
         out.clear();
 
         let pinned_bb = self.context().pinned;
-        let mut possible_non_king_dsts = !self.board.color_mask_at(S::STM);
+        let mut possible_non_king_dsts = !self.board.color_mask_at(STM);
 
         match self.context().checkers {
             0 => {
@@ -432,7 +432,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
                 let is_checker_a_slider = self.board.piece_at(checker_square).is_sliding_piece();
 
                 let current_side_king =
-                    self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(S::STM);
+                    self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
 
                 if is_checker_a_slider {
                     possible_non_king_dsts &= checkers
@@ -493,7 +493,7 @@ impl<const N: usize, S: SideState> Position<N, S> {
                 if !self.board.is_occupied_at(dst) {
                     return false;
                 }
-                self.board.get_colored_piece_at(dst).color() != S::STM
+                self.board.get_colored_piece_at(dst).color() != STM
             }
         }
     }
@@ -520,8 +520,8 @@ impl<const N: usize, S: SideState> Position<N, S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{LegalGenKind, Position, WhiteToMove};
-    use crate::{Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
+    use crate::position::{LegalGenKind, Position};
+    use crate::{Color, Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
     use std::collections::HashSet;
 
     fn expected_moves_test<const M: usize>(
@@ -835,7 +835,7 @@ mod tests {
 
     #[test]
     fn legal_gen_kind_partitions_startpos() {
-        let pos = Position::<1, WhiteToMove>::initial();
+        let pos = Position::<1, { Color::White }>::initial();
         let mut all = MoveList::new();
         let mut cap = MoveList::new();
         let mut quiet = MoveList::new();

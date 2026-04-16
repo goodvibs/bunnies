@@ -1,6 +1,7 @@
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
-/// Represents a side of the board.
+/// Represents a side of the board (piece color and, on [`crate::position::Position`], **side to move**
+/// via the const-generic parameter `const STM: Color`, spelled `Color::White` / `Color::Black`).
 pub enum Color {
     White = 0,
     Black = 1,

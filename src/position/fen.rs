@@ -2,9 +2,8 @@ use crate::Color;
 use crate::ColoredPiece;
 use crate::Square;
 use crate::position::{
-    BlackToMove, Board, GameResult, Position, PositionContext, TypedPosition, WhiteToMove,
+    Board, GameResult, Position, PositionContext, TypedPosition,
 };
-use std::marker::PhantomData;
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -186,13 +185,12 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
 
             match side_to_move {
                 Color::White => {
-                    let mut state = Position {
+                    let mut state = Position::<N, { Color::White }> {
                         board,
                         halfmove,
                         result: GameResult::None,
                         contexts,
                         context_len: 1,
-                        _marker: PhantomData::<WhiteToMove>,
                     };
                     if state.is_unequivocally_valid() {
                         state.update_pins_and_checks();
@@ -202,13 +200,12 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
                     }
                 }
                 Color::Black => {
-                    let mut state = Position {
+                    let mut state = Position::<N, { Color::Black }> {
                         board,
                         halfmove,
                         result: GameResult::None,
                         contexts,
                         context_len: 1,
-                        _marker: PhantomData::<BlackToMove>,
                     };
                     if state.is_unequivocally_valid() {
                         state.update_pins_and_checks();
@@ -226,6 +223,7 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::position::TypedPosition;
 
     #[test]
     fn test_from_fen() {

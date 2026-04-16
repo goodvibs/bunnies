@@ -11,7 +11,7 @@ use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
-use crate::position::{Position, TypedPosition, WhiteToMove};
+use crate::position::{Position, TypedPosition};
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
@@ -31,7 +31,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         let buffered_position_manager =
             PgnBufferedPositionBrancher::new(
                 &current_node,
-                TypedPosition::White(Position::<N, WhiteToMove>::initial()),
+                TypedPosition::White(Position::<N, { Color::White }>::initial()),
             );
         PgnParser {
             lexer,

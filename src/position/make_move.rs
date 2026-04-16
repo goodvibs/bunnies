@@ -9,10 +9,9 @@ use crate::Square;
 use crate::masks::{STARTING_KING_ROOK_GAP, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
-use crate::position::{Position, PositionError, SideState};
-use std::marker::PhantomData;
+use crate::position::{Position, PositionError};
 
-impl<const N: usize, S: SideState> Position<N, S> {
+impl<const N: usize, const STM: Color> Position<N, STM> {
     fn process_promotion(
         &mut self,
         stm: Color,
@@ -126,10 +125,11 @@ impl<const N: usize, S: SideState> Position<N, S> {
         new_context.process_castling(stm);
     }
 
-    /// Applies a move in place, updating board state for [`S::Other`](SideState::Other).
-    /// After this returns `Ok`, the memory must only be observed as `Position<N, S::Other>`.
+    /// Applies a move in place, updating board state for the opponent.
+    /// After this returns `Ok`, the layout matches the destination type of [`Position::make_move`]
+    /// (`Position<N, { Color::Black }>` when `STM` is white, and vice versa).
     pub(crate) fn make_move_in_place(&mut self, mv: Move) -> Result<(), PositionError> {
-        let stm = S::STM;
+        let stm = STM;
         if self.context_len() >= N {
             return Err(PositionError::ContextStackFull);
         }
@@ -166,15 +166,18 @@ impl<const N: usize, S: SideState> Position<N, S> {
 
         self.halfmove += 1;
         self.try_push_context(new_context)?;
-        self.update_pins_and_checks_for_stm(S::STM.other());
+        self.update_pins_and_checks_for_stm(STM.other());
 
         Ok(())
     }
 
+}
+
+impl<const N: usize> Position<N, { Color::White }> {
     /// Applies a move without checking if it is valid or legal.
     ///
     /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    pub fn make_move(mut self, mv: Move) -> Result<Position<N, S::Other>, PositionError> {
+    pub fn make_move(mut self, mv: Move) -> Result<Position<N, { Color::Black }>, PositionError> {
         self.make_move_in_place(mv)?;
         let Position {
             board,
@@ -182,15 +185,36 @@ impl<const N: usize, S: SideState> Position<N, S> {
             result,
             contexts,
             context_len,
-            ..
         } = self;
-        Ok(Position::<N, S::Other> {
+        Ok(Position::<N, { Color::Black }> {
             board,
             halfmove,
             result,
             contexts,
             context_len,
-            _marker: PhantomData,
+        })
+    }
+}
+
+impl<const N: usize> Position<N, { Color::Black }> {
+    /// Applies a move without checking if it is valid or legal.
+    ///
+    /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
+    pub fn make_move(mut self, mv: Move) -> Result<Position<N, { Color::White }>, PositionError> {
+        self.make_move_in_place(mv)?;
+        let Position {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
+        } = self;
+        Ok(Position::<N, { Color::White }> {
+            board,
+            halfmove,
+            result,
+            contexts,
+            context_len,
         })
     }
 }
