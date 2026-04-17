@@ -1,9 +1,9 @@
 //! Board struct and methods
 
 use crate::Piece;
+use crate::Rank;
 use crate::Square;
 use crate::attacks::*;
-use crate::masks::*;
 use crate::utilities::{Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
 use crate::{BitboardUtils, ColoredPiece};
@@ -44,14 +44,29 @@ impl Board {
 
     /// The board for the initial position.
     pub const fn initial() -> Board {
+        const WP: Bitboard = Rank::Two.mask();
+        const BP: Bitboard = Rank::Seven.mask();
+        const WN: Bitboard = Square::B1.mask() | Square::G1.mask();
+        const BN: Bitboard = Square::B8.mask() | Square::G8.mask();
+        const WB: Bitboard = Square::C1.mask() | Square::F1.mask();
+        const BB: Bitboard = Square::C8.mask() | Square::F8.mask();
+        const WR: Bitboard = Square::A1.mask() | Square::H1.mask();
+        const BR: Bitboard = Square::A8.mask() | Square::H8.mask();
+        const WQ: Bitboard = Square::D1.mask();
+        const BQ: Bitboard = Square::D8.mask();
+        const WK: Bitboard = Square::E1.mask();
+        const BK: Bitboard = Square::E8.mask();
+        const STARTING_WHITE: Bitboard = WP | WN | WB | WR | WQ | WK;
+        const STARTING_BLACK: Bitboard = BP | BN | BB | BR | BQ | BK;
+        const STARTING_ALL: Bitboard = STARTING_WHITE | STARTING_BLACK;
         const PM: [Bitboard; Piece::LIMIT as usize] = [
             STARTING_ALL,
-            STARTING_WP | STARTING_BP,
-            STARTING_WN | STARTING_BN,
-            STARTING_WB | STARTING_BB,
-            STARTING_WR | STARTING_BR,
-            STARTING_WQ | STARTING_BQ,
-            STARTING_WK | STARTING_BK,
+            WP | BP,
+            WN | BN,
+            WB | BB,
+            WR | BR,
+            WQ | BQ,
+            WK | BK,
         ];
         Board {
             piece_masks: PM,

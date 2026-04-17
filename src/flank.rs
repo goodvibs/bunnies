@@ -3,6 +3,8 @@
 use crate::Bitboard;
 use crate::Color;
 use crate::Square;
+use crate::file::File;
+use crate::rank::Rank;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
@@ -14,12 +16,42 @@ pub enum Flank {
 impl Flank {
     pub const ALL: [Flank; 2] = [Flank::Kingside, Flank::Queenside];
 
-    /// Bit mask for this flank in the 4-bit castling rights nibble (same layout as FEN / `PositionContext::castling_rights`).
+    /// Bit mask for this flank in the 4-bit castling rights nibble (same layout as FEN / [`crate::CastlingRights`]).
     pub const fn rights_mask(self, color: Color) -> u8 {
         match self {
             Flank::Kingside => 0b00001000u8 >> (color as u8 * 2),
             Flank::Queenside => 0b00000100u8 >> (color as u8 * 2),
         }
+    }
+
+    /// Both castling bits for `color` (white: bits 3–2, black: bits 1–0).
+    pub const fn rights_mask_both_flanks(color: Color) -> u8 {
+        Flank::Kingside.rights_mask(color) | Flank::Queenside.rights_mask(color)
+    }
+
+    /// Kingside: files e–h; queenside: files a–d (former `KING_SIDE` / `QUEEN_SIDE` composites).
+    pub const fn half_board_mask(self) -> Bitboard {
+        match self {
+            Flank::Kingside => {
+                File::E.mask() | File::F.mask() | File::G.mask() | File::H.mask()
+            }
+            Flank::Queenside => {
+                File::A.mask() | File::B.mask() | File::C.mask() | File::D.mask()
+            }
+        }
+    }
+
+    /// Empty squares required between king and rook in the starting layout (per color and flank).
+    pub const fn castling_gap_mask(self, color: Color) -> Bitboard {
+        let back = match color {
+            Color::White => Rank::One,
+            Color::Black => Rank::Eight,
+        };
+        let gap_files = match self {
+            Flank::Kingside => File::F.mask() | File::G.mask(),
+            Flank::Queenside => File::B.mask() | File::C.mask() | File::D.mask(),
+        };
+        back.mask() & gap_files
     }
 
     /// Squares the king passes through or lands on (excluding start); used for attack tests when castling.

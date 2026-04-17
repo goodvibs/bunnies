@@ -2,7 +2,7 @@
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::position::{Board, GameResult, PositionContext};
-use crate::{Bitboard, BitboardUtils, Color, Piece, Square};
+use crate::{Bitboard, BitboardUtils, CastlingRights, Color, Piece, Square};
 use std::fmt;
 
 /// Error from [`Position::make_move`] and related APIs.
@@ -97,7 +97,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         );
         let board = Board::initial();
         let mut context = PositionContext::blank();
-        context.castling_rights = 0b00001111;
+        context.castling_rights = CastlingRights::ALL;
         context.zobrist_hash = crate::calc_zobrist_hash(&board);
         let mut contexts = [PositionContext::blank(); N];
         contexts[0] = context;

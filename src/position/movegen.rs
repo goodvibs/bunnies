@@ -5,7 +5,8 @@ use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
-use crate::masks::{FILE_A, FILE_H, RANK_3, RANK_6};
+use crate::File;
+use crate::Rank;
 use crate::r#move::{Move, MoveFlag, MoveList};
 use crate::position::legal_gen_kind::LegalGenKind;
 use crate::position::Position;
@@ -25,7 +26,8 @@ const fn ep_possible_src_masks(stm: Color, double_pawn_push: i8) -> Bitboard {
         Color::Black => unsafe { Square::from_rank_file(3, double_pawn_push as u8).mask() },
     };
 
-    ((double_pawn_push_dst << 1) & !FILE_H) | ((double_pawn_push_dst >> 1) & !FILE_A)
+    ((double_pawn_push_dst << 1) & !File::H.mask())
+        | ((double_pawn_push_dst >> 1) & !File::A.mask())
 }
 
 const fn ep_dst_square(stm: Color, double_pawn_push: i8) -> Square {
@@ -68,8 +70,8 @@ unsafe fn pawn_double_push_origin(stm: Color, dst_square: Square) -> Square {
 
 const fn additional_pawn_push_rank_mask(stm: Color) -> Bitboard {
     match stm {
-        Color::White => RANK_3,
-        Color::Black => RANK_6,
+        Color::White => Rank::Three.mask(),
+        Color::Black => Rank::Six.mask(),
     }
 }
 

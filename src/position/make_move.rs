@@ -1,12 +1,10 @@
 //! Contains [`Position::make_move`].
 
-use crate::Bitboard;
 use crate::Color;
 use crate::ColoredPiece;
 use crate::Flank;
 use crate::Piece;
 use crate::Square;
-use crate::masks::{STARTING_KING_ROOK_GAP, STARTING_KING_SIDE_ROOK, STARTING_QUEEN_SIDE_ROOK};
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
 use crate::position::{Position, PositionError};
@@ -53,7 +51,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         dst_square: Square,
         new_context: &mut PositionContext,
     ) {
-        let dst_mask = dst_square.mask();
         let opposite_color = stm.other();
 
         self.board.remove_color_at(opposite_color, dst_square);
@@ -61,8 +58,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let captured_piece = self.board.piece_at(dst_square);
         if captured_piece != Piece::Null {
             self.board.remove_piece_at(captured_piece, dst_square);
-            new_context
-                .process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_mask);
+            new_context.process_capture(
+                ColoredPiece::new(opposite_color, captured_piece),
+                dst_square,
+            );
         }
     }
 
@@ -100,12 +99,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         self.board.move_piece(Piece::King, dst_square, src_square);
 
-        let flank =
-            if dst_mask & STARTING_KING_ROOK_GAP[stm as usize][Flank::Kingside as usize] != 0 {
-                Flank::Kingside
-            } else {
-                Flank::Queenside
-            };
+        let flank = if dst_mask & Flank::Kingside.castling_gap_mask(stm) != 0 {
+            Flank::Kingside
+        } else {
+            Flank::Queenside
+        };
 
         let (rook_src_square, rook_dst_square) = match flank {
             Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {
@@ -223,8 +221,9 @@ impl PositionContext {
     }
 
     fn process_normal_king_move_disregarding_capture(&mut self, moved_piece_color: Color) {
-        self.castling_rights &= !(Flank::Kingside.rights_mask(moved_piece_color)
-            | Flank::Queenside.rights_mask(moved_piece_color));
+        self.castling_rights = self
+            .castling_rights
+            .with_cleared_color(moved_piece_color);
     }
 
     fn process_normal_rook_move_disregarding_capture(
@@ -232,13 +231,17 @@ impl PositionContext {
         moved_piece_color: Color,
         src_square: Square,
     ) {
-        let src_mask = src_square.mask();
-
-        if src_mask & STARTING_KING_SIDE_ROOK[moved_piece_color as usize] != 0 {
-            self.castling_rights &= !Flank::Kingside.rights_mask(moved_piece_color);
-        } else if src_mask & STARTING_QUEEN_SIDE_ROOK[moved_piece_color as usize] != 0 {
-            self.castling_rights &= !Flank::Queenside.rights_mask(moved_piece_color);
-        }
+        self.castling_rights = match (moved_piece_color, src_square) {
+            (Color::White, Square::H1) | (Color::Black, Square::H8) => {
+                self.castling_rights
+                    .with_cleared(Flank::Kingside, moved_piece_color)
+            }
+            (Color::White, Square::A1) | (Color::Black, Square::A8) => {
+                self.castling_rights
+                    .with_cleared(Flank::Queenside, moved_piece_color)
+            }
+            _ => self.castling_rights,
+        };
     }
 
     fn process_en_passant(&mut self) {
@@ -248,24 +251,25 @@ impl PositionContext {
 
     fn process_castling(&mut self, color: Color) {
         self.halfmove_clock = 0;
-        self.castling_rights &=
-            !(Flank::Kingside.rights_mask(color) | Flank::Queenside.rights_mask(color));
+        self.castling_rights = self.castling_rights.with_cleared_color(color);
     }
 
-    fn process_capture(&mut self, captured_colored_piece: ColoredPiece, dst_mask: Bitboard) {
+    fn process_capture(&mut self, captured_colored_piece: ColoredPiece, dst_square: Square) {
         let captured_color = captured_colored_piece.color();
         let captured_piece = captured_colored_piece.piece();
 
         self.captured_piece = captured_piece;
         self.halfmove_clock = 0;
         if captured_piece == Piece::Rook {
-            let king_side_rook_mask = STARTING_KING_SIDE_ROOK[captured_color as usize];
-            let queen_side_rook_mask = STARTING_QUEEN_SIDE_ROOK[captured_color as usize];
-            if dst_mask & king_side_rook_mask != 0 {
-                self.castling_rights &= !Flank::Kingside.rights_mask(captured_color);
-            } else if dst_mask & queen_side_rook_mask != 0 {
-                self.castling_rights &= !Flank::Queenside.rights_mask(captured_color);
-            }
+            self.castling_rights = match (captured_color, dst_square) {
+                (Color::White, Square::H1) | (Color::Black, Square::H8) => self
+                    .castling_rights
+                    .with_cleared(Flank::Kingside, captured_color),
+                (Color::White, Square::A1) | (Color::Black, Square::A8) => self
+                    .castling_rights
+                    .with_cleared(Flank::Queenside, captured_color),
+                _ => self.castling_rights,
+            };
         }
     }
 }

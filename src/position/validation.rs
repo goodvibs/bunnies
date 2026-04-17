@@ -1,9 +1,5 @@
-use crate::masks::{
-    FILES, RANK_4, STARTING_BK, STARTING_KING_SIDE_BR, STARTING_KING_SIDE_WR,
-    STARTING_QUEEN_SIDE_BR, STARTING_QUEEN_SIDE_WR, STARTING_WK,
-};
 use crate::position::Position;
-use crate::{Bitboard, Color, Flank, Piece, Square};
+use crate::{Color, File, Flank, Piece, Rank, Square};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -57,46 +53,46 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let white_bb = self.board.color_mask::<{ Color::White }>();
         let black_bb = self.board.color_mask::<{ Color::Black }>();
 
-        let is_white_king_in_place = (kings_bb & white_bb & STARTING_WK) != 0;
-        let is_black_king_in_place = (kings_bb & black_bb & STARTING_BK) != 0;
+        let is_white_king_in_place = (kings_bb & white_bb & Square::E1.mask()) != 0;
+        let is_black_king_in_place = (kings_bb & black_bb & Square::E8.mask()) != 0;
 
         let white_castle =
             Flank::Kingside.rights_mask(Color::White) | Flank::Queenside.rights_mask(Color::White);
         let black_castle =
             Flank::Kingside.rights_mask(Color::Black) | Flank::Queenside.rights_mask(Color::Black);
 
-        if !is_white_king_in_place && context.castling_rights & white_castle != 0 {
+        if !is_white_king_in_place && context.castling_rights.intersects(white_castle) {
             return false;
         }
 
-        if !is_black_king_in_place && context.castling_rights & black_castle != 0 {
+        if !is_black_king_in_place && context.castling_rights.intersects(black_castle) {
             return false;
         }
 
-        let is_white_king_side_rook_in_place = (rooks_bb & white_bb & STARTING_KING_SIDE_WR) != 0;
+        let is_white_king_side_rook_in_place = (rooks_bb & white_bb & Square::H1.mask()) != 0;
         if !is_white_king_side_rook_in_place
-            && (context.castling_rights & Flank::Kingside.rights_mask(Color::White)) != 0
+            && context.castling_rights.has(Flank::Kingside, Color::White)
         {
             return false;
         }
 
-        let is_white_queen_side_rook_in_place = (rooks_bb & white_bb & STARTING_QUEEN_SIDE_WR) != 0;
+        let is_white_queen_side_rook_in_place = (rooks_bb & white_bb & Square::A1.mask()) != 0;
         if !is_white_queen_side_rook_in_place
-            && (context.castling_rights & Flank::Queenside.rights_mask(Color::White)) != 0
+            && context.castling_rights.has(Flank::Queenside, Color::White)
         {
             return false;
         }
 
-        let is_black_king_side_rook_in_place = (rooks_bb & black_bb & STARTING_KING_SIDE_BR) != 0;
+        let is_black_king_side_rook_in_place = (rooks_bb & black_bb & Square::H8.mask()) != 0;
         if !is_black_king_side_rook_in_place
-            && (context.castling_rights & Flank::Kingside.rights_mask(Color::Black)) != 0
+            && context.castling_rights.has(Flank::Kingside, Color::Black)
         {
             return false;
         }
 
-        let is_black_queen_side_rook_in_place = (rooks_bb & black_bb & STARTING_QUEEN_SIDE_BR) != 0;
+        let is_black_queen_side_rook_in_place = (rooks_bb & black_bb & Square::A8.mask()) != 0;
         if !is_black_queen_side_rook_in_place
-            && (context.castling_rights & Flank::Queenside.rights_mask(Color::Black)) != 0
+            && context.castling_rights.has(Flank::Queenside, Color::Black)
         {
             return false;
         }
@@ -116,8 +112,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 let color_just_moved = STM.other();
                 let pawns_bb = self.board.piece_mask::<{ Piece::Pawn }>();
                 let colored_pawns_bb = pawns_bb & self.board.color_mask_at(color_just_moved);
-                let file_mask = FILES[file as usize];
-                let rank_mask = RANK_4 << (color_just_moved as Bitboard * 8); // 4 for white, 5 for black
+                let file_mask = File::from_u8(file as u8).mask();
+                let rank_mask = match color_just_moved {
+                    Color::White => Rank::Four.mask(),
+                    Color::Black => Rank::Five.mask(),
+                };
                 colored_pawns_bb & file_mask & rank_mask != 0
             }
         }

@@ -1,6 +1,7 @@
 //! Context struct and methods
 
 use crate::Bitboard;
+use crate::CastlingRights;
 use crate::Piece;
 
 /// A struct containing metadata about the current and past states of the game.
@@ -8,7 +9,7 @@ use crate::Piece;
 pub struct PositionContext {
     pub halfmove_clock: u8,
     pub double_pawn_push: i8, // file of double pawn push, if any, else -1
-    pub castling_rights: u8,  // 0, 0, 0, 0, wk, wq, bk, bq
+    pub castling_rights: CastlingRights,
     pub captured_piece: Piece,
     pub zobrist_hash: Bitboard,
     pub pinned: Bitboard,
@@ -21,7 +22,7 @@ impl PositionContext {
         PositionContext {
             halfmove_clock: 0,
             double_pawn_push: -1,
-            castling_rights: 0,
+            castling_rights: CastlingRights::NONE,
             captured_piece: Piece::Null,
             zobrist_hash: 0,
             pinned: 0,

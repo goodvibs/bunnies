@@ -1,3 +1,4 @@
+use crate::CastlingRights;
 use crate::Color;
 use crate::ColoredPiece;
 use crate::Square;
@@ -32,17 +33,17 @@ fn parse_side_to_move(fen_side_to_move: &str) -> Result<Color, FenParseError> {
     }
 }
 
-fn parse_castling_rights(fen_castling_rights: &str) -> Result<u8, FenParseError> {
+fn parse_castling_rights(fen_castling_rights: &str) -> Result<CastlingRights, FenParseError> {
     if fen_castling_rights == "-" {
-        Ok(0)
+        Ok(CastlingRights::NONE)
     } else {
-        let mut castling_rights = 0;
+        let mut bits = 0u8;
         for c in fen_castling_rights.chars() {
             match c {
-                'K' => castling_rights |= 0b1000,
-                'Q' => castling_rights |= 0b0100,
-                'k' => castling_rights |= 0b0010,
-                'q' => castling_rights |= 0b0001,
+                'K' => bits |= 0b1000,
+                'Q' => bits |= 0b0100,
+                'k' => bits |= 0b0010,
+                'q' => bits |= 0b0001,
                 _ => {
                     return Err(FenParseError::InvalidCastlingRights(
                         fen_castling_rights.to_string(),
@@ -50,7 +51,7 @@ fn parse_castling_rights(fen_castling_rights: &str) -> Result<u8, FenParseError>
                 }
             }
         }
-        Ok(castling_rights)
+        Ok(CastlingRights::from_bits(bits))
     }
 }
 

@@ -7,11 +7,13 @@
 
 pub mod attacks;
 mod bitboard;
+mod castling_rights;
 mod color;
 mod colored_piece;
+mod file;
 pub mod flank;
-pub mod masks;
 mod r#move;
+mod rank;
 pub mod pgn;
 mod piece;
 mod position;
@@ -19,9 +21,12 @@ mod square;
 pub mod utilities;
 
 pub use bitboard::*;
+pub use castling_rights::CastlingRights;
 pub use color::*;
 pub use colored_piece::*;
+pub use file::File;
 pub use flank::*;
+pub use rank::Rank;
 pub use r#move::*;
 pub use piece::*;
 pub use position::*;

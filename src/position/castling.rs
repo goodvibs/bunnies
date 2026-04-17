@@ -1,18 +1,15 @@
-use crate::masks::STARTING_KING_ROOK_GAP;
 use crate::position::Position;
 use crate::{Color, Flank, Piece};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Returns whether the current side to move has castling rights on `flank`.
     pub fn has_castling_rights(&self, flank: Flank) -> bool {
-        self.context().castling_rights & flank.rights_mask(STM) != 0
+        self.context().castling_rights.has(flank, STM)
     }
 
     /// Returns true if there are no pieces between king and rook on `flank`.
     const fn has_castling_space(&self, flank: Flank) -> bool {
-        STARTING_KING_ROOK_GAP[STM as usize][flank as usize]
-            & self.board.piece_mask::<{ Piece::ALL_PIECES }>()
-            == 0
+        flank.castling_gap_mask(STM) & self.board.piece_mask::<{ Piece::ALL_PIECES }>() == 0
     }
 
     /// Opponent cannot attack squares the king crosses or lands on.

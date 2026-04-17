@@ -1,7 +1,45 @@
 use crate::Bitboard;
-use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILES, RANKS};
+use crate::file::File;
+use crate::rank::Rank;
 use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks, SquaresTwoToOneMapping};
 use std::fmt::Display;
+
+// Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
+pub(crate) const DIAGONALS_BR_TO_TL: [Bitboard; 15] = [
+    0x0000000000000001,
+    0x0000000000000102,
+    0x0000000000010204,
+    0x0000000001020408,
+    0x0000000102040810,
+    0x0000010204081020,
+    0x0001020408102040,
+    0x0102040810204080,
+    0x0204081020408000,
+    0x0408102040800000,
+    0x0810204080000000,
+    0x1020408000000000,
+    0x2040800000000000,
+    0x4080000000000000,
+    0x8000000000000000,
+];
+
+pub(crate) const DIAGONALS_BL_TO_TR: [Bitboard; 15] = [
+    0x0000000000000080,
+    0x0000000000008040,
+    0x0000000000804020,
+    0x0000000080402010,
+    0x0000008040201008,
+    0x0000804020100804,
+    0x0080402010080402,
+    0x8040201008040201,
+    0x4020100804020100,
+    0x2010080402010000,
+    0x1008040201000000,
+    0x0804020100000000,
+    0x0402010000000000,
+    0x0201000000000000,
+    0x0100000000000000,
+];
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -110,7 +148,7 @@ impl Square {
 
     /// Returns the file mask for the square.
     pub const fn file_mask(&self) -> Bitboard {
-        FILES[self.file() as usize]
+        File::from_u8(self.file()).mask()
     }
 
     /// Returns the rank of the square (0-7).
@@ -120,7 +158,7 @@ impl Square {
 
     /// Returns the rank mask for the square.
     pub const fn rank_mask(&self) -> Bitboard {
-        RANKS[self.rank() as usize]
+        Rank::from_u8(self.rank()).mask()
     }
 
     /// Returns the combined file and rank mask for the square.
@@ -441,6 +479,7 @@ impl Display for Square {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{File, Rank};
 
     #[test]
     fn test_square_values() {
@@ -509,13 +548,12 @@ mod tests {
 
     #[test]
     fn test_get_file_mask() {
-        // This test assumes FILES is correctly implemented
         // Testing that the correct file mask is returned
         let a_file_mask = Square::A1.file_mask();
         let h_file_mask = Square::H1.file_mask();
 
-        assert_eq!(a_file_mask, FILES[0]);
-        assert_eq!(h_file_mask, FILES[7]);
+        assert_eq!(a_file_mask, File::A.mask());
+        assert_eq!(h_file_mask, File::H.mask());
 
         // Check that all squares in the same file return the same mask
         assert_eq!(Square::A1.file_mask(), Square::A8.file_mask());
@@ -531,13 +569,12 @@ mod tests {
 
     #[test]
     fn test_get_rank_mask() {
-        // This test assumes RANKS is correctly implemented
         // Testing that the correct rank mask is returned
         let rank_1_mask = Square::A1.rank_mask();
         let rank_8_mask = Square::A8.rank_mask();
 
-        assert_eq!(rank_1_mask, RANKS[0]);
-        assert_eq!(rank_8_mask, RANKS[7]);
+        assert_eq!(rank_1_mask, Rank::One.mask());
+        assert_eq!(rank_8_mask, Rank::Eight.mask());
 
         // Check that all squares in the same rank return the same mask
         assert_eq!(Square::A1.rank_mask(), Square::H1.rank_mask());

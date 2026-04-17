@@ -5,7 +5,6 @@ use crate::ColoredPiece;
 use crate::Flank;
 use crate::Piece;
 use crate::Square;
-use crate::masks::STARTING_KING_ROOK_GAP;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::{GameResult, Position};
 
@@ -51,12 +50,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.board.move_piece(Piece::King, src_square, dst_square);
 
         let caster = STM.other();
-        let flank =
-            if dst_mask & STARTING_KING_ROOK_GAP[caster as usize][Flank::Kingside as usize] != 0 {
-                Flank::Kingside
-            } else {
-                Flank::Queenside
-            };
+        let flank = if dst_mask & Flank::Kingside.castling_gap_mask(caster) != 0 {
+            Flank::Kingside
+        } else {
+            Flank::Queenside
+        };
 
         let (rook_src_square, rook_dst_square) = match flank {
             Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {

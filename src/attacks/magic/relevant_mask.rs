@@ -1,6 +1,8 @@
 use crate::Bitboard;
+use crate::File;
+use crate::Rank;
 use crate::Square;
-use crate::masks::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, FILE_A, FILE_H, RANK_1, RANK_8};
+use crate::square::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL};
 use crate::utilities::SquaresToMasks;
 
 const ROOK_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
@@ -36,7 +38,12 @@ pub const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
     let file_mask = square.file_mask();
     let rank_mask = square.rank_mask();
     let mut res = (file_mask | rank_mask) & !square.mask();
-    const EDGE_MASKS: [Bitboard; 4] = [FILE_A, FILE_H, RANK_1, RANK_8];
+    const EDGE_MASKS: [Bitboard; 4] = [
+        File::A.mask(),
+        File::H.mask(),
+        Rank::One.mask(),
+        Rank::Eight.mask(),
+    ];
     let mut j = 0;
     while j < 4 {
         let edge_mask = EDGE_MASKS[j];
@@ -68,5 +75,9 @@ pub const fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
         }
         i += 1;
     }
-    res & !square_mask & !(FILE_A | FILE_H | RANK_1 | RANK_8)
+    res & !square_mask
+        & !(File::A.mask()
+            | File::H.mask()
+            | Rank::One.mask()
+            | Rank::Eight.mask())
 }
