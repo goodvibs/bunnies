@@ -3,7 +3,7 @@
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
 #![allow(incomplete_features)]
-#![allow(unused_features)] // `const_for` is not yet usable for our `Piece::PIECES` loops; see `Board::piece_at`.
+#![allow(unused_features)] // Reserved for `const_for` over arrays when const `Iterator` stabilizes.
 
 pub mod attacks;
 mod bitboard;

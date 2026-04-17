@@ -10,26 +10,53 @@ use crate::{BitboardUtils, ColoredPiece};
 use std::fmt::Display;
 
 /// A struct representing the positions of all pieces on the board, for both colors.
+///
+/// [`Self::piece_masks`] are authoritative for attacks; [`Self::pieces`] is a mailbox (`pieces[square]`)
+/// mirroring piece placement for O(1) [`Self::piece_at`].
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct Board {
     piece_masks: [Bitboard; Piece::LIMIT as usize],
     color_masks: [Bitboard; 2],
+    /// Piece type per square (`Square` index 0..64); empty squares are [`Piece::Null`].
+    pieces: [Piece; 64],
 }
 
 impl Board {
+    const fn mailbox_from_piece_masks(piece_masks: &[Bitboard; Piece::LIMIT as usize]) -> [Piece; 64] {
+        let mut out = [Piece::Null; 64];
+        let mut sq: u8 = 0;
+        while sq < 64 {
+            let square = unsafe { Square::from(sq) };
+            let mask = square.mask();
+            let mut i = 0;
+            while i < Piece::PIECES.len() {
+                let piece_type = Piece::PIECES[i];
+                if piece_masks[piece_type as usize] & mask != 0 {
+                    out[sq as usize] = piece_type;
+                    break;
+                }
+                i += 1;
+            }
+            sq += 1;
+        }
+        out
+    }
+
     /// The board for the initial position.
     pub const fn initial() -> Board {
+        const PM: [Bitboard; Piece::LIMIT as usize] = [
+            STARTING_ALL,
+            STARTING_WP | STARTING_BP,
+            STARTING_WN | STARTING_BN,
+            STARTING_WB | STARTING_BB,
+            STARTING_WR | STARTING_BR,
+            STARTING_WQ | STARTING_BQ,
+            STARTING_WK | STARTING_BK,
+        ];
         Board {
-            piece_masks: [
-                STARTING_ALL,
-                STARTING_WP | STARTING_BP,
-                STARTING_WN | STARTING_BN,
-                STARTING_WB | STARTING_BB,
-                STARTING_WR | STARTING_BR,
-                STARTING_WQ | STARTING_BQ,
-                STARTING_WK | STARTING_BK,
-            ],
+            piece_masks: PM,
             color_masks: [STARTING_WHITE, STARTING_BLACK],
+            pieces: Self::mailbox_from_piece_masks(&PM),
         }
     }
 
@@ -38,6 +65,7 @@ impl Board {
         Board {
             piece_masks: [0; Piece::LIMIT as usize],
             color_masks: [0; 2],
+            pieces: [Piece::Null; 64],
         }
     }
 
@@ -204,6 +232,7 @@ impl Board {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] |= mask;
         self.piece_masks[Piece::ALL_PIECES as usize] |= mask;
+        self.pieces[square as usize] = piece_type;
     }
 
     /// Populates a square with `colored_piece`.
@@ -226,6 +255,7 @@ impl Board {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] &= !mask;
         self.piece_masks[Piece::ALL_PIECES as usize] &= !mask;
+        self.pieces[square as usize] = Piece::Null;
     }
 
     /// Removes `colored_piece` from a square.
@@ -246,6 +276,9 @@ impl Board {
 
         self.piece_masks[piece_type as usize] ^= src_dst_mask;
         self.piece_masks[Piece::ALL_PIECES as usize] ^= src_dst_mask;
+
+        self.pieces[src_square as usize] = Piece::Null;
+        self.pieces[dst_square as usize] = piece_type;
     }
 
     /// Moves `color` from `src_square` to `dst_square`.
@@ -272,27 +305,14 @@ impl Board {
         self.move_piece(piece_type, dst_square, src_square);
     }
 
-    /// Returns the piece type at `square`.
-    ///
-    /// Uses an indexed loop: `for` over `Piece::PIECES` in `const fn` still needs `const` `Iterator` /
-    /// `IntoIterator` for array iterators (see rust#87575, rust#92476); until then this matches a
-    /// `for` over `Piece::PIECES` in source order.
+    /// Returns the piece type at `square` (from the mailbox; kept in sync with [`Self::piece_masks`]).
+    #[inline]
     pub const fn piece_at(&self, square: Square) -> Piece {
-        let mask = square.mask();
-        let mut i = 0;
-        while i < Piece::PIECES.len() {
-            let piece_type = Piece::PIECES[i];
-            if self.piece_masks[piece_type as usize] & mask != 0 {
-                return piece_type;
-            }
-            i += 1;
-        }
-        Piece::Null
+        self.pieces[square as usize]
     }
 
     pub const fn is_occupied_at(&self, square: Square) -> bool {
-        let mask = square.mask();
-        self.piece_masks[Piece::ALL_PIECES as usize] & mask != 0
+        (self.pieces[square as usize] as u8) != (Piece::Null as u8)
     }
 
     /// Returns the color at `square`.
@@ -346,7 +366,31 @@ impl Board {
             i += 1;
         }
 
-        all_occupancy_bb_reconstructed == all_occupancy_bb
+        if all_occupancy_bb_reconstructed != all_occupancy_bb {
+            return false;
+        }
+
+        let mut sq: u8 = 0;
+        while sq < 64 {
+            let square = unsafe { Square::from(sq) };
+            let mask = square.mask();
+            let mut from_masks = Piece::Null;
+            let mut i = 0;
+            while i < Piece::PIECES.len() {
+                let piece_type = Piece::PIECES[i];
+                if self.piece_masks[piece_type as usize] & mask != 0 {
+                    from_masks = piece_type;
+                    break;
+                }
+                i += 1;
+            }
+            if (from_masks as u8) != (self.pieces[sq as usize] as u8) {
+                return false;
+            }
+            sq += 1;
+        }
+
+        true
     }
 
     /// Checks if the board has one king of each color.
