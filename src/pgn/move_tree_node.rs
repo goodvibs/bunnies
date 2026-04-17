@@ -1,6 +1,6 @@
 use crate::Color;
 use crate::Piece;
-use crate::r#move::{Move, MoveFlag};
+use crate::r#move::{MoveFlag, MoveList};
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::position::{GameResult, TypedPosition};
@@ -98,26 +98,30 @@ impl MoveTreeNode {
                 Piece::Pawn | Piece::King => "".to_string(),
                 Piece::Null => panic!("Invalid piece type"),
                 _ => {
-                    let all_moves = state.moves();
-                    let all_other_moves: Vec<Move> =
-                        all_moves.iter().filter(|m| **m != mv).cloned().collect();
-                    let disambiguation_moves: Vec<Move> = all_other_moves
-                        .iter()
-                        .filter(|m| {
-                            m.destination() == mv_dest
-                                && state.board().piece_at(m.source()) == moved_piece
-                        })
-                        .cloned()
-                        .collect::<Vec<Move>>();
+                    let mut legal = MoveList::new();
+                    state.generate_legal_moves(&mut legal);
+                    let mut disambiguation_moves = MoveList::new();
+                    for m in legal.as_slice().iter().copied() {
+                        if m == mv {
+                            continue;
+                        }
+                        if m.destination() == mv_dest
+                            && state.board().piece_at(m.source()) == moved_piece
+                        {
+                            disambiguation_moves.push(m);
+                        }
+                    }
                     match disambiguation_moves.len() {
                         0 => "".to_string(),
                         _ => {
                             let file = mv_source.file();
                             let rank = mv_source.rank();
                             let is_file_ambiguous = disambiguation_moves
+                                .as_slice()
                                 .iter()
                                 .any(|m| m.source().file() == file);
                             let is_rank_ambiguous = disambiguation_moves
+                                .as_slice()
                                 .iter()
                                 .any(|m| m.source().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
@@ -144,8 +148,9 @@ impl MoveTreeNode {
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {
-                    let all_moves = state.moves();
-                    let is_checkmate = all_moves.is_empty();
+                    let mut replies = MoveList::new();
+                    state.generate_legal_moves(&mut replies);
+                    let is_checkmate = replies.is_empty();
                     if is_checkmate {
                         *state.result_mut() = GameResult::Checkmate;
                     }

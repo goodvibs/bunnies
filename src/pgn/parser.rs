@@ -12,6 +12,7 @@ use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
 use crate::position::{Position, TypedPosition};
+use crate::r#move::MoveList;
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
@@ -175,10 +176,11 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                         pgn_move
                     )));
                 }
-                let possible_moves = current_state.moves();
+                let mut possible_moves = MoveList::new();
+                current_state.generate_legal_moves(&mut possible_moves);
 
                 let mut matched_move = None;
-                for possible_move in possible_moves {
+                for &possible_move in possible_moves.as_slice() {
                     if pgn_move.matches_move(possible_move, current_state) {
                         if matched_move.is_some() {
                             return Err(PgnParsingError::AmbiguousMove(format!(

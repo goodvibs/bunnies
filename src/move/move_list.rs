@@ -69,11 +69,6 @@ impl MoveList {
     pub fn iter(&self) -> core::slice::Iter<'_, Move> {
         self.as_slice().iter()
     }
-
-    /// Convert to an owned `Vec` for API compatibility.
-    pub fn to_vec(&self) -> Vec<Move> {
-        self.as_slice().to_vec()
-    }
 }
 
 impl<'a> IntoIterator for &'a MoveList {

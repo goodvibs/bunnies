@@ -466,14 +466,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.generate_legal_moves(out);
     }
 
-    /// Returns all legal moves as a heap-allocated vector (allocates each call).
-    /// Convenience wrapper that allocates a [`Vec`]; prefer [`Self::generate_legal_moves`] in benchmarks and search.
-    pub fn moves(&self) -> Vec<Move> {
-        let mut out = MoveList::new();
-        self.generate_legal_moves(&mut out);
-        out.to_vec()
-    }
-
     /// Whether `mv` is fully legal from this position (mover's king not left in check).
     pub fn is_legal_move(&self, mv: Move) -> bool {
         let mut clone = self.clone();
@@ -530,16 +522,19 @@ mod tests {
         expected_moves: [Move; M],
     ) {
         let pos = TypedPosition::<1>::from_fen(fen).unwrap();
-        let moves: Vec<Move> = pos
-            .moves()
-            .into_iter()
-            .filter(|mv| include_move(*mv, &pos))
-            .collect();
+        let mut legal = MoveList::new();
+        pos.generate_legal_moves(&mut legal);
+        let mut moves_set = HashSet::new();
+        for mv in legal.as_slice().iter().copied() {
+            if include_move(mv, &pos) {
+                moves_set.insert(mv);
+            }
+        }
 
         let expected_moves_set = HashSet::from(expected_moves);
 
-        assert_eq!(moves.len(), expected_moves_set.len());
-        assert!(moves.iter().all(|mv| expected_moves_set.contains(mv)));
+        assert_eq!(moves_set.len(), expected_moves_set.len());
+        assert!(moves_set.iter().all(|mv| expected_moves_set.contains(mv)));
     }
 
     #[test]

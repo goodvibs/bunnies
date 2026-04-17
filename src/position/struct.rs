@@ -249,6 +249,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 mod state_tests {
     use crate::Color;
     use crate::position::{Position, PositionError};
+    use crate::MoveList;
 
     #[test]
     fn test_initial_state() {
@@ -280,18 +281,14 @@ mod state_tests {
     #[test]
     fn test_context_stack_full_returns_error() {
         let pos = Position::<2, { Color::White }>::initial();
-        let mv = pos
-            .moves()
-            .into_iter()
-            .next()
-            .expect("at least one legal move");
+        let mut ml = MoveList::new();
+        pos.generate_legal_moves(&mut ml);
+        let mv = *ml.as_slice().first().expect("at least one legal move");
         let pos: Position<2, { Color::Black }> = pos.make_move(mv).unwrap();
         assert_eq!(pos.context_len(), 2);
-        let mv2 = pos
-            .moves()
-            .into_iter()
-            .next()
-            .expect("at least one legal move");
+        ml.clear();
+        pos.generate_legal_moves(&mut ml);
+        let mv2 = *ml.as_slice().first().expect("at least one legal move");
         assert_eq!(pos.make_move(mv2), Err(PositionError::ContextStackFull));
     }
 }
