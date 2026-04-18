@@ -18,33 +18,27 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
         .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
 }
 
-const fn ep_possible_src_masks(stm: Color, double_pawn_push: i8) -> Bitboard {
-    assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
-
+const fn ep_possible_src_masks(stm: Color, ep_file: File) -> Bitboard {
     let double_pawn_push_dst = match stm {
-        Color::White => unsafe { Square::from_raw((7 - 4) * 8 + double_pawn_push as u8).mask() },
-        Color::Black => unsafe { Square::from_raw((7 - 3) * 8 + double_pawn_push as u8).mask() },
+        Color::White => Square::from_rank_and_file(Rank::Five, ep_file).mask(),
+        Color::Black => Square::from_rank_and_file(Rank::Four, ep_file).mask(),
     };
 
     ((double_pawn_push_dst << 1) & !File::H.mask())
         | ((double_pawn_push_dst >> 1) & !File::A.mask())
 }
 
-const fn ep_dst_square(stm: Color, double_pawn_push: i8) -> Square {
-    assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
-
+const fn ep_dst_square(stm: Color, ep_file: File) -> Square {
     match stm {
-        Color::White => unsafe { Square::from_raw((7 - 5) * 8 + double_pawn_push as u8) },
-        Color::Black => unsafe { Square::from_raw((7 - 2) * 8 + double_pawn_push as u8) },
+        Color::White => Square::from_rank_and_file(Rank::Six, ep_file),
+        Color::Black => Square::from_rank_and_file(Rank::Three, ep_file),
     }
 }
 
-const fn ep_capture_square(stm: Color, double_pawn_push: i8) -> Square {
-    assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
-
+const fn ep_capture_square(stm: Color, ep_file: File) -> Square {
     match stm {
-        Color::White => unsafe { Square::from_raw((7 - 4) * 8 + double_pawn_push as u8) },
-        Color::Black => unsafe { Square::from_raw((7 - 3) * 8 + double_pawn_push as u8) },
+        Color::White => Square::from_rank_and_file(Rank::Five, ep_file),
+        Color::Black => Square::from_rank_and_file(Rank::Four, ep_file),
     }
 }
 
@@ -151,19 +145,16 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
      */
     fn add_legal_en_passants(&self, pinned_bb: Bitboard, moves: &mut MoveList) {
         let stm = STM;
-        let double_pawn_push = self.context().double_pawn_push;
         let current_side_pawns =
             self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
         let current_side_king =
             self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
-        if double_pawn_push != -1 {
-            let capture_square = ep_capture_square(stm, double_pawn_push);
-            let dst_square = ep_dst_square(stm, double_pawn_push);
+        if let Some(ep_file) = self.context().double_pawn_push {
+            let capture_square = ep_capture_square(stm, ep_file);
+            let dst_square = ep_dst_square(stm, ep_file);
 
-            for src_square in
-                ep_possible_src_masks(stm, double_pawn_push).iter_set_bits_as_squares()
-            {
+            for src_square in ep_possible_src_masks(stm, ep_file).iter_set_bits_as_squares() {
                 if src_square.mask() & pinned_bb != 0 {
                     let possible_move_ray = Bitboard::edge_to_edge_ray(
                         src_square,

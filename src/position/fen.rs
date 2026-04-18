@@ -1,6 +1,7 @@
 use crate::CastlingRights;
 use crate::Color;
 use crate::ColoredPiece;
+use crate::File;
 use crate::Square;
 use crate::position::{
     Board, GameResult, Position, PositionContext, TypedPosition,
@@ -55,9 +56,9 @@ fn parse_castling_rights(fen_castling_rights: &str) -> Result<CastlingRights, Fe
     }
 }
 
-fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<i8, FenParseError> {
+fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<Option<File>, FenParseError> {
     if fen_en_passant_target == "-" {
-        Ok(-1)
+        Ok(None)
     } else {
         if fen_en_passant_target.len() != 2 {
             return Err(FenParseError::InvalidEnPassantTarget(
@@ -71,7 +72,7 @@ fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<i8, FenParseEr
                 fen_en_passant_target.to_string(),
             ));
         }
-        Ok(file as i8 - 'a' as i8)
+        Ok(Some(File::from_u8(file as u8 - b'a')))
     }
 }
 

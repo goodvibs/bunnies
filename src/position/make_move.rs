@@ -2,6 +2,7 @@
 
 use crate::Color;
 use crate::ColoredPiece;
+use crate::File;
 use crate::Flank;
 use crate::Piece;
 use crate::Square;
@@ -216,7 +217,7 @@ impl PositionContext {
     ) {
         self.halfmove_clock = 0;
         if is_double_pawn_push(dst_square, src_square) {
-            self.double_pawn_push = (src_square as u8 % 8) as i8;
+            self.double_pawn_push = Some(File::from_u8(src_square.file()));
         }
     }
 

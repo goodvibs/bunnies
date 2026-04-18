@@ -2,13 +2,15 @@
 
 use crate::Bitboard;
 use crate::CastlingRights;
+use crate::File;
 use crate::Piece;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub struct PositionContext {
     pub halfmove_clock: u8,
-    pub double_pawn_push: i8, // file of double pawn push, if any, else -1
+    /// File on which a pawn may capture en passant next move, if any (set after a double push).
+    pub double_pawn_push: Option<File>,
     pub castling_rights: CastlingRights,
     pub captured_piece: Piece,
     pub zobrist_hash: Bitboard,
@@ -21,7 +23,7 @@ impl PositionContext {
     pub const fn blank() -> PositionContext {
         PositionContext {
             halfmove_clock: 0,
-            double_pawn_push: -1,
+            double_pawn_push: None,
             castling_rights: CastlingRights::NONE,
             captured_piece: Piece::Null,
             zobrist_hash: 0,
