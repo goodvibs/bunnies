@@ -21,7 +21,7 @@ impl Piece {
     /// # Safety
     /// The number must be less than Piece::LIMIT.
     pub const unsafe fn from(piece_type_number: u8) -> Piece {
-        assert!(
+        debug_assert!(
             piece_type_number < Piece::LIMIT,
             "Piece type number out of bounds"
         );

@@ -142,9 +142,7 @@ impl MoveTreeNode {
                     state.board().piece_at(mv_dest) != Piece::Null
                 }
             };
-            state = state
-                .make_move(mv)
-                .expect("context stack capacity exceeded during PGN render");
+            state = state.make_move(mv);
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {
                 true => {

@@ -10,7 +10,7 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
     pos.generate_legal_moves(&mut moves);
     let mut total = 0u64;
     for &mv in moves.as_slice() {
-        pos.make_move_in_place(mv).expect("perft depth within context stack");
+        pos.make_move_in_place(mv);
         match STM {
             Color::White => {
                 // SAFETY: After `make_move_in_place`, board/context match `Position<N, { Color::Black }>`;

@@ -37,7 +37,7 @@ impl Rank {
 
     #[inline]
     pub const fn from_u8(rank: u8) -> Self {
-        assert!(rank < 8);
+        debug_assert!(rank < 8);
         unsafe { std::mem::transmute::<u8, Rank>(rank) }
     }
 }

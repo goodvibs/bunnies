@@ -7,7 +7,7 @@ use crate::Piece;
 use crate::Square;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
-use crate::position::{Position, PositionError};
+use crate::position::Position;
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -37,7 +37,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.process_possible_capture(stm, dst_square, new_context);
 
         let moved_piece = self.board.piece_at(src_square);
-        assert_ne!(moved_piece, Piece::Null);
+        debug_assert_ne!(moved_piece, Piece::Null);
         self.board.move_piece(moved_piece, dst_square, src_square);
         new_context.process_normal_disregarding_capture(
             ColoredPiece::new(stm, moved_piece),
@@ -76,8 +76,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let opposite_color = stm.other();
 
         let en_passant_capture_square = match opposite_color {
-            Color::White => unsafe { Square::from_raw(dst_square as u8 - 8) },
-            Color::Black => unsafe { Square::from_raw(dst_square as u8 + 8) },
+            Color::White => Square::from_u8(dst_square as u8 - 8),
+            Color::Black => Square::from_u8(dst_square as u8 + 8),
         };
 
         self.board
@@ -107,12 +107,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         };
 
         let (rook_src_square, rook_dst_square) = match flank {
-            Flank::Kingside => (unsafe { Square::from_raw(src_square as u8 + 3) }, unsafe {
-                Square::from_raw(src_square as u8 + 1)
-            }),
-            Flank::Queenside => (unsafe { Square::from_raw(src_square as u8 - 4) }, unsafe {
-                Square::from_raw(src_square as u8 - 1)
-            }),
+            Flank::Kingside => (
+                Square::from_u8(src_square as u8 + 3),
+                Square::from_u8(src_square as u8 + 1),
+            ),
+            Flank::Queenside => (
+                Square::from_u8(src_square as u8 - 4),
+                Square::from_u8(src_square as u8 - 1),
+            ),
         };
 
         self.board.move_colored_piece(
@@ -125,13 +127,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     /// Applies a move in place, updating board state for the opponent.
-    /// After this returns `Ok`, the layout matches the destination type of [`Position::make_move`]
+    ///
+    /// After this returns, the layout matches the destination type of [`Position::make_move`]
     /// (`Position<N, { STM.other() }>`).
-    pub(crate) fn make_move_in_place(&mut self, mv: Move) -> Result<(), PositionError> {
+    pub(crate) fn make_move_in_place(&mut self, mv: Move) {
         let stm = STM;
-        if self.context_len() >= N {
-            return Err(PositionError::ContextStackFull);
-        }
+        debug_assert!(self.context_len() < N);
 
         let src_square = mv.source();
         let dst_square = mv.destination();
@@ -164,23 +165,16 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         }
 
         self.halfmove += 1;
-        self.try_push_context(new_context)?;
+        self.push_context(new_context);
         self.update_pins_and_checks_for_stm(STM.other());
-
-        Ok(())
     }
 
     /// Applies a move without checking if it is valid or legal.
     ///
-    /// Returns [`PositionError::ContextStackFull`] if the context stack cannot grow (no state change).
-    ///
     /// Flipped side is `Position<N, { STM.other() }>`.
-    pub fn make_move(
-        mut self,
-        mv: Move,
-    ) -> Result<Position<N, { STM.other() }>, PositionError> {
-        self.make_move_in_place(mv)?;
-        Ok(self.rebrand_stm::<{ STM.other() }>())
+    pub fn make_move(mut self, mv: Move) -> Position<N, { STM.other() }> {
+        self.make_move_in_place(mv);
+        self.rebrand_stm::<{ STM.other() }>()
     }
 }
 

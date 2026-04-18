@@ -18,7 +18,7 @@ impl Move {
 
     /// Creates a new move.
     pub const fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
-        assert!(
+        debug_assert!(
             !matches!(promotion, Piece::King | Piece::Pawn),
             "Invalid promotion piece type"
         );
@@ -42,13 +42,13 @@ impl Move {
     /// Gets the destination square of the move.
     pub const fn destination(&self) -> Square {
         let dst_int = (self.value >> 10) as u8;
-        unsafe { Square::from_raw(dst_int) }
+        Square::from_u8(dst_int)
     }
 
     /// Gets the source square of the move.
     pub const fn source(&self) -> Square {
         let src_int = ((self.value & 0b0000001111110000) >> 4) as u8;
-        unsafe { Square::from_raw(src_int) }
+        Square::from_u8(src_int)
     }
 
     /// Gets the promotion piece type of the move.

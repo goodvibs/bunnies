@@ -2,7 +2,7 @@
 
 use crate::Color;
 use crate::position::{
-    Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext, PositionError,
+    Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext,
 };
 use crate::r#move::{Move, MoveList};
 
@@ -103,15 +103,15 @@ impl<const N: usize> TypedPosition<N> {
     /// `make_move -> Position<N, { STM.other() }>` from this `match` does not satisfy
     /// rustc’s const-generic inference (“unconstrained generic constant”), even when `STM` is fixed
     /// by each arm; the in-place + rebrand sequence matches [`Position::make_move`] exactly.
-    pub fn make_move(self, mv: Move) -> Result<Self, PositionError> {
+    pub fn make_move(self, mv: Move) -> Self {
         match self {
             TypedPosition::White(mut p) => {
-                p.make_move_in_place(mv)?;
-                Ok(TypedPosition::Black(p.rebrand_stm::<{ Color::Black }>()))
+                p.make_move_in_place(mv);
+                TypedPosition::Black(p.rebrand_stm::<{ Color::Black }>())
             }
             TypedPosition::Black(mut p) => {
-                p.make_move_in_place(mv)?;
-                Ok(TypedPosition::White(p.rebrand_stm::<{ Color::White }>()))
+                p.make_move_in_place(mv);
+                TypedPosition::White(p.rebrand_stm::<{ Color::White }>())
             }
         }
     }

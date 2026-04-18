@@ -194,10 +194,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 }
 
                 if let Some(matched_move) = matched_move {
-                    let new_state = current_state
-                        .clone()
-                        .make_move(matched_move)
-                        .map_err(|_| PgnParsingError::ContextStackFull)?;
+                    let new_state = current_state.clone().make_move(matched_move);
                     let move_data = PgnMoveData {
                         mv: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),

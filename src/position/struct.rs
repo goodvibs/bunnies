@@ -5,19 +5,15 @@ use crate::position::{Board, GameResult, PositionContext};
 use crate::{Bitboard, BitboardUtils, CastlingRights, Color, ConstBitboardGeometry, Piece, Square};
 use std::fmt;
 
-/// Error from [`Position::make_move`] and related APIs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PositionError {
-    ContextStackFull,
-}
-
 /// Chess position with a fixed-size context stack of capacity `N` (root plus at most `N - 1` plies).
 ///
 /// `STM` is the **side to move**, encoded as a const generic [`Color`] (`Color::White` or
 /// `Color::Black`) so it is known at compile time.
 ///
-/// `N` must be at least **1**. Choose `N` at compile time so the deepest `make_move` chain you use
-/// (search depth, PGN main line length, etc.) never exceeds `N` slots (including the root context).
+/// `N` must be at least **1**. Choose `N` at compile time so the deepest `make_move` / `unmake_move`
+/// chain you use (search depth, PGN main line length, etc.) never needs more than **`N` context
+/// slots** (including the root). Pushing beyond that is a **contract violation**: debug builds
+/// panic on `debug_assert!`; release builds may exhibit **undefined behavior** (out-of-bounds write).
 #[derive(Clone)]
 pub struct Position<const N: usize, const STM: Color> {
     pub board: Board,
@@ -91,7 +87,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Creates an initial state with the standard starting position (White to move).
     pub fn initial() -> Position<N, { Color::White }> {
-        assert!(
+        debug_assert!(
             N >= 1,
             "Position context stack capacity N must be at least 1"
         );
@@ -109,7 +105,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             context_len: 1,
         };
         res.update_pins_and_checks();
-        assert!(res.is_unequivocally_valid());
+        debug_assert!(res.is_unequivocally_valid());
 
         res
     }
@@ -124,17 +120,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         &mut self.contexts[self.context_len - 1]
     }
 
-    pub fn try_push_context(&mut self, context: PositionContext) -> Result<(), PositionError> {
-        if self.context_len >= N {
-            return Err(PositionError::ContextStackFull);
-        }
+    pub fn push_context(&mut self, context: PositionContext) {
+        debug_assert!(self.context_len < N);
         self.contexts[self.context_len] = context;
         self.context_len += 1;
-        Ok(())
     }
 
     pub fn pop_context(&mut self) -> PositionContext {
-        assert!(self.context_len > 1);
+        debug_assert!(self.context_len > 1);
         let popped = self.contexts[self.context_len - 1];
         self.context_len -= 1;
         popped
@@ -248,8 +241,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 #[cfg(test)]
 mod state_tests {
     use crate::Color;
-    use crate::position::{Position, PositionError};
-    use crate::MoveList;
+    use crate::position::Position;
 
     #[test]
     fn test_initial_state() {
@@ -278,17 +270,23 @@ mod state_tests {
         assert_eq!(state.get_fullmove(), 6);
     }
 
+    #[cfg(debug_assertions)]
     #[test]
-    fn test_context_stack_full_returns_error() {
+    fn test_context_stack_overflow_second_move_panics_in_debug() {
+        use crate::MoveList;
+
         let pos = Position::<2, { Color::White }>::initial();
         let mut ml = MoveList::new();
         pos.generate_legal_moves(&mut ml);
         let mv = *ml.as_slice().first().expect("at least one legal move");
-        let pos: Position<2, { Color::Black }> = pos.make_move(mv).unwrap();
+        let pos: Position<2, { Color::Black }> = pos.make_move(mv);
         assert_eq!(pos.context_len(), 2);
         ml.clear();
         pos.generate_legal_moves(&mut ml);
         let mv2 = *ml.as_slice().first().expect("at least one legal move");
-        assert_eq!(pos.make_move(mv2), Err(PositionError::ContextStackFull));
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = pos.make_move(mv2);
+        }));
+        assert!(r.is_err(), "second make_move with N=2 should panic in debug");
     }
 }

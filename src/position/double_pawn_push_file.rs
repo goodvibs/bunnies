@@ -74,10 +74,8 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_possible_src_mask(self, stm: Color) -> Bitboard {
-        let f = match self.file() {
-            Some(f) => f,
-            None => panic!("ep_possible_src_mask requires active file"),
-        };
+        debug_assert!(self.is_some());
+        let f = File::from_u8(self as u8);
         let double_pawn_push_dst = match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f).mask(),
             Color::Black => Square::from_rank_and_file(Rank::Four, f).mask(),
@@ -88,10 +86,8 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_dst_square(self, stm: Color) -> Square {
-        let f = match self.file() {
-            Some(f) => f,
-            None => panic!("ep_dst_square requires active file"),
-        };
+        debug_assert!(self.is_some());
+        let f = File::from_u8(self as u8);
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Six, f),
             Color::Black => Square::from_rank_and_file(Rank::Three, f),
@@ -99,10 +95,8 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_capture_square(self, stm: Color) -> Square {
-        let f = match self.file() {
-            Some(f) => f,
-            None => panic!("ep_capture_square requires active file"),
-        };
+        debug_assert!(self.is_some());
+        let f = File::from_u8(self as u8);
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f),
             Color::Black => Square::from_rank_and_file(Rank::Four, f),
@@ -121,7 +115,8 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
         let color_just_moved = side_to_move.other();
         let pawns_bb = board.piece_mask::<{ Piece::Pawn }>();
         let colored_pawns_bb = pawns_bb & board.color_mask_at(color_just_moved);
-        let file_mask = self.file().expect("active implies file").mask();
+        debug_assert!(self.is_some());
+        let file_mask = File::from_u8(self as u8).mask();
         let rank_mask = match color_just_moved {
             Color::White => Rank::Four.mask(),
             Color::Black => Rank::Five.mask(),

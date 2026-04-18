@@ -9,7 +9,7 @@ const ROOK_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = calc_rook_relevant_mask(unsafe { Square::from_raw(i) });
+        arr[i as usize] = calc_rook_relevant_mask(Square::from_u8(i));
         i += 1;
     }
     arr
@@ -19,7 +19,7 @@ const BISHOP_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = calc_bishop_relevant_mask(unsafe { Square::from_raw(i) });
+        arr[i as usize] = calc_bishop_relevant_mask(Square::from_u8(i));
         i += 1;
     }
     arr

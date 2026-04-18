@@ -26,7 +26,7 @@ impl Board {
         let mut out = [Piece::Null; 64];
         let mut sq: u8 = 0;
         while sq < 64 {
-            let square = unsafe { Square::from_raw(sq) };
+            let square = Square::from_u8(sq);
             let mask = square.mask();
             let mut i = 0;
             while i < Piece::PIECES.len() {
@@ -387,7 +387,7 @@ impl Board {
 
         let mut sq: u8 = 0;
         while sq < 64 {
-            let square = unsafe { Square::from_raw(sq) };
+            let square = Square::from_u8(sq);
             let mask = square.mask();
             let mut from_masks = Piece::Null;
             let mut i = 0;

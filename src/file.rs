@@ -39,7 +39,7 @@ impl File {
 
     #[inline]
     pub const fn from_u8(file: u8) -> Self {
-        assert!(file < 8);
+        debug_assert!(file < 8);
         unsafe { std::mem::transmute::<u8, File>(file) }
     }
 }

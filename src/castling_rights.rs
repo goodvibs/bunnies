@@ -31,7 +31,7 @@ impl CastlingRights {
 
     #[inline]
     pub const fn from_bits(bits: u8) -> Self {
-        assert!(bits <= 0b1111);
+        debug_assert!(bits <= 0b1111);
         unsafe { std::mem::transmute::<u8, CastlingRights>(bits & 0b1111) }
     }
 

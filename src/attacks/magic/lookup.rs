@@ -101,7 +101,12 @@ impl MagicAttacksLookup {
 
         // Read number of squares (should be 64)
         file.read_exact(&mut buffer)?;
-        assert_eq!(buffer[0], 64, "Invalid file format");
+        if buffer[0] != 64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "magic lookup file: expected 64 in header",
+            ));
+        }
 
         // Read magic info for each square
         let mut magic_info_for_squares = [MagicInfo::default(); 64];

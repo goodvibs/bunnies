@@ -102,7 +102,7 @@ fn parse_fen_board_row(
     row_from_top: u8,
     board: &mut Board,
 ) -> Result<(), FenParseError> {
-    assert!(row_from_top < 8);
+    debug_assert!(row_from_top < 8);
 
     let mut file = 0;
     for c in row.chars() {
@@ -117,7 +117,7 @@ fn parse_fen_board_row(
                     return Err(FenParseError::InvalidBoardRow(row.to_string()));
                 }
                 colored_piece => {
-                    let dst = unsafe { Square::from_raw(row_from_top * 8 + file) };
+                    let dst = Square::from_u8(row_from_top * 8 + file);
                     board.put_colored_piece_at(colored_piece, dst);
 
                     file += 1;

@@ -377,8 +377,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         for flank in Flank::ALL {
             if self.can_legally_castle(flank) {
                 let king_dst_square = match flank {
-                    Flank::Kingside => unsafe { Square::from_raw(king_src_square as u8 + 2) },
-                    Flank::Queenside => unsafe { Square::from_raw(king_src_square as u8 - 2) },
+                    Flank::Kingside => Square::from_u8(king_src_square as u8 + 2),
+                    Flank::Queenside => Square::from_u8(king_src_square as u8 - 2),
                 };
                 moves.push(Move::new_non_promotion(
                     king_src_square,
@@ -481,9 +481,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Whether `mv` is fully legal from this position (mover's king not left in check).
     pub fn is_legal_move(&self, mv: Move) -> bool {
         let mut clone = self.clone();
-        if clone.make_move_in_place(mv).is_err() {
-            return false;
-        }
+        clone.make_move_in_place(mv);
         !clone.is_opposite_side_in_check()
     }
 

@@ -2,7 +2,6 @@ use crate::Bitboard;
 use crate::file::File;
 use crate::rank::Rank;
 use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks};
-use std::convert::TryFrom;
 use std::fmt::Display;
 
 // Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
@@ -122,25 +121,15 @@ pub const DELTA_LEFT: i8 = -1;
 pub const DELTA_RIGHT: i8 = 1;
 
 impl Square {
-    /// Constructs a square from a raw index in `0..64` (A8→0 … H1→63) without checking bounds.
+    /// Board index `0..64` → square (A8→0 … H1→63), same layout as [`File::from_u8`] / [`Rank::from_u8`].
     ///
-    /// # Safety
-    /// `square_number` must be less than 64.
+    /// **Contract:** `index` must be `< 64`. In debug builds, invalid values panic; in release, invalid
+    /// values are **undefined behavior** (invalid enum bit pattern). Use FEN parsing for validated input
+    /// from text.
     #[inline]
-    pub const unsafe fn from_raw(square_number: u8) -> Square {
-        debug_assert!(square_number < 64);
-        unsafe { std::mem::transmute::<u8, Square>(square_number) }
-    }
-
-    /// Returns a square from a square number (0–63), or `None` if out of range.
-    /// Square numbers are ordered from A8 to H1, left to right, top to bottom.
-    #[inline]
-    pub const fn from_u8(square_number: u8) -> Option<Square> {
-        if square_number < 64 {
-            Some(unsafe { Square::from_raw(square_number) })
-        } else {
-            None
-        }
+    pub const fn from_u8(index: u8) -> Square {
+        debug_assert!(index < 64);
+        unsafe { std::mem::transmute::<u8, Square>(index) }
     }
 
     /// Returns a square from a bitboard with **exactly one** bit set, or `None` if the mask is empty or has multiple bits.
@@ -149,13 +138,13 @@ impl Square {
         if bitboard == 0 || !bitboard.is_power_of_two() {
             return None;
         }
-        Some(unsafe { Square::from_raw(bitboard.leading_zeros() as u8) })
+        Some(Square::from_u8(bitboard.leading_zeros() as u8))
     }
 
     /// Returns the square for the given [`Rank`] and [`File`] (same layout as chmog `fromRankAndFile`).
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Square {
-        unsafe { Square::from_raw((7 - rank as u8) * 8 + file as u8) }
+        Square::from_u8((7 - rank as u8) * 8 + file as u8)
     }
 
     /// Returns the bitboard mask for the square.
@@ -207,7 +196,7 @@ impl Square {
     pub const fn relative(self, delta: i8) -> Option<Square> {
         let idx = self as u8 as i16 + delta as i16;
         if idx >= 0 && idx <= 63 {
-            Some(unsafe { Square::from_raw(idx as u8) })
+            Some(Square::from_u8(idx as u8))
         } else {
             None
         }
@@ -307,7 +296,7 @@ impl Square {
 
     /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
     pub const fn rotated_perspective(&self) -> Square {
-        unsafe { Square::from_raw(63 - *self as u8) }
+        Square::from_u8(63 - *self as u8)
     }
 
     /// Returns the character corresponding to the file of the square.
@@ -402,14 +391,6 @@ impl Square {
     ];
 }
 
-impl TryFrom<u8> for Square {
-    type Error = ();
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        Square::from_u8(value).ok_or(())
-    }
-}
-
 const fn ascending_diagonal_mask_impl(square: Square) -> Bitboard {
     let mask = square.mask();
     let mut i = 0;
@@ -447,7 +428,7 @@ const DIAGONALS_MASK_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = diagonals_union_impl(unsafe { Square::from_raw(i) });
+        arr[i as usize] = diagonals_union_impl(Square::from_u8(i));
         i += 1;
     }
     arr
@@ -481,18 +462,20 @@ mod tests {
 
     #[test]
     fn test_from_square_number() {
-        assert_eq!(Square::from_u8(0), Some(Square::A8));
-        assert_eq!(Square::from_u8(7), Some(Square::H8));
-        assert_eq!(Square::from_u8(56), Some(Square::A1));
-        assert_eq!(Square::from_u8(63), Some(Square::H1));
-        assert_eq!(Square::from_u8(36), Some(Square::E4));
-        assert_eq!(Square::from_u8(64), None);
+        assert_eq!(Square::from_u8(0), Square::A8);
+        assert_eq!(Square::from_u8(7), Square::H8);
+        assert_eq!(Square::from_u8(56), Square::A1);
+        assert_eq!(Square::from_u8(63), Square::H1);
+        assert_eq!(Square::from_u8(36), Square::E4);
     }
 
+    #[cfg(debug_assertions)]
     #[test]
-    fn test_try_from_u8() {
-        assert_eq!(Square::try_from(0u8), Ok(Square::A8));
-        assert_eq!(Square::try_from(64u8), Err(()));
+    fn test_from_u8_out_of_range_debug_panics() {
+        let r = std::panic::catch_unwind(|| {
+            let _ = Square::from_u8(64);
+        });
+        assert!(r.is_err(), "from_u8(64) should panic in debug builds");
     }
 
     #[test]
