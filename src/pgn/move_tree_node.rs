@@ -100,7 +100,7 @@ impl MoveTreeNode {
                 _ => {
                     let mut legal = MoveList::new();
                     state.generate_legal_moves(&mut legal);
-                    let mut disambiguation_moves = MoveList::new();
+                    let mut disambiguation_moves: MoveList = MoveList::new();
                     for m in legal.as_slice().iter().copied() {
                         if m == mv {
                             continue;

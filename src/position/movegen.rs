@@ -94,7 +94,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
             for dst_square in possible_captures.iter_set_bits_as_squares() {
                 if dst_square.rank() == promotion_rank {
-                    moves.push_promotions(generate_pawn_promotions(src_square, dst_square));
+                    moves.push_all(generate_pawn_promotions(src_square, dst_square));
                 } else {
                     moves.push(Move::new_non_promotion(
                         src_square,
@@ -216,7 +216,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             let src_square = unsafe { pawn_push_origin(STM, dst_square) };
 
             if dst_square.rank() == self.current_side_promotion_rank() {
-                moves.push_promotions(generate_pawn_promotions(src_square, dst_square));
+                moves.push_all(generate_pawn_promotions(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(
                     src_square,

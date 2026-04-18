@@ -2,12 +2,9 @@
 
 use crate::r#move::Move;
 
-/// Maximum moves in any legal chess position (upper bound ~218; 256 is comfortable).
-pub const MAX_MOVES: usize = 256;
-
 /// Fixed-capacity move list stored on the stack, similar to engine-style `MoveList` types.
 #[derive(Clone)]
-pub struct MoveList {
+pub struct MoveList<const MAX_MOVES: usize = 256> {
     moves: [Move; MAX_MOVES],
     len: usize,
 }
@@ -18,7 +15,7 @@ impl Default for MoveList {
     }
 }
 
-impl MoveList {
+impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     pub const fn new() -> Self {
         Self {
             moves: [Move { value: 0 }; MAX_MOVES],
@@ -48,12 +45,15 @@ impl MoveList {
         self.len += 1;
     }
 
-    /// Push four promotion moves from the same source/destination.
     #[inline]
-    pub fn push_promotions(&mut self, promos: [Move; 4]) {
-        for m in promos {
-            self.push(m);
-        }
+    pub fn push_all<const N: usize>(&mut self, moves: [Move; N]) {
+        debug_assert!(
+            self.len + N <= MAX_MOVES,
+            "MoveList overflow: max {}",
+            MAX_MOVES
+        );
+        self.moves[self.len..self.len + N].copy_from_slice(&moves);
+        self.len += N;
     }
 
     #[inline]

@@ -41,6 +41,7 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Counts leaf nodes to `depth` (divide-perft), mutating this position in place.
     /// Must be called on the search root; context stack must fit the traversal depth.
+    #[inline]
     pub fn perft(&mut self, depth: u8) -> u64 {
         count_nodes(self, depth)
     }
