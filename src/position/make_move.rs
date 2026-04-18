@@ -131,7 +131,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     /// After this returns, the layout matches the destination type of [`Position::make_move`]
     /// (`Position<N, { STM.other() }>`).
     pub fn make_move(&mut self, mv: Move) {
-        let stm = STM;
         debug_assert!(self.context_len() < N);
 
         let src_square = mv.source();
@@ -141,15 +140,15 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
-        self.board.move_color(stm, dst_square, src_square);
+        self.board.move_color(STM, dst_square, src_square);
 
         match mv.flag() {
             MoveFlag::NormalMove => {
-                self.process_normal(stm, dst_square, src_square, &mut new_context);
+                self.process_normal(STM, dst_square, src_square, &mut new_context);
             }
             MoveFlag::Promotion => {
                 self.process_promotion(
-                    stm,
+                    STM,
                     dst_square,
                     src_square,
                     mv.promotion(),
@@ -157,10 +156,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 );
             }
             MoveFlag::EnPassant => {
-                self.process_en_passant(stm, dst_square, src_square, &mut new_context);
+                self.process_en_passant(STM, dst_square, src_square, &mut new_context);
             }
             MoveFlag::Castling => {
-                self.process_castling(stm, dst_square, src_square, &mut new_context);
+                self.process_castling(STM, dst_square, src_square, &mut new_context);
             }
         }
 

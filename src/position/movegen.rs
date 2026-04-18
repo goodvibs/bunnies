@@ -69,21 +69,20 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = STM;
-        let opposite_side_pieces = self.board.color_mask_at(stm.other());
+        let opposite_side_pieces = self.board.color_mask_at(STM.other());
 
         let promotion_rank = self.current_side_promotion_rank();
 
         let current_side_pawns =
-            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(STM);
         let current_side_king =
-            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
 
         for src in current_side_pawns.iter_set_bits_as_masks() {
             let src_square = Square::from_bitboard(src).expect("pawn source mask");
 
             let mut possible_captures =
-                multi_pawn_attacks(src, stm) & opposite_side_pieces & possible_dsts;
+                multi_pawn_attacks(src, STM) & opposite_side_pieces & possible_dsts;
 
             if src_square.mask() & pinned_bb != 0 {
                 let possible_move_ray = Bitboard::edge_to_edge_ray(
@@ -119,18 +118,17 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_en_passants(&self, pinned_bb: Bitboard, moves: &mut MoveList) {
-        let stm = STM;
         let current_side_pawns =
-            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(STM);
         let current_side_king =
-            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
 
         let dpf = self.context().double_pawn_push_file;
         if dpf.is_some() {
-            let capture_square = dpf.ep_capture_square(stm);
-            let dst_square = dpf.ep_dst_square(stm);
+            let capture_square = dpf.ep_capture_square(STM);
+            let dst_square = dpf.ep_dst_square(STM);
 
-            for src_square in dpf.ep_possible_src_mask(stm).iter_set_bits_as_squares() {
+            for src_square in dpf.ep_possible_src_mask(STM).iter_set_bits_as_squares() {
                 if src_square.mask() & pinned_bb != 0 {
                     let possible_move_ray = Bitboard::edge_to_edge_ray(
                         src_square,
@@ -147,14 +145,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     {
                         let mut board_copy = self.board.clone();
 
-                        board_copy.move_color(stm, dst_square, src_square);
+                        board_copy.move_color(STM, dst_square, src_square);
                         board_copy.move_piece(Piece::Pawn, dst_square, src_square);
-                        board_copy.remove_color_at(stm.other(), capture_square);
+                        board_copy.remove_color_at(STM.other(), capture_square);
                         board_copy.remove_piece_at(Piece::Pawn, capture_square);
 
                         if !board_copy.is_square_attacked(
                             Square::from_bitboard(current_side_king).expect("king mask"),
-                            stm.other(),
+                            STM.other(),
                         ) {
                             moves.push(Move::new_non_promotion(
                                 src_square,
@@ -192,16 +190,15 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = STM;
         let occupied_mask = self.board.pieces();
 
         let mut movable_pawns =
-            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(STM);
 
         let pinned_pawns = pinned_bb & movable_pawns;
         if pinned_pawns != 0 {
             let current_side_king =
-                self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+                self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
             let current_side_king_file = Square::from_bitboard(current_side_king)
                 .expect("king mask")
                 .file();
@@ -213,10 +210,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
         }
 
-        let single_push_dsts = multi_pawn_moves(movable_pawns, stm) & !occupied_mask;
+        let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied_mask;
         let single_push_dsts_without_check = single_push_dsts & possible_dsts;
         for dst_square in single_push_dsts_without_check.iter_set_bits_as_squares() {
-            let src_square = unsafe { pawn_push_origin(stm, dst_square) };
+            let src_square = unsafe { pawn_push_origin(STM, dst_square) };
 
             if dst_square.rank() == self.current_side_promotion_rank() {
                 moves.push_promotions(generate_pawn_promotions(src_square, dst_square));
@@ -230,11 +227,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         }
 
         let double_push_dsts =
-            multi_pawn_moves(single_push_dsts & additional_pawn_push_rank_mask(stm), stm)
+            multi_pawn_moves(single_push_dsts & additional_pawn_push_rank_mask(STM), STM)
                 & !occupied_mask
                 & possible_dsts;
         for dst_square in double_push_dsts.iter_set_bits_as_squares() {
-            let src_square = unsafe { pawn_double_push_origin(stm, dst_square) };
+            let src_square = unsafe { pawn_double_push_origin(STM, dst_square) };
             moves.push(Move::new_non_promotion(
                 src_square,
                 dst_square,
@@ -259,9 +256,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = STM;
         let movable_knights = self.board.piece_mask::<{ Piece::Knight }>()
-            & self.board.color_mask_at(stm)
+            & self.board.color_mask_at(STM)
             & !pinned_bb;
 
         for src_square in movable_knights.iter_set_bits_as_squares() {
@@ -296,12 +292,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         pinned_bb: Bitboard,
         moves: &mut MoveList,
     ) {
-        let stm = STM;
         let all_occupancy_bb = self.board.pieces();
         let current_side_king =
-            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
 
-        let piece_mask = self.board.piece_mask_at(piece) & self.board.color_mask_at(stm);
+        let piece_mask = self.board.piece_mask_at(piece) & self.board.color_mask_at(STM);
 
         for src_square in piece_mask.iter_set_bits_as_squares() {
             let attacks = sliding_piece_attacks(src_square, all_occupancy_bb, piece);
@@ -335,8 +330,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_king_moves(&self, moves: &mut MoveList) {
-        let stm = STM;
-        let current_side_mask = self.board.color_mask_at(stm);
+        let current_side_mask = self.board.color_mask_at(STM);
 
         let king_src_bb = self.board.piece_mask::<{ Piece::King }>() & current_side_mask;
         let king_src_square = Square::from_bitboard(king_src_bb).expect("king mask");
@@ -347,7 +341,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         for dst_square in king_moves.iter_set_bits_as_squares() {
             if !self.board.is_square_attacked_after_king_move(
                 dst_square,
-                stm.other(),
+                STM.other(),
                 king_src_bb | dst_square.mask(),
             ) {
                 moves.push(Move::new_non_promotion(
