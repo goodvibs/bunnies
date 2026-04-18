@@ -1,6 +1,5 @@
 //! Move generation functions for the state struct
 
-use crate::File;
 use crate::Rank;
 use crate::Square;
 use crate::attacks::{
@@ -11,35 +10,11 @@ use crate::r#move::{Move, MoveFlag, MoveList};
 use crate::position::Position;
 use crate::position::legal_gen_kind::LegalGenKind;
 use crate::{Bitboard, Color, Flank};
-use crate::{BitboardUtils, Piece};
+use crate::{BitboardUtils, DoublePawnPushFileUtils, Piece};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     Piece::PROMOTION_PIECES
         .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
-}
-
-const fn ep_possible_src_masks(stm: Color, ep_file: File) -> Bitboard {
-    let double_pawn_push_dst = match stm {
-        Color::White => Square::from_rank_and_file(Rank::Five, ep_file).mask(),
-        Color::Black => Square::from_rank_and_file(Rank::Four, ep_file).mask(),
-    };
-
-    ((double_pawn_push_dst << 1) & !File::H.mask())
-        | ((double_pawn_push_dst >> 1) & !File::A.mask())
-}
-
-const fn ep_dst_square(stm: Color, ep_file: File) -> Square {
-    match stm {
-        Color::White => Square::from_rank_and_file(Rank::Six, ep_file),
-        Color::Black => Square::from_rank_and_file(Rank::Three, ep_file),
-    }
-}
-
-const fn ep_capture_square(stm: Color, ep_file: File) -> Square {
-    match stm {
-        Color::White => Square::from_rank_and_file(Rank::Five, ep_file),
-        Color::Black => Square::from_rank_and_file(Rank::Four, ep_file),
-    }
 }
 
 unsafe fn pawn_push_origin(stm: Color, dst_square: Square) -> Square {
@@ -150,11 +125,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let current_side_king =
             self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
-        if let Some(ep_file) = self.context().double_pawn_push {
-            let capture_square = ep_capture_square(stm, ep_file);
-            let dst_square = ep_dst_square(stm, ep_file);
+        let dpf = self.context().double_pawn_push_file;
+        if dpf.is_some() {
+            let capture_square = dpf.ep_capture_square(stm);
+            let dst_square = dpf.ep_dst_square(stm);
 
-            for src_square in ep_possible_src_masks(stm, ep_file).iter_set_bits_as_squares() {
+            for src_square in dpf.ep_possible_src_mask(stm).iter_set_bits_as_squares() {
                 if src_square.mask() & pinned_bb != 0 {
                     let possible_move_ray = Bitboard::edge_to_edge_ray(
                         src_square,

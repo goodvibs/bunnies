@@ -1,0 +1,127 @@
+//! Sentinel-encoded file for the side that just double-pushed a pawn (`-1` = none, `0..=7` = [`File`] index).
+
+use super::Board;
+use crate::Bitboard;
+use crate::Color;
+use crate::File;
+use crate::Piece;
+use crate::Rank;
+use crate::Square;
+
+/// FEN / context encoding: `-1` means no en-passant target; otherwise the [`File`] index `0..=7`.
+pub type DoublePawnPushFile = i8;
+
+/// En-passant file helpers and square geometry (mirrors the [`crate::Bitboard`] + [`crate::BitboardUtils`] pattern).
+pub trait DoublePawnPushFileUtils {
+    /// No en-passant capture is available next move.
+    const NONE: DoublePawnPushFile;
+
+    /// After a pawn step, the EP file to store in the new context (`NONE` unless a double push).
+    fn from_pawn_step(dst_square: Square, src_square: Square) -> DoublePawnPushFile;
+
+    /// `true` when `self` holds a file index `0..=7`.
+    fn is_some(self) -> bool;
+
+    fn from_file(file: Option<File>) -> DoublePawnPushFile;
+
+    /// The file when [`Self::is_active`], otherwise `None`.
+    fn file(self) -> Option<File>;
+
+    /// Bitboard of squares from which the side to move might capture en passant on `self`'s file.
+    fn ep_possible_src_mask(self, stm: Color) -> Bitboard;
+
+    /// Destination square of an en-passant capture for the side to move.
+    fn ep_dst_square(self, stm: Color) -> Square;
+
+    /// Square of the pawn that was skipped over (remove this pawn on EP capture).
+    fn ep_capture_square(self, stm: Color) -> Square;
+
+    /// Whether this value is consistent with pawn placement (used by FEN / position validation).
+    fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool;
+}
+
+impl DoublePawnPushFileUtils for DoublePawnPushFile {
+    const NONE: DoublePawnPushFile = -1;
+
+    fn from_pawn_step(dst_square: Square, src_square: Square) -> DoublePawnPushFile {
+        if is_double_pawn_step(dst_square, src_square) {
+            src_square.file() as DoublePawnPushFile
+        } else {
+            Self::NONE
+        }
+    }
+
+    fn is_some(self) -> bool {
+        debug_assert!(self < 8);
+        self >= 0
+    }
+
+    fn from_file(file: Option<File>) -> DoublePawnPushFile {
+        match file {
+            None => -1,
+            Some(file) => u8::cast_signed(file as u8),
+        }
+    }
+
+    fn file(self) -> Option<File> {
+        if self.is_some() {
+            Some(File::from_u8(self as u8))
+        } else {
+            None
+        }
+    }
+
+    fn ep_possible_src_mask(self, stm: Color) -> Bitboard {
+        let f = self
+            .file()
+            .expect("ep_possible_src_mask requires active file");
+        let double_pawn_push_dst = match stm {
+            Color::White => Square::from_rank_and_file(Rank::Five, f).mask(),
+            Color::Black => Square::from_rank_and_file(Rank::Four, f).mask(),
+        };
+
+        ((double_pawn_push_dst << 1) & !File::H.mask())
+            | ((double_pawn_push_dst >> 1) & !File::A.mask())
+    }
+
+    fn ep_dst_square(self, stm: Color) -> Square {
+        let f = self.file().expect("ep_dst_square requires active file");
+        match stm {
+            Color::White => Square::from_rank_and_file(Rank::Six, f),
+            Color::Black => Square::from_rank_and_file(Rank::Three, f),
+        }
+    }
+
+    fn ep_capture_square(self, stm: Color) -> Square {
+        let f = self.file().expect("ep_capture_square requires active file");
+        match stm {
+            Color::White => Square::from_rank_and_file(Rank::Five, f),
+            Color::Black => Square::from_rank_and_file(Rank::Four, f),
+        }
+    }
+
+    fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool {
+        if !self.is_some() {
+            return true;
+        }
+        if halfmove < 1 {
+            return false;
+        }
+        let color_just_moved = side_to_move.other();
+        let pawns_bb = board.piece_mask::<{ Piece::Pawn }>();
+        let colored_pawns_bb = pawns_bb & board.color_mask_at(color_just_moved);
+        let file_mask = self.file().expect("active implies file").mask();
+        let rank_mask = match color_just_moved {
+            Color::White => Rank::Four.mask(),
+            Color::Black => Rank::Five.mask(),
+        };
+        colored_pawns_bb & file_mask & rank_mask != 0
+    }
+}
+
+const fn is_double_pawn_step(dst_square: Square, src_square: Square) -> bool {
+    let dst_mask = dst_square.mask();
+    let src_mask = src_square.mask();
+
+    dst_mask & (src_mask << 16) != 0 || dst_mask & (src_mask >> 16) != 0
+}

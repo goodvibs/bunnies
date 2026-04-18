@@ -2,13 +2,13 @@
 
 use crate::Color;
 use crate::ColoredPiece;
-use crate::File;
 use crate::Flank;
 use crate::Piece;
 use crate::Square;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
 use crate::position::{Position, PositionError};
+use crate::{DoublePawnPushFile, DoublePawnPushFileUtils};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     fn process_promotion(
@@ -216,9 +216,7 @@ impl PositionContext {
         src_square: Square,
     ) {
         self.halfmove_clock = 0;
-        if is_double_pawn_push(dst_square, src_square) {
-            self.double_pawn_push = Some(File::from_u8(src_square.file()));
-        }
+        self.double_pawn_push_file = DoublePawnPushFile::from_pawn_step(dst_square, src_square);
     }
 
     fn process_normal_king_move_disregarding_capture(&mut self, moved_piece_color: Color) {
@@ -275,9 +273,3 @@ impl PositionContext {
     }
 }
 
-const fn is_double_pawn_push(dst_square: Square, src_square: Square) -> bool {
-    let dst_mask = dst_square.mask();
-    let src_mask = src_square.mask();
-
-    dst_mask & (src_mask << 16) != 0 || dst_mask & (src_mask >> 16) != 0
-}

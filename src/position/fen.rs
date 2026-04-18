@@ -3,9 +3,8 @@ use crate::Color;
 use crate::ColoredPiece;
 use crate::File;
 use crate::Square;
-use crate::position::{
-    Board, GameResult, Position, PositionContext, TypedPosition,
-};
+use crate::position::{Board, GameResult, Position, PositionContext, TypedPosition};
+use crate::{DoublePawnPushFile, DoublePawnPushFileUtils};
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -56,9 +55,11 @@ fn parse_castling_rights(fen_castling_rights: &str) -> Result<CastlingRights, Fe
     }
 }
 
-fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<Option<File>, FenParseError> {
+fn parse_en_passant_target(
+    fen_en_passant_target: &str,
+) -> Result<DoublePawnPushFile, FenParseError> {
     if fen_en_passant_target == "-" {
-        Ok(None)
+        Ok(-1)
     } else {
         if fen_en_passant_target.len() != 2 {
             return Err(FenParseError::InvalidEnPassantTarget(
@@ -72,7 +73,9 @@ fn parse_en_passant_target(fen_en_passant_target: &str) -> Result<Option<File>, 
                 fen_en_passant_target.to_string(),
             ));
         }
-        Ok(Some(File::from_u8(file as u8 - b'a')))
+        Ok(DoublePawnPushFile::from_file(Some(File::from_u8(
+            file as u8 - b'a',
+        ))))
     }
 }
 
@@ -168,7 +171,7 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
         ] => {
             let side_to_move = parse_side_to_move(fen_side_to_move)?;
             let castling_rights = parse_castling_rights(fen_castling_rights)?;
-            let double_pawn_push = parse_en_passant_target(fen_en_passant_target)?;
+            let double_pawn_push_file = parse_en_passant_target(fen_en_passant_target)?;
             let halfmove_clock = parse_fen_halfmove_clock(fen_halfmove_clock)?;
             let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
             let board = parse_fen_board(fen_board)?;
@@ -179,7 +182,7 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
             let mut context = PositionContext::blank();
             context.castling_rights = castling_rights;
             context.zobrist_hash = zobrist_hash;
-            context.double_pawn_push = double_pawn_push;
+            context.double_pawn_push_file = double_pawn_push_file;
             context.halfmove_clock = halfmove_clock;
 
             let mut contexts = [PositionContext::blank(); N];

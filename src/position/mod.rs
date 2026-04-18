@@ -8,6 +8,7 @@
 mod board;
 mod castling;
 mod context;
+mod double_pawn_push_file;
 mod fen;
 mod insufficient_material;
 mod legal_gen_kind;
@@ -23,6 +24,7 @@ mod zobrist;
 
 pub use board::*;
 pub use context::*;
+pub use double_pawn_push_file::*;
 pub use fen::*;
 pub use legal_gen_kind::LegalGenKind;
 pub use r#struct::{Position, PositionError};

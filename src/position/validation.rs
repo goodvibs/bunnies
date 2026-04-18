@@ -1,5 +1,5 @@
 use crate::position::Position;
-use crate::{Color, Flank, Piece, Rank, Square};
+use crate::{Color, DoublePawnPushFileUtils, Flank, Piece, Square};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Rigorous check for whether the current positional information is consistent and valid.
@@ -102,22 +102,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Checks if the double pawn push is consistent with the position of the pawns.
     pub fn has_valid_double_pawn_push(&self) -> bool {
-        match self.context().double_pawn_push {
-            None => true,
-            Some(file) => {
-                if self.halfmove < 1 {
-                    return false;
-                }
-                let color_just_moved = STM.other();
-                let pawns_bb = self.board.piece_mask::<{ Piece::Pawn }>();
-                let colored_pawns_bb = pawns_bb & self.board.color_mask_at(color_just_moved);
-                let file_mask = file.mask();
-                let rank_mask = match color_just_moved {
-                    Color::White => Rank::Four.mask(),
-                    Color::Black => Rank::Five.mask(),
-                };
-                colored_pawns_bb & file_mask & rank_mask != 0
-            }
-        }
+        self.context()
+            .double_pawn_push_file
+            .is_valid_ep_target(self.halfmove, STM, &self.board)
     }
 }
