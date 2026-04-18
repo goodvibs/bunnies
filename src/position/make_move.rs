@@ -130,7 +130,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     ///
     /// After this returns, the layout matches the destination type of [`Position::make_move`]
     /// (`Position<N, { STM.other() }>`).
-    pub(crate) fn make_move_in_place(&mut self, mv: Move) {
+    pub fn make_move(&mut self, mv: Move) {
         let stm = STM;
         debug_assert!(self.context_len() < N);
 
@@ -167,14 +167,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.halfmove += 1;
         self.push_context(new_context);
         self.update_pins_and_checks_for_stm(STM.other());
-    }
-
-    /// Applies a move without checking if it is valid or legal.
-    ///
-    /// Flipped side is `Position<N, { STM.other() }>`.
-    pub fn make_move(mut self, mv: Move) -> Position<N, { STM.other() }> {
-        self.make_move_in_place(mv);
-        self.rebrand_stm::<{ STM.other() }>()
     }
 }
 

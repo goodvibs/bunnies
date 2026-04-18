@@ -104,11 +104,11 @@ impl<const N: usize> TypedPosition<N> {
     pub fn make_move(self, mv: Move) -> Self {
         match self {
             TypedPosition::White(mut p) => {
-                p.make_move_in_place(mv);
+                p.make_move(mv);
                 TypedPosition::Black(p.rebrand_stm::<{ Color::Black }>())
             }
             TypedPosition::Black(mut p) => {
-                p.make_move_in_place(mv);
+                p.make_move(mv);
                 TypedPosition::White(p.rebrand_stm::<{ Color::White }>())
             }
         }

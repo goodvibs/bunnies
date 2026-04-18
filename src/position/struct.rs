@@ -275,11 +275,11 @@ mod state_tests {
     fn test_context_stack_overflow_second_move_panics_in_debug() {
         use crate::MoveList;
 
-        let pos = Position::<2, { Color::White }>::initial();
+        let mut pos = Position::<2, { Color::White }>::initial();
         let mut ml = MoveList::new();
         pos.generate_legal_moves(&mut ml);
         let mv = *ml.as_slice().first().expect("at least one legal move");
-        let pos: Position<2, { Color::Black }> = pos.make_move(mv);
+        pos.make_move(mv);
         assert_eq!(pos.context_len(), 2);
         ml.clear();
         pos.generate_legal_moves(&mut ml);

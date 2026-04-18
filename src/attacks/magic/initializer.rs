@@ -27,11 +27,6 @@ impl MagicAttacksInitializer {
         self
     }
 
-    pub(crate) fn with_min_bits_threshold(mut self, threshold: u32) -> Self {
-        self.min_bits_threshold = threshold;
-        self
-    }
-
     /// Initialize the magic attacks lookup object for a sliding piece
     pub(crate) fn init_for_piece(
         &mut self,
