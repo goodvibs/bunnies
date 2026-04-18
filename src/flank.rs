@@ -55,7 +55,7 @@ impl Flank {
     }
 
     /// Squares the king passes through or lands on (excluding start); used for attack tests when castling.
-    pub fn king_path_mask(self, color: Color) -> Bitboard {
+    pub const fn king_path_mask(self, color: Color) -> Bitboard {
         match (color, self) {
             (Color::White, Flank::Kingside) => Square::F1.mask() | Square::G1.mask(),
             (Color::White, Flank::Queenside) => Square::D1.mask() | Square::C1.mask(),

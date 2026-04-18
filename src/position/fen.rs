@@ -4,7 +4,7 @@ use crate::ColoredPiece;
 use crate::File;
 use crate::Square;
 use crate::position::{Board, GameResult, Position, PositionContext, TypedPosition};
-use crate::{DoublePawnPushFile, DoublePawnPushFileUtils};
+use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

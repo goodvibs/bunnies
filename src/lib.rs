@@ -1,5 +1,6 @@
 //! This crate requires a **nightly** Rust toolchain (see repository `rust-toolchain.toml`).
 #![feature(const_for)] // Reserved: `for` in `const fn` over arrays needs const `Iterator` (rust#87575).
+#![feature(const_trait_impl)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
 #![allow(incomplete_features)]

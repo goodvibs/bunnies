@@ -2,7 +2,7 @@
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::position::{Board, GameResult, PositionContext};
-use crate::{Bitboard, BitboardUtils, CastlingRights, Color, Piece, Square};
+use crate::{Bitboard, BitboardUtils, CastlingRights, Color, ConstBitboardGeometry, Piece, Square};
 use std::fmt;
 
 /// Error from [`Position::make_move`] and related APIs.

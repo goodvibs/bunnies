@@ -61,7 +61,7 @@ impl CastlingRights {
     }
 
     /// Clear the right corresponding to a rook on its home corner (FEN loss of castling).
-    pub fn clear_for_rook_square(self, on: Square) -> Self {
+    pub const fn clear_for_rook_square(self, on: Square) -> Self {
         let b = match on {
             Square::A1 => self.bits() & !0b0100,
             Square::H1 => self.bits() & !0b1000,

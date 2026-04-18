@@ -28,8 +28,11 @@ impl Piece {
         unsafe { std::mem::transmute::<u8, Piece>(piece_type_number) }
     }
 
-    pub fn is_sliding_piece(&self) -> bool {
-        Self::SLIDING_PIECES.contains(self)
+    pub const fn is_sliding_piece(&self) -> bool {
+        matches!(
+            *self,
+            Piece::Bishop | Piece::Rook | Piece::Queen
+        )
     }
 
     /// Returns the Piece from the given uppercase char.

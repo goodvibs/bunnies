@@ -12,7 +12,7 @@ impl SquaresToMasks {
     }
 
     #[inline]
-    pub fn get(&self, square: Square) -> Bitboard {
+    pub const fn get(&self, square: Square) -> Bitboard {
         self.data[square as usize]
     }
 }
@@ -29,7 +29,7 @@ impl SquarePairsToMasks {
     }
 
     #[inline]
-    pub fn get(&self, sq1: Square, sq2: Square) -> Bitboard {
+    pub const fn get(&self, sq1: Square, sq2: Square) -> Bitboard {
         self.data[(sq1 as usize) * 64 + (sq2 as usize)]
     }
 }
@@ -46,7 +46,7 @@ impl<T: Copy> SquaresTwoToOneMapping<T> {
     }
 
     #[inline]
-    pub fn get(&self, sq1: Square, sq2: Square) -> T {
+    pub const fn get(&self, sq1: Square, sq2: Square) -> T {
         self.data[(sq1 as usize) * 64 + (sq2 as usize)]
     }
 }

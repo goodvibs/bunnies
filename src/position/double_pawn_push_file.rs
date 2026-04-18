@@ -11,8 +11,8 @@ use crate::Square;
 /// FEN / context encoding: `-1` means no en-passant target; otherwise the [`File`] index `0..=7`.
 pub type DoublePawnPushFile = i8;
 
-/// En-passant file helpers and square geometry (mirrors the [`crate::Bitboard`] + [`crate::BitboardUtils`] pattern).
-pub trait DoublePawnPushFileUtils {
+/// Const-safe en-passant file encoding and square geometry.
+pub const trait ConstDoublePawnPushFile {
     /// No en-passant capture is available next move.
     const NONE: DoublePawnPushFile;
 
@@ -24,7 +24,7 @@ pub trait DoublePawnPushFileUtils {
 
     fn from_file(file: Option<File>) -> DoublePawnPushFile;
 
-    /// The file when [`Self::is_active`], otherwise `None`.
+    /// The file when [`Self::is_some`], otherwise `None`.
     fn file(self) -> Option<File>;
 
     /// Bitboard of squares from which the side to move might capture en passant on `self`'s file.
@@ -35,12 +35,15 @@ pub trait DoublePawnPushFileUtils {
 
     /// Square of the pawn that was skipped over (remove this pawn on EP capture).
     fn ep_capture_square(self, stm: Color) -> Square;
+}
 
+/// [`ConstDoublePawnPushFile`] plus validation that needs a [`Board`] read.
+pub trait DoublePawnPushFileUtils: ConstDoublePawnPushFile {
     /// Whether this value is consistent with pawn placement (used by FEN / position validation).
     fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool;
 }
 
-impl DoublePawnPushFileUtils for DoublePawnPushFile {
+impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     const NONE: DoublePawnPushFile = -1;
 
     fn from_pawn_step(dst_square: Square, src_square: Square) -> DoublePawnPushFile {
@@ -52,14 +55,13 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
     }
 
     fn is_some(self) -> bool {
-        debug_assert!(self < 8);
-        self >= 0
+        self >= 0 && self < 8
     }
 
     fn from_file(file: Option<File>) -> DoublePawnPushFile {
         match file {
             None => -1,
-            Some(file) => u8::cast_signed(file as u8),
+            Some(file) => file as u8 as i8,
         }
     }
 
@@ -72,9 +74,10 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
     }
 
     fn ep_possible_src_mask(self, stm: Color) -> Bitboard {
-        let f = self
-            .file()
-            .expect("ep_possible_src_mask requires active file");
+        let f = match self.file() {
+            Some(f) => f,
+            None => panic!("ep_possible_src_mask requires active file"),
+        };
         let double_pawn_push_dst = match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f).mask(),
             Color::Black => Square::from_rank_and_file(Rank::Four, f).mask(),
@@ -85,7 +88,10 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
     }
 
     fn ep_dst_square(self, stm: Color) -> Square {
-        let f = self.file().expect("ep_dst_square requires active file");
+        let f = match self.file() {
+            Some(f) => f,
+            None => panic!("ep_dst_square requires active file"),
+        };
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Six, f),
             Color::Black => Square::from_rank_and_file(Rank::Three, f),
@@ -93,13 +99,18 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
     }
 
     fn ep_capture_square(self, stm: Color) -> Square {
-        let f = self.file().expect("ep_capture_square requires active file");
+        let f = match self.file() {
+            Some(f) => f,
+            None => panic!("ep_capture_square requires active file"),
+        };
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f),
             Color::Black => Square::from_rank_and_file(Rank::Four, f),
         }
     }
+}
 
+impl DoublePawnPushFileUtils for DoublePawnPushFile {
     fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool {
         if !self.is_some() {
             return true;

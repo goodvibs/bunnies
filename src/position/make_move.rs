@@ -8,7 +8,7 @@ use crate::Square;
 use crate::r#move::{Move, MoveFlag};
 use crate::position::context::PositionContext;
 use crate::position::{Position, PositionError};
-use crate::{DoublePawnPushFile, DoublePawnPushFileUtils};
+use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     fn process_promotion(

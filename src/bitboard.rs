@@ -2,23 +2,25 @@ use crate::Square;
 use crate::square::same_line;
 use crate::utilities::{
     BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator, QueenLikeMoveDirection,
-    SquarePairsToMasks,
 };
 
 /// A type alias for a bitboard. A bitboard is a 64-bit unsigned integer that represents an aspect of board state.
 /// Each bit represents a square on the board, with the most significant bit representing A8 and the least significant bit representing H1.
 pub type Bitboard = u64;
 
-pub trait BitboardUtils {
-    /// Returns the mask of squares between two squares, inclusive/exclusive??.
-    /// This includes orthogonal and diagonal lines. If none exist, zero is returned.
+/// Const-friendly ray geometry between squares (also a supertrait of [`BitboardUtils`]).
+pub const trait ConstBitboardGeometry {
+    /// Returns the mask of squares **strictly between** the two squares (endpoints excluded).
+    /// On a rank, file, or diagonal; otherwise returns zero.
     fn between(sq1: Square, sq2: Square) -> Bitboard;
 
     /// Returns the mask of squares that form a line connecting two squares, extending to the
     /// edges of the board.
     /// This includes orthogonal and diagonal lines. If none exist, zero is returned.
     fn edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard;
+}
 
+pub trait BitboardUtils: ConstBitboardGeometry {
     /// Returns an iterator that generates the set bits of the bitboard.
     fn iter_set_bits_as_masks(self) -> MaskBitsIterator;
 
@@ -29,15 +31,17 @@ pub trait BitboardUtils {
     fn iter_bit_combinations(self) -> BitCombinationsIterator;
 }
 
-impl BitboardUtils for Bitboard {
+impl const ConstBitboardGeometry for Bitboard {
     fn between(sq1: Square, sq2: Square) -> Bitboard {
-        MASK_BETWEEN_LOOKUP.get(sq1, sq2)
+        MASK_BETWEEN_DATA[(sq1 as usize) * 64 + (sq2 as usize)]
     }
 
     fn edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
-        EDGE_TO_EDGE_RAY_LOOKUP.get(sq1, sq2)
+        EDGE_TO_EDGE_RAY_DATA[(sq1 as usize) * 64 + (sq2 as usize)]
     }
+}
 
+impl BitboardUtils for Bitboard {
     fn iter_set_bits_as_masks(self) -> MaskBitsIterator {
         self.into()
     }
@@ -130,15 +134,10 @@ const EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
     arr
 };
 
-static MASK_BETWEEN_LOOKUP: SquarePairsToMasks = SquarePairsToMasks::from_array(MASK_BETWEEN_DATA);
-
-static EDGE_TO_EDGE_RAY_LOOKUP: SquarePairsToMasks =
-    SquarePairsToMasks::from_array(EDGE_TO_EDGE_RAY_DATA);
-
 #[cfg(test)]
 mod tests {
     use crate::utilities::BitboardDisplay;
-    use crate::{Bitboard, BitboardUtils, Square};
+    use crate::{Bitboard, ConstBitboardGeometry, Square};
 
     #[test]
     fn test_between() {

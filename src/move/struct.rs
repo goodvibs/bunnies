@@ -17,9 +17,9 @@ impl Move {
     pub const DEFAULT_PROMOTION_VALUE: Piece = Piece::Rook;
 
     /// Creates a new move.
-    pub fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
+    pub const fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
         assert!(
-            promotion != Piece::King && promotion != Piece::Pawn,
+            !matches!(promotion, Piece::King | Piece::Pawn),
             "Invalid promotion piece type"
         );
         Move {
@@ -31,11 +31,11 @@ impl Move {
     }
 
     /// Creates a new move with the default promotion value.
-    pub fn new_non_promotion(src: Square, dst: Square, flag: MoveFlag) -> Move {
+    pub const fn new_non_promotion(src: Square, dst: Square, flag: MoveFlag) -> Move {
         Move::new(src, dst, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
-    pub fn new_promotion(src: Square, dst: Square, promotion: Piece) -> Move {
+    pub const fn new_promotion(src: Square, dst: Square, promotion: Piece) -> Move {
         Move::new(src, dst, promotion, MoveFlag::Promotion)
     }
 

@@ -10,7 +10,7 @@ use crate::r#move::{Move, MoveFlag, MoveList};
 use crate::position::Position;
 use crate::position::legal_gen_kind::LegalGenKind;
 use crate::{Bitboard, Color, Flank};
-use crate::{BitboardUtils, DoublePawnPushFileUtils, Piece};
+use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     Piece::PROMOTION_PIECES

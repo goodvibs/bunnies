@@ -4,8 +4,8 @@ use crate::Bitboard;
 use crate::CastlingRights;
 use crate::Piece;
 
+use super::ConstDoublePawnPushFile;
 use super::DoublePawnPushFile;
-use super::DoublePawnPushFileUtils;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
