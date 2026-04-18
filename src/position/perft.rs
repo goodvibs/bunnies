@@ -8,6 +8,11 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
     }
     let mut moves = MoveList::new();
     pos.generate_legal_moves(&mut moves);
+
+    if depth == 1 {
+        return moves.len() as u64;
+    }
+
     let mut total = 0u64;
     for &mv in moves.as_slice() {
         pos.make_move(mv);
