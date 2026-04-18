@@ -22,7 +22,9 @@ pub struct Board {
 }
 
 impl Board {
-    const fn mailbox_from_piece_masks(piece_masks: &[Bitboard; Piece::LIMIT as usize]) -> [Piece; 64] {
+    const fn mailbox_from_piece_masks(
+        piece_masks: &[Bitboard; Piece::LIMIT as usize],
+    ) -> [Piece; 64] {
         let mut out = [Piece::Null; 64];
         let mut sq: u8 = 0;
         while sq < 64 {
@@ -144,9 +146,12 @@ impl Board {
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
         let attackers = self.color_mask_at(by_color);
 
-        if (multi_pawn_attacks(mask, by_color.other()) & self.piece_mask::<{ Piece::Pawn }>() & attackers
+        if (multi_pawn_attacks(mask, by_color.other())
+            & self.piece_mask::<{ Piece::Pawn }>()
+            & attackers
             != 0)
-            || (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>() & attackers
+                != 0)
             || (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
@@ -167,7 +172,8 @@ impl Board {
             & self.piece_mask::<{ Piece::Pawn }>()
             & attackers
             != 0)
-            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers
+                != 0)
             || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
@@ -188,7 +194,8 @@ impl Board {
             & self.piece_mask::<{ Piece::Pawn }>()
             & attackers
             != 0)
-            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers != 0)
+            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers
+                != 0)
             || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
         {
             true
@@ -209,19 +216,21 @@ impl Board {
             by_color,
         );
 
-        for src_square in
-            (self.piece_mask::<{ Piece::Knight }>() & attacking_color_mask).iter_set_bits_as_squares()
+        for src_square in (self.piece_mask::<{ Piece::Knight }>() & attacking_color_mask)
+            .iter_set_bits_as_squares()
         {
             attacks |= non_pawn_piece_attacks(src_square, occupied_mask, Piece::Knight);
         }
 
-        for src_square in ((self.piece_mask::<{ Piece::Bishop }>() | queens_mask) & attacking_color_mask)
+        for src_square in ((self.piece_mask::<{ Piece::Bishop }>() | queens_mask)
+            & attacking_color_mask)
             .iter_set_bits_as_squares()
         {
             attacks |= single_bishop_attacks(src_square, occupied_mask);
         }
 
-        for src_square in ((self.piece_mask::<{ Piece::Rook }>() | queens_mask) & attacking_color_mask)
+        for src_square in ((self.piece_mask::<{ Piece::Rook }>() | queens_mask)
+            & attacking_color_mask)
             .iter_set_bits_as_squares()
         {
             attacks |= single_rook_attacks(src_square, occupied_mask);

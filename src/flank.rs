@@ -32,12 +32,8 @@ impl Flank {
     /// Kingside: files e–h; queenside: files a–d (former `KING_SIDE` / `QUEEN_SIDE` composites).
     pub const fn half_board_mask(self) -> Bitboard {
         match self {
-            Flank::Kingside => {
-                File::E.mask() | File::F.mask() | File::G.mask() | File::H.mask()
-            }
-            Flank::Queenside => {
-                File::A.mask() | File::B.mask() | File::C.mask() | File::D.mask()
-            }
+            Flank::Kingside => File::E.mask() | File::F.mask() | File::G.mask() | File::H.mask(),
+            Flank::Queenside => File::A.mask() | File::B.mask() | File::C.mask() | File::D.mask(),
         }
     }
 

@@ -75,9 +75,5 @@ pub const fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
         }
         i += 1;
     }
-    res & !square_mask
-        & !(File::A.mask()
-            | File::H.mask()
-            | Rank::One.mask()
-            | Rank::Eight.mask())
+    res & !square_mask & !(File::A.mask() | File::H.mask() | Rank::One.mask() | Rank::Eight.mask())
 }

@@ -14,10 +14,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Opponent cannot attack squares the king crosses or lands on.
     fn can_castle_without_check(&self, flank: Flank) -> bool {
-        !self.board.is_mask_attacked(
-            flank.king_path_mask(STM),
-            STM.other(),
-        )
+        !self
+            .board
+            .is_mask_attacked(flank.king_path_mask(STM), STM.other())
     }
 
     /// Legal castling on `flank` for the side to move.

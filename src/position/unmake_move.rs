@@ -38,8 +38,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         };
 
         self.board.move_piece(Piece::Pawn, src_square, dst_square);
-        self.board
-            .put_color_at(STM, en_passant_capture_square);
+        self.board.put_color_at(STM, en_passant_capture_square);
         self.board
             .put_piece_at(Piece::Pawn, en_passant_capture_square);
     }
@@ -79,8 +78,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let src_square = mv.source();
         let dst_square = mv.destination();
 
-        self.board
-            .move_color(STM.other(), src_square, dst_square);
+        self.board.move_color(STM.other(), src_square, dst_square);
 
         match mv.flag() {
             MoveFlag::NormalMove => self.unprocess_normal(dst_square, src_square),
@@ -99,5 +97,4 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.unmake_move_in_place(mv);
         self.rebrand_stm::<{ STM.other() }>()
     }
-
 }

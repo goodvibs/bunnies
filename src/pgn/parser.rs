@@ -1,4 +1,5 @@
 use crate::Color;
+use crate::r#move::MoveList;
 use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::object::PgnObject;
@@ -12,7 +13,6 @@ use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
 use crate::position::{Position, TypedPosition};
-use crate::r#move::MoveList;
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
@@ -29,11 +29,10 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
-        let buffered_position_manager =
-            PgnBufferedPositionBrancher::new(
-                &current_node,
-                TypedPosition::White(Position::<N, { Color::White }>::initial()),
-            );
+        let buffered_position_manager = PgnBufferedPositionBrancher::new(
+            &current_node,
+            TypedPosition::White(Position::<N, { Color::White }>::initial()),
+        );
         PgnParser {
             lexer,
             parse_state: PgnParsingState::Tags,

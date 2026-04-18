@@ -6,8 +6,8 @@ use crate::Flank;
 use crate::Piece;
 use crate::Square;
 use crate::r#move::{Move, MoveFlag};
-use crate::position::context::PositionContext;
 use crate::position::Position;
+use crate::position::context::PositionContext;
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -214,9 +214,7 @@ impl PositionContext {
     }
 
     fn process_normal_king_move_disregarding_capture(&mut self, moved_piece_color: Color) {
-        self.castling_rights = self
-            .castling_rights
-            .with_cleared_color(moved_piece_color);
+        self.castling_rights = self.castling_rights.with_cleared_color(moved_piece_color);
     }
 
     fn process_normal_rook_move_disregarding_capture(
@@ -225,14 +223,12 @@ impl PositionContext {
         src_square: Square,
     ) {
         self.castling_rights = match (moved_piece_color, src_square) {
-            (Color::White, Square::H1) | (Color::Black, Square::H8) => {
-                self.castling_rights
-                    .with_cleared(Flank::Kingside, moved_piece_color)
-            }
-            (Color::White, Square::A1) | (Color::Black, Square::A8) => {
-                self.castling_rights
-                    .with_cleared(Flank::Queenside, moved_piece_color)
-            }
+            (Color::White, Square::H1) | (Color::Black, Square::H8) => self
+                .castling_rights
+                .with_cleared(Flank::Kingside, moved_piece_color),
+            (Color::White, Square::A1) | (Color::Black, Square::A8) => self
+                .castling_rights
+                .with_cleared(Flank::Queenside, moved_piece_color),
             _ => self.castling_rights,
         };
     }
@@ -266,4 +262,3 @@ impl PositionContext {
         }
     }
 }
-

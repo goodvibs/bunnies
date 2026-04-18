@@ -94,7 +94,7 @@ mod tests {
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::position::{TypedPosition, INITIAL_FEN};
+    use crate::position::{INITIAL_FEN, TypedPosition};
     use logos::Logos;
 
     #[test]

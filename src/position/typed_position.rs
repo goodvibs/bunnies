@@ -1,10 +1,8 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
 use crate::Color;
-use crate::position::{
-    Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext,
-};
 use crate::r#move::{Move, MoveList};
+use crate::position::{Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext};
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]

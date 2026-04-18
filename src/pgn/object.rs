@@ -1,7 +1,7 @@
+use crate::Color;
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::position::{Position, TypedPosition};
-use crate::Color;
 use indexmap::IndexMap;
 use std::cell::RefCell;
 use std::rc::Rc;

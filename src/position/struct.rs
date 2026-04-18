@@ -151,8 +151,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     pub(crate) fn update_pins_and_checks_for_stm(&mut self, stm: Color) {
         let opp = stm.other();
 
-        let current_side_king = self.board.piece_mask::<{ Piece::King }>()
-            & self.board.color_mask_at(stm);
+        let current_side_king =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         if current_side_king.count_ones() != 1 {
             return;
@@ -287,6 +287,9 @@ mod state_tests {
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let _ = pos.make_move(mv2);
         }));
-        assert!(r.is_err(), "second make_move with N=2 should panic in debug");
+        assert!(
+            r.is_err(),
+            "second make_move with N=2 should panic in debug"
+        );
     }
 }

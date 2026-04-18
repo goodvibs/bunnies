@@ -480,20 +480,11 @@ mod tests {
 
     #[test]
     fn test_from_rank_and_file() {
-        assert_eq!(
-            Square::from_rank_and_file(Rank::Eight, File::A),
-            Square::A8
-        );
-        assert_eq!(
-            Square::from_rank_and_file(Rank::Eight, File::H),
-            Square::H8
-        );
+        assert_eq!(Square::from_rank_and_file(Rank::Eight, File::A), Square::A8);
+        assert_eq!(Square::from_rank_and_file(Rank::Eight, File::H), Square::H8);
         assert_eq!(Square::from_rank_and_file(Rank::One, File::A), Square::A1);
         assert_eq!(Square::from_rank_and_file(Rank::One, File::H), Square::H1);
-        assert_eq!(
-            Square::from_rank_and_file(Rank::Four, File::E),
-            Square::E4
-        );
+        assert_eq!(Square::from_rank_and_file(Rank::Four, File::E), Square::E4);
     }
 
     #[test]
@@ -508,10 +499,7 @@ mod tests {
         for a in Square::ALL {
             for b in Square::ALL {
                 assert_eq!(a.is_on_same_line_as(b), same_line(a, b));
-                assert_eq!(
-                    a.is_diagonal_to(b),
-                    diagonals_union_impl(a) & b.mask() != 0
-                );
+                assert_eq!(a.is_diagonal_to(b), diagonals_union_impl(a) & b.mask() != 0);
             }
         }
     }

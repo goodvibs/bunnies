@@ -29,10 +29,7 @@ impl Piece {
     }
 
     pub const fn is_sliding_piece(&self) -> bool {
-        matches!(
-            *self,
-            Piece::Bishop | Piece::Rook | Piece::Queen
-        )
+        matches!(*self, Piece::Bishop | Piece::Rook | Piece::Queen)
     }
 
     /// Returns the Piece from the given uppercase char.

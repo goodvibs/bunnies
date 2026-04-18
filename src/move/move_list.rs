@@ -43,11 +43,7 @@ impl MoveList {
 
     #[inline]
     pub fn push(&mut self, m: Move) {
-        debug_assert!(
-            self.len < MAX_MOVES,
-            "MoveList overflow: max {}",
-            MAX_MOVES
-        );
+        debug_assert!(self.len < MAX_MOVES, "MoveList overflow: max {}", MAX_MOVES);
         self.moves[self.len] = m;
         self.len += 1;
     }
