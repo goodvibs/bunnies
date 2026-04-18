@@ -19,14 +19,14 @@ fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, dep
                     &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::Black }>>()
                 };
                 total += count_nodes(child, depth - 1);
-                child.unmake_move_in_place(mv);
+                child.unmake_move(mv);
             }
             Color::Black => {
                 let child = unsafe {
                     &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::White }>>()
                 };
                 total += count_nodes(child, depth - 1);
-                child.unmake_move_in_place(mv);
+                child.unmake_move(mv);
             }
         }
     }

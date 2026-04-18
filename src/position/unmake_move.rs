@@ -74,7 +74,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     /// Undoes a move in place. After this, memory matches the destination type of [`Position::unmake_move`].
-    pub(crate) fn unmake_move_in_place(&mut self, mv: Move) {
+    pub fn unmake_move(&mut self, mv: Move) {
         let src_square = mv.source();
         let dst_square = mv.destination();
 
@@ -90,11 +90,5 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.halfmove -= 1;
         self.decrement_context_stack_for_unmake();
         self.result = GameResult::None;
-    }
-
-    /// Undoes a move from State without checking if it is valid, legal, or even applied to the current position.
-    pub fn unmake_move(mut self, mv: Move) -> Position<N, { STM.other() }> {
-        self.unmake_move_in_place(mv);
-        self.rebrand_stm::<{ STM.other() }>()
     }
 }
