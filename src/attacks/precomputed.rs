@@ -9,7 +9,7 @@ const SINGLE_KING_ATTACKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = manual::multi_king_attacks(unsafe { Square::from(i) }.mask());
+        arr[i as usize] = manual::multi_king_attacks(unsafe { Square::from_raw(i) }.mask());
         i += 1;
     }
     arr
@@ -19,7 +19,7 @@ const SINGLE_KNIGHT_ATTACKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = manual::multi_knight_attacks(unsafe { Square::from(i) }.mask());
+        arr[i as usize] = manual::multi_knight_attacks(unsafe { Square::from_raw(i) }.mask());
         i += 1;
     }
     arr

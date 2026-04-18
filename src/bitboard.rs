@@ -110,8 +110,8 @@ const MASK_BETWEEN_DATA: [Bitboard; 64 * 64] = {
     let mut arr = [0u64; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {
-        let sq1 = unsafe { Square::from((i / 64) as u8) };
-        let sq2 = unsafe { Square::from((i % 64) as u8) };
+        let sq1 = unsafe { Square::from_raw((i / 64) as u8) };
+        let sq2 = unsafe { Square::from_raw((i % 64) as u8) };
         arr[i] = calc_between(sq1, sq2);
         i += 1;
     }
@@ -122,8 +122,8 @@ const EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
     let mut arr = [0u64; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {
-        let sq1 = unsafe { Square::from((i / 64) as u8) };
-        let sq2 = unsafe { Square::from((i % 64) as u8) };
+        let sq1 = unsafe { Square::from_raw((i / 64) as u8) };
+        let sq2 = unsafe { Square::from_raw((i % 64) as u8) };
         arr[i] = calc_edge_to_edge_ray(sq1, sq2);
         i += 1;
     }

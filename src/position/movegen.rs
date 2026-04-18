@@ -1,15 +1,15 @@
 //! Move generation functions for the state struct
 
+use crate::File;
+use crate::Rank;
 use crate::Square;
 use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
-use crate::File;
-use crate::Rank;
 use crate::r#move::{Move, MoveFlag, MoveList};
-use crate::position::legal_gen_kind::LegalGenKind;
 use crate::position::Position;
+use crate::position::legal_gen_kind::LegalGenKind;
 use crate::{Bitboard, Color, Flank};
 use crate::{BitboardUtils, Piece};
 
@@ -22,8 +22,8 @@ const fn ep_possible_src_masks(stm: Color, double_pawn_push: i8) -> Bitboard {
     assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
 
     let double_pawn_push_dst = match stm {
-        Color::White => unsafe { Square::from_rank_file(4, double_pawn_push as u8).mask() },
-        Color::Black => unsafe { Square::from_rank_file(3, double_pawn_push as u8).mask() },
+        Color::White => unsafe { Square::from_raw((7 - 4) * 8 + double_pawn_push as u8).mask() },
+        Color::Black => unsafe { Square::from_raw((7 - 3) * 8 + double_pawn_push as u8).mask() },
     };
 
     ((double_pawn_push_dst << 1) & !File::H.mask())
@@ -34,8 +34,8 @@ const fn ep_dst_square(stm: Color, double_pawn_push: i8) -> Square {
     assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
 
     match stm {
-        Color::White => unsafe { Square::from_rank_file(5, double_pawn_push as u8) },
-        Color::Black => unsafe { Square::from_rank_file(2, double_pawn_push as u8) },
+        Color::White => unsafe { Square::from_raw((7 - 5) * 8 + double_pawn_push as u8) },
+        Color::Black => unsafe { Square::from_raw((7 - 2) * 8 + double_pawn_push as u8) },
     }
 }
 
@@ -43,8 +43,8 @@ const fn ep_capture_square(stm: Color, double_pawn_push: i8) -> Square {
     assert!(double_pawn_push >= 0 && double_pawn_push <= 7);
 
     match stm {
-        Color::White => unsafe { Square::from_rank_file(4, double_pawn_push as u8) },
-        Color::Black => unsafe { Square::from_rank_file(3, double_pawn_push as u8) },
+        Color::White => unsafe { Square::from_raw((7 - 4) * 8 + double_pawn_push as u8) },
+        Color::Black => unsafe { Square::from_raw((7 - 3) * 8 + double_pawn_push as u8) },
     }
 }
 
@@ -105,19 +105,22 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         let promotion_rank = self.current_side_promotion_rank();
 
-        let current_side_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
-        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+        let current_side_pawns =
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+        let current_side_king =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         for src in current_side_pawns.iter_set_bits_as_masks() {
-            let src_square = unsafe { Square::from_bitboard(src) };
+            let src_square = Square::from_bitboard(src).expect("pawn source mask");
 
             let mut possible_captures =
                 multi_pawn_attacks(src, stm) & opposite_side_pieces & possible_dsts;
 
             if src_square.mask() & pinned_bb != 0 {
-                let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe {
-                    Square::from_bitboard(current_side_king)
-                });
+                let possible_move_ray = Bitboard::edge_to_edge_ray(
+                    src_square,
+                    Square::from_bitboard(current_side_king).expect("king mask"),
+                );
                 possible_captures &= possible_move_ray;
             }
 
@@ -149,19 +152,23 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     fn add_legal_en_passants(&self, pinned_bb: Bitboard, moves: &mut MoveList) {
         let stm = STM;
         let double_pawn_push = self.context().double_pawn_push;
-        let current_side_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
-        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+        let current_side_pawns =
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+        let current_side_king =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         if double_pawn_push != -1 {
             let capture_square = ep_capture_square(stm, double_pawn_push);
             let dst_square = ep_dst_square(stm, double_pawn_push);
 
-            for src_square in ep_possible_src_masks(stm, double_pawn_push).iter_set_bits_as_squares()
+            for src_square in
+                ep_possible_src_masks(stm, double_pawn_push).iter_set_bits_as_squares()
             {
                 if src_square.mask() & pinned_bb != 0 {
-                    let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe {
-                        Square::from_bitboard(current_side_king)
-                    });
+                    let possible_move_ray = Bitboard::edge_to_edge_ray(
+                        src_square,
+                        Square::from_bitboard(current_side_king).expect("king mask"),
+                    );
                     if possible_move_ray & dst_square.mask() == 0 {
                         continue;
                     }
@@ -169,7 +176,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
                 if src_square.mask() & current_side_pawns != 0 {
                     if self.context().checkers != 0
-                        || current_side_king & src_square.rank_mask() != 0
+                        || current_side_king & Rank::from_u8(src_square.rank()).mask() != 0
                     {
                         let mut board_copy = self.board.clone();
 
@@ -179,7 +186,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                         board_copy.remove_piece_at(Piece::Pawn, capture_square);
 
                         if !board_copy.is_square_attacked(
-                            unsafe { Square::from_bitboard(current_side_king) },
+                            Square::from_bitboard(current_side_king).expect("king mask"),
                             stm.other(),
                         ) {
                             moves.push(Move::new_non_promotion(
@@ -221,12 +228,16 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let stm = STM;
         let occupied_mask = self.board.pieces();
 
-        let mut movable_pawns = self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
+        let mut movable_pawns =
+            self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(stm);
 
         let pinned_pawns = pinned_bb & movable_pawns;
         if pinned_pawns != 0 {
-            let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
-            let current_side_king_file = unsafe { Square::from_bitboard(current_side_king) }.file();
+            let current_side_king =
+                self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+            let current_side_king_file = Square::from_bitboard(current_side_king)
+                .expect("king mask")
+                .file();
 
             for pinned_pawn_square in pinned_pawns.iter_set_bits_as_squares() {
                 if pinned_pawn_square.file() != current_side_king_file {
@@ -251,11 +262,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
         }
 
-        let double_push_dsts = multi_pawn_moves(
-            single_push_dsts & additional_pawn_push_rank_mask(stm),
-            stm,
-        ) & !occupied_mask
-            & possible_dsts;
+        let double_push_dsts =
+            multi_pawn_moves(single_push_dsts & additional_pawn_push_rank_mask(stm), stm)
+                & !occupied_mask
+                & possible_dsts;
         for dst_square in double_push_dsts.iter_set_bits_as_squares() {
             let src_square = unsafe { pawn_double_push_origin(stm, dst_square) };
             moves.push(Move::new_non_promotion(
@@ -321,7 +331,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     ) {
         let stm = STM;
         let all_occupancy_bb = self.board.pieces();
-        let current_side_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+        let current_side_king =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
 
         let piece_mask = self.board.piece_mask_at(piece) & self.board.color_mask_at(stm);
 
@@ -330,9 +341,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             let mut possible_moves = attacks & possible_dsts;
 
             if src_square.mask() & pinned_bb != 0 {
-                let possible_move_ray = Bitboard::edge_to_edge_ray(src_square, unsafe {
-                    Square::from_bitboard(current_side_king)
-                });
+                let possible_move_ray = Bitboard::edge_to_edge_ray(
+                    src_square,
+                    Square::from_bitboard(current_side_king).expect("king mask"),
+                );
                 possible_moves &= possible_move_ray;
             }
 
@@ -360,7 +372,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let current_side_mask = self.board.color_mask_at(stm);
 
         let king_src_bb = self.board.piece_mask::<{ Piece::King }>() & current_side_mask;
-        let king_src_square = unsafe { Square::from_bitboard(king_src_bb) };
+        let king_src_square = Square::from_bitboard(king_src_bb).expect("king mask");
 
         let king_attacks = single_king_attacks(king_src_square);
         let king_moves = king_attacks & !current_side_mask;
@@ -398,8 +410,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         for flank in Flank::ALL {
             if self.can_legally_castle(flank) {
                 let king_dst_square = match flank {
-                    Flank::Kingside => unsafe { Square::from(king_src_square as u8 + 2) },
-                    Flank::Queenside => unsafe { Square::from(king_src_square as u8 - 2) },
+                    Flank::Kingside => unsafe { Square::from_raw(king_src_square as u8 + 2) },
+                    Flank::Queenside => unsafe { Square::from_raw(king_src_square as u8 - 2) },
                 };
                 moves.push(Move::new_non_promotion(
                     king_src_square,
@@ -423,14 +435,29 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 self.add_legal_en_passants(pinned_bb, out);
                 self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, out);
                 self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Bishop, possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Rook, possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Queen, possible_non_king_dsts, pinned_bb, out);
+                self.add_legal_sliding_piece_moves(
+                    Piece::Bishop,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
+                self.add_legal_sliding_piece_moves(
+                    Piece::Rook,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
+                self.add_legal_sliding_piece_moves(
+                    Piece::Queen,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
                 self.add_legal_king_moves(out);
                 self.add_legal_castling_moves(out);
             }
             checkers if checkers.count_ones() == 1 => {
-                let checker_square = unsafe { Square::from_bitboard(checkers) };
+                let checker_square = Square::from_bitboard(checkers).expect("single checker");
                 let is_checker_a_slider = self.board.piece_at(checker_square).is_sliding_piece();
 
                 let current_side_king =
@@ -438,9 +465,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
                 if is_checker_a_slider {
                     possible_non_king_dsts &= checkers
-                        | Bitboard::between(checker_square, unsafe {
-                            Square::from_bitboard(current_side_king)
-                        });
+                        | Bitboard::between(
+                            checker_square,
+                            Square::from_bitboard(current_side_king).expect("king mask"),
+                        );
                 } else {
                     possible_non_king_dsts = checker_square.mask();
                 }
@@ -449,9 +477,24 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 self.add_legal_en_passants(pinned_bb, out);
                 self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, out);
                 self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Bishop, possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Rook, possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_sliding_piece_moves(Piece::Queen, possible_non_king_dsts, pinned_bb, out);
+                self.add_legal_sliding_piece_moves(
+                    Piece::Bishop,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
+                self.add_legal_sliding_piece_moves(
+                    Piece::Rook,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
+                self.add_legal_sliding_piece_moves(
+                    Piece::Queen,
+                    possible_non_king_dsts,
+                    pinned_bb,
+                    out,
+                );
                 self.add_legal_king_moves(out);
             }
             _ => {

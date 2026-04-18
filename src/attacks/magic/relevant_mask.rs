@@ -9,7 +9,7 @@ const ROOK_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = calc_rook_relevant_mask(unsafe { Square::from(i) });
+        arr[i as usize] = calc_rook_relevant_mask(unsafe { Square::from_raw(i) });
         i += 1;
     }
     arr
@@ -19,7 +19,7 @@ const BISHOP_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
-        arr[i as usize] = calc_bishop_relevant_mask(unsafe { Square::from(i) });
+        arr[i as usize] = calc_bishop_relevant_mask(unsafe { Square::from_raw(i) });
         i += 1;
     }
     arr
@@ -35,8 +35,8 @@ pub static BISHOP_RELEVANT_MASKS: SquaresToMasks =
 
 /// Calculate the relevant mask for a rook on a given square
 pub const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
-    let file_mask = square.file_mask();
-    let rank_mask = square.rank_mask();
+    let file_mask = File::from_u8(square.file()).mask();
+    let rank_mask = Rank::from_u8(square.rank()).mask();
     let mut res = (file_mask | rank_mask) & !square.mask();
     const EDGE_MASKS: [Bitboard; 4] = [
         File::A.mask(),

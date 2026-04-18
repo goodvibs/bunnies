@@ -27,7 +27,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let opp = STM.other();
         let opp_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(opp);
         self.board.is_square_attacked(
-            unsafe { Square::from_bitboard(opp_king) },
+            Square::from_bitboard(opp_king).expect("opponent king mask"),
             STM,
         )
     }

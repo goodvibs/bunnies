@@ -50,7 +50,7 @@ impl Iterator for MaskSquaresIterator {
         let ls1b_mask = self.current_mask & self.current_mask.wrapping_neg(); // Isolate the least significant set bit
         self.current_mask &= !ls1b_mask; // Clear the least significant set bit
 
-        unsafe { Some(Square::from_bitboard(ls1b_mask)) }
+        Square::from_bitboard(ls1b_mask)
     }
 }
 

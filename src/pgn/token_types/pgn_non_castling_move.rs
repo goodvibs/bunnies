@@ -1,4 +1,6 @@
+use crate::File;
 use crate::Piece;
+use crate::Rank;
 use crate::Square;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
@@ -129,7 +131,7 @@ impl ParsablePgnToken for PgnNonCastlingMove {
             let to_rank_char = captures.get(6).unwrap().as_str().chars().next().unwrap();
             let to_file = to_file_char as u8 - 'a' as u8;
             let to_rank = to_rank_char as u8 - '1' as u8;
-            let to = unsafe { Square::from_rank_file(to_rank, to_file) };
+            let to = Square::from_rank_and_file(Rank::from_u8(to_rank), File::from_u8(to_file));
 
             let promoted_to = match captures.get(7) {
                 Some(m) => Piece::from_uppercase_char(m.as_str().chars().next().unwrap()),

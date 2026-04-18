@@ -33,8 +33,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     fn unprocess_en_passant(&mut self, dst_square: Square, src_square: Square) {
         let en_passant_capture_square = match STM {
-            Color::White => unsafe { Square::from(dst_square as u8 - 8) },
-            Color::Black => unsafe { Square::from(dst_square as u8 + 8) },
+            Color::White => unsafe { Square::from_raw(dst_square as u8 - 8) },
+            Color::Black => unsafe { Square::from_raw(dst_square as u8 + 8) },
         };
 
         self.board.move_piece(Piece::Pawn, src_square, dst_square);
@@ -57,11 +57,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         };
 
         let (rook_src_square, rook_dst_square) = match flank {
-            Flank::Kingside => (unsafe { Square::from(src_square as u8 + 3) }, unsafe {
-                Square::from(src_square as u8 + 1)
+            Flank::Kingside => (unsafe { Square::from_raw(src_square as u8 + 3) }, unsafe {
+                Square::from_raw(src_square as u8 + 1)
             }),
-            Flank::Queenside => (unsafe { Square::from(src_square as u8 - 4) }, unsafe {
-                Square::from(src_square as u8 - 1)
+            Flank::Queenside => (unsafe { Square::from_raw(src_square as u8 - 4) }, unsafe {
+                Square::from_raw(src_square as u8 - 1)
             }),
         };
 

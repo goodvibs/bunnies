@@ -165,7 +165,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             return;
         }
 
-        let current_side_king_square = unsafe { Square::from_bitboard(current_side_king) };
+        let current_side_king_square = Square::from_bitboard(current_side_king).expect("king mask");
 
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
