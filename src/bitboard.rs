@@ -64,7 +64,7 @@ const fn calc_between(sq1: Square, sq2: Square) -> Bitboard {
         let mut mask: Bitboard = 0;
         let mut current = sq1;
         loop {
-            match current.at(direction) {
+            match current.neighbor_in_direction(direction) {
                 None => break,
                 Some(next) => {
                     if next as u8 == sq2 as u8 {
@@ -88,7 +88,7 @@ const fn calc_edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
         let mut mask = sq1.mask();
         let mut current = sq1;
         loop {
-            match current.at(direction) {
+            match current.neighbor_in_direction(direction) {
                 None => break,
                 Some(next) => {
                     mask |= next.mask();
@@ -98,7 +98,7 @@ const fn calc_edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
         }
         current = sq1;
         loop {
-            match current.at(direction.opposite()) {
+            match current.neighbor_in_direction(direction.opposite()) {
                 None => break,
                 Some(next) => {
                     mask |= next.mask();

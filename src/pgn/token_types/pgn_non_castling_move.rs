@@ -60,11 +60,11 @@ impl PgnMove for PgnNonCastlingMove {
         } else if self.is_capture != mv.is_capture(initial_state) {
             return false;
         } else if let Some(file) = self.disambiguation_file {
-            if src.file() != file as u8 - 'a' as u8 {
+            if src.file() as u8 != file as u8 - 'a' as u8 {
                 return false;
             }
         } else if let Some(rank) = self.disambiguation_rank {
-            if src.rank() != rank as u8 - '1' as u8 {
+            if src.rank() as u8 != rank as u8 - '1' as u8 {
                 return false;
             }
         }

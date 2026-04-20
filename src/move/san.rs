@@ -1,6 +1,6 @@
-use crate::Piece;
 use crate::r#move::Move;
 use crate::r#move::flag::MoveFlag;
+use crate::{File, Piece};
 
 impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.
@@ -17,8 +17,8 @@ impl Move {
 
         let move_str = if flag == MoveFlag::Castling {
             match dst_square.file() {
-                6 => "O-O".to_string(),
-                2 => "O-O-O".to_string(),
+                File::G => "O-O".to_string(),
+                File::C => "O-O-O".to_string(),
                 _ => panic!("Invalid castling move"),
             }
         } else {

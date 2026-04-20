@@ -35,8 +35,8 @@ pub static BISHOP_RELEVANT_MASKS: SquaresToMasks =
 
 /// Calculate the relevant mask for a rook on a given square
 pub const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
-    let file_mask = File::from_u8(square.file()).mask();
-    let rank_mask = Rank::from_u8(square.rank()).mask();
+    let file_mask = square.file().mask();
+    let rank_mask = square.rank().mask();
     let mut res = (file_mask | rank_mask) & !square.mask();
     const EDGE_MASKS: [Bitboard; 4] = [
         File::A.mask(),

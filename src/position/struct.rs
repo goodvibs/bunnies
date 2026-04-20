@@ -222,20 +222,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             self.result = GameResult::FiftyMoveRule;
         }
     }
-
-    pub const fn current_side_promotion_rank(&self) -> u8 {
-        match STM {
-            Color::White => 7,
-            Color::Black => 0,
-        }
-    }
-
-    pub const fn opposite_side_promotion_rank(&self) -> u8 {
-        match STM {
-            Color::White => 0,
-            Color::Black => 7,
-        }
-    }
 }
 
 #[cfg(test)]

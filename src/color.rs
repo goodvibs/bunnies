@@ -1,3 +1,5 @@
+use crate::Square;
+
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
 /// Represents a side of the board (piece color and, on [`crate::position::Position`], **side to move**
@@ -19,6 +21,13 @@ impl Color {
         match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
+        }
+    }
+
+    pub const fn king_initial_square(self: Color) -> Square {
+        match self {
+            Color::White => Square::E1,
+            Color::Black => Square::E8,
         }
     }
 

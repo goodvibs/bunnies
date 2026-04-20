@@ -2,7 +2,7 @@
 
 use crate::Color;
 use crate::r#move::{Move, MoveList};
-use crate::position::{Board, FenParseError, GameResult, LegalGenKind, Position, PositionContext};
+use crate::position::{Board, FenParseError, GameResult, Position, PositionContext};
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
@@ -63,26 +63,10 @@ impl<const N: usize> TypedPosition<N> {
     }
 
     #[inline]
-    pub fn generate_legal_moves(&self, out: &mut MoveList) {
+    pub fn generate_legal_moves(&self, moves: &mut MoveList) {
         match self {
-            TypedPosition::White(p) => p.generate_legal_moves(out),
-            TypedPosition::Black(p) => p.generate_legal_moves(out),
-        }
-    }
-
-    #[inline]
-    pub fn generate_pseudolegal_moves(&self, out: &mut MoveList) {
-        match self {
-            TypedPosition::White(p) => p.generate_pseudolegal_moves(out),
-            TypedPosition::Black(p) => p.generate_pseudolegal_moves(out),
-        }
-    }
-
-    #[inline]
-    pub fn generate_legal_moves_kind(&self, kind: LegalGenKind, out: &mut MoveList) {
-        match self {
-            TypedPosition::White(p) => p.generate_legal_moves_kind(kind, out),
-            TypedPosition::Black(p) => p.generate_legal_moves_kind(kind, out),
+            TypedPosition::White(p) => p.generate_legal_moves(moves),
+            TypedPosition::Black(p) => p.generate_legal_moves(moves),
         }
     }
 

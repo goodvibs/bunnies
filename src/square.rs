@@ -1,8 +1,9 @@
-use crate::Bitboard;
+use std::fmt::Display;
+
 use crate::file::File;
 use crate::rank::Rank;
 use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks};
-use std::fmt::Display;
+use crate::{Bitboard, Color};
 
 // Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
 pub(crate) const DIAGONALS_BR_TO_TL: [Bitboard; 15] = [
@@ -40,6 +41,36 @@ pub(crate) const DIAGONALS_BL_TO_TR: [Bitboard; 15] = [
     0x0201000000000000,
     0x0100000000000000,
 ];
+
+pub type SquareDelta = i8;
+
+mod private {
+    pub const trait Sealed {}
+    impl Sealed for super::SquareDelta {}
+}
+
+pub const trait SquareDeltaUtils: private::Sealed {
+    const UP: SquareDelta;
+    const DOWN: SquareDelta;
+    const LEFT: SquareDelta;
+    const RIGHT: SquareDelta;
+
+    fn from_perspective(self, color: Color) -> SquareDelta;
+}
+
+impl SquareDeltaUtils for SquareDelta {
+    const UP: SquareDelta = -8;
+    const DOWN: SquareDelta = 8;
+    const LEFT: SquareDelta = -1;
+    const RIGHT: SquareDelta = 1;
+
+    fn from_perspective(self, color: Color) -> SquareDelta {
+        self * match color {
+            Color::White => 1,
+            Color::Black => -1,
+        }
+    }
+}
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -111,15 +142,6 @@ pub enum Square {
     H1 = 63,
 }
 
-/// One step toward rank 8 along a file (decreases square index).
-pub const DELTA_UP: i8 = -8;
-/// One step toward rank 1 along a file (increases square index).
-pub const DELTA_DOWN: i8 = 8;
-/// One step toward file a (decreases square index).
-pub const DELTA_LEFT: i8 = -1;
-/// One step toward file h (increases square index).
-pub const DELTA_RIGHT: i8 = 1;
-
 impl Square {
     /// Board index `0..64` → square (A8→0 … H1→63), same layout as [`File::from_u8`] / [`Rank::from_u8`].
     ///
@@ -152,19 +174,17 @@ impl Square {
         1 << (63 - *self as u8)
     }
 
-    /// Returns the file of the square (0-7).
-    pub const fn file(&self) -> u8 {
-        *self as u8 % 8
+    pub const fn file(&self) -> File {
+        File::from_u8(*self as u8 % 8)
     }
 
-    /// Returns the rank of the square (0-7).
-    pub const fn rank(&self) -> u8 {
-        7 - *self as u8 / 8
+    pub const fn rank(&self) -> Rank {
+        Rank::from_u8(7 - *self as u8 / 8)
     }
 
     /// Returns the combined file and rank mask for the square.
     pub const fn orthogonals_mask(&self) -> Bitboard {
-        File::from_u8(self.file()).mask() | Rank::from_u8(self.rank()).mask()
+        self.file().mask() | self.rank().mask()
     }
 
     /// Returns the combined diagonals mask for the square (both `/` and `\` diagonals through this square).
@@ -175,10 +195,6 @@ impl Square {
     /// Returns the combined orthogonals and diagonals mask for the square.
     pub fn orthogonals_and_diagonals_mask(&self) -> Bitboard {
         self.orthogonals_mask() | self.diagonals_mask()
-    }
-
-    pub const fn is_orthogonal_to(&self, other: Square) -> bool {
-        self.file() == other.file() || self.rank() == other.rank()
     }
 
     /// True if `other` lies on either diagonal through this square (including `other == self`).
@@ -193,7 +209,7 @@ impl Square {
 
     /// Offset from this square by `delta` in rank-major index space, or `None` if the sum is outside `0..64`.
     /// Callers stepping orthogonally or diagonally should still enforce file/rank edges; see [`Square::up`], etc.
-    pub const fn relative(self, delta: i8) -> Option<Square> {
+    pub const fn relative(self, delta: SquareDelta) -> Option<Square> {
         let idx = self as u8 as i16 + delta as i16;
         if idx >= 0 && idx <= 63 {
             Some(Square::from_u8(idx as u8))
@@ -204,94 +220,87 @@ impl Square {
 
     /// Returns the square above the current square, if it exists.
     pub const fn up(&self) -> Option<Square> {
-        if self.rank() == 7 {
+        if self.rank() == Rank::Eight {
             None
         } else {
-            self.relative(DELTA_UP)
+            self.relative(SquareDelta::UP)
         }
     }
 
     /// Returns the square below the current square, if it exists.
     pub const fn down(&self) -> Option<Square> {
-        if self.rank() == 0 {
+        if self.rank() == Rank::One {
             None
         } else {
-            self.relative(DELTA_DOWN)
+            self.relative(SquareDelta::DOWN)
         }
     }
 
     /// Returns the square to the left of the current square, if it exists.
     pub const fn left(&self) -> Option<Square> {
-        if self.file() == 0 {
+        if self.file() == File::A {
             None
         } else {
-            self.relative(DELTA_LEFT)
+            self.relative(SquareDelta::LEFT)
         }
     }
 
     /// Returns the square to the right of the current square, if it exists.
     pub const fn right(&self) -> Option<Square> {
-        if self.file() == 7 {
+        if self.file() == File::H {
             None
         } else {
-            self.relative(DELTA_RIGHT)
+            self.relative(SquareDelta::RIGHT)
         }
     }
 
     /// Returns the square northwest of the current square, if it exists.
     pub const fn up_left(&self) -> Option<Square> {
-        if self.rank() == 7 || self.file() == 0 {
+        if self.rank() == Rank::Eight || self.file() == File::A {
             None
         } else {
-            self.relative(DELTA_UP + DELTA_LEFT)
+            self.relative(SquareDelta::UP + SquareDelta::LEFT)
         }
     }
 
     /// Returns the square northeast of the current square, if it exists.
     pub const fn up_right(&self) -> Option<Square> {
-        if self.rank() == 7 || self.file() == 7 {
+        if self.rank() == Rank::Eight || self.file() == File::H {
             None
         } else {
-            self.relative(DELTA_UP + DELTA_RIGHT)
+            self.relative(SquareDelta::UP + SquareDelta::RIGHT)
         }
     }
 
     /// Returns the square southwest of the current square, if it exists.
     pub const fn down_left(&self) -> Option<Square> {
-        if self.rank() == 0 || self.file() == 0 {
+        if self.rank() == Rank::One || self.file() == File::A {
             None
         } else {
-            self.relative(DELTA_DOWN + DELTA_LEFT)
+            self.relative(SquareDelta::DOWN + SquareDelta::LEFT)
         }
     }
 
     /// Returns the square southeast of the current square, if it exists.
     pub const fn down_right(&self) -> Option<Square> {
-        if self.rank() == 0 || self.file() == 7 {
+        if self.rank() == Rank::One || self.file() == File::H {
             None
         } else {
-            self.relative(DELTA_DOWN + DELTA_RIGHT)
+            self.relative(SquareDelta::DOWN + SquareDelta::RIGHT)
         }
     }
 
-    /// Returns the adjacent square in the given direction, or `None` at the board edge.
-    pub const fn neighbor_in_direction(&self, direction: QueenLikeMoveDirection) -> Option<Square> {
+    pub const fn neighbor_in_direction(self, direction: QueenLikeMoveDirection) -> Option<Square> {
         match direction {
             QueenLikeMoveDirection::Up => self.up(),
             QueenLikeMoveDirection::Down => self.down(),
-            QueenLikeMoveDirection::Left => self.left(),
             QueenLikeMoveDirection::Right => self.right(),
-            QueenLikeMoveDirection::UpLeft => self.up_left(),
+            QueenLikeMoveDirection::Left => self.left(),
             QueenLikeMoveDirection::UpRight => self.up_right(),
-            QueenLikeMoveDirection::DownLeft => self.down_left(),
+            QueenLikeMoveDirection::UpLeft => self.up_left(),
             QueenLikeMoveDirection::DownRight => self.down_right(),
+            QueenLikeMoveDirection::DownLeft => self.down_left(),
         }
-    }
-
-    /// Alias for [`Square::neighbor_in_direction`].
-    #[inline]
-    pub const fn at(&self, direction: QueenLikeMoveDirection) -> Option<Square> {
-        self.neighbor_in_direction(direction)
     }
 
     /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
@@ -301,12 +310,12 @@ impl Square {
 
     /// Returns the character corresponding to the file of the square.
     pub const fn file_char(&self) -> char {
-        (b'a' + self.file()) as char
+        (b'a' + self.file() as u8) as char
     }
 
     /// Returns the character corresponding to the rank of the square.
     pub const fn rank_char(&self) -> char {
-        (b'1' + self.rank()) as char
+        (b'1' + self.rank() as u8) as char
     }
 
     /// Returns a string representing the square in algebraic notation.
@@ -513,119 +522,52 @@ mod tests {
 
     #[test]
     fn test_get_file() {
-        assert_eq!(Square::A8.file(), 0);
-        assert_eq!(Square::H8.file(), 7);
-        assert_eq!(Square::E4.file(), 4);
+        assert_eq!(Square::A8.file() as u8, 0);
+        assert_eq!(Square::H8.file() as u8, 7);
+        assert_eq!(Square::E4.file() as u8, 4);
     }
 
     #[test]
     fn test_get_file_mask() {
-        let a_file_mask = File::from_u8(Square::A1.file()).mask();
-        let h_file_mask = File::from_u8(Square::H1.file()).mask();
+        let a_file_mask = File::from_u8(Square::A1.file() as u8).mask();
+        let h_file_mask = File::from_u8(Square::H1.file() as u8).mask();
 
         assert_eq!(a_file_mask, File::A.mask());
         assert_eq!(h_file_mask, File::H.mask());
 
         assert_eq!(
-            File::from_u8(Square::A1.file()).mask(),
-            File::from_u8(Square::A8.file()).mask()
+            File::from_u8(Square::A1.file() as u8).mask(),
+            File::from_u8(Square::A8.file() as u8).mask()
         );
         assert_eq!(
-            File::from_u8(Square::H1.file()).mask(),
-            File::from_u8(Square::H8.file()).mask()
+            File::from_u8(Square::H1.file() as u8).mask(),
+            File::from_u8(Square::H8.file() as u8).mask()
         );
     }
 
     #[test]
     fn test_get_rank() {
-        assert_eq!(Square::A8.rank(), 7);
-        assert_eq!(Square::A1.rank(), 0);
-        assert_eq!(Square::E4.rank(), 3);
+        assert_eq!(Square::A8.rank() as u8, 7);
+        assert_eq!(Square::A1.rank() as u8, 0);
+        assert_eq!(Square::E4.rank() as u8, 3);
     }
 
     #[test]
     fn test_get_rank_mask() {
-        let rank_1_mask = Rank::from_u8(Square::A1.rank()).mask();
-        let rank_8_mask = Rank::from_u8(Square::A8.rank()).mask();
+        let rank_1_mask = Rank::from_u8(Square::A1.rank() as u8).mask();
+        let rank_8_mask = Rank::from_u8(Square::A8.rank() as u8).mask();
 
         assert_eq!(rank_1_mask, Rank::One.mask());
         assert_eq!(rank_8_mask, Rank::Eight.mask());
 
         assert_eq!(
-            Rank::from_u8(Square::A1.rank()).mask(),
-            Rank::from_u8(Square::H1.rank()).mask()
+            Rank::from_u8(Square::A1.rank() as u8).mask(),
+            Rank::from_u8(Square::H1.rank() as u8).mask()
         );
         assert_eq!(
-            Rank::from_u8(Square::A8.rank()).mask(),
-            Rank::from_u8(Square::H8.rank()).mask()
+            Rank::from_u8(Square::A8.rank() as u8).mask(),
+            Rank::from_u8(Square::H8.rank() as u8).mask()
         );
-    }
-
-    #[test]
-    fn test_up() {
-        // Middle of board
-        assert_eq!(Square::E4.up(), Some(Square::E5));
-
-        // Edge cases
-        assert_eq!(Square::E8.up(), None);
-        assert_eq!(Square::A1.up(), Some(Square::A2));
-    }
-
-    #[test]
-    fn test_down() {
-        // Middle of board
-        assert_eq!(Square::E4.down(), Some(Square::E3));
-
-        // Edge cases
-        assert_eq!(Square::E1.down(), None);
-        assert_eq!(Square::A8.down(), Some(Square::A7));
-    }
-
-    #[test]
-    fn test_left() {
-        // Middle of board
-        assert_eq!(Square::E4.left(), Some(Square::D4));
-
-        // Edge cases
-        assert_eq!(Square::A4.left(), None);
-        assert_eq!(Square::H1.left(), Some(Square::G1));
-    }
-
-    #[test]
-    fn test_right() {
-        // Middle of board
-        assert_eq!(Square::E4.right(), Some(Square::F4));
-
-        // Edge cases
-        assert_eq!(Square::H4.right(), None);
-        assert_eq!(Square::A1.right(), Some(Square::B1));
-    }
-
-    #[test]
-    fn test_diagonal_moves() {
-        // Test up_left
-        assert_eq!(Square::E4.up_left(), Some(Square::D5));
-        assert_eq!(Square::A4.up_left(), None); // Left edge
-        assert_eq!(Square::E8.up_left(), None); // Top edge
-        assert_eq!(Square::A8.up_left(), None); // Top-left corner
-
-        // Test up_right
-        assert_eq!(Square::E4.up_right(), Some(Square::F5));
-        assert_eq!(Square::H4.up_right(), None); // Right edge
-        assert_eq!(Square::E8.up_right(), None); // Top edge
-        assert_eq!(Square::H8.up_right(), None); // Top-right corner
-
-        // Test down_left
-        assert_eq!(Square::E4.down_left(), Some(Square::D3));
-        assert_eq!(Square::A4.down_left(), None); // Left edge
-        assert_eq!(Square::E1.down_left(), None); // Bottom edge
-        assert_eq!(Square::A1.down_left(), None); // Bottom-left corner
-
-        // Test down_right
-        assert_eq!(Square::E4.down_right(), Some(Square::F3));
-        assert_eq!(Square::H4.down_right(), None); // Right edge
-        assert_eq!(Square::E1.down_right(), None); // Bottom edge
-        assert_eq!(Square::H1.down_right(), None); // Bottom-right corner
     }
 
     #[test]

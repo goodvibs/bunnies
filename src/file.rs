@@ -4,7 +4,7 @@ use crate::Bitboard;
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Eq, Debug, Hash)]
 pub enum File {
     A = 0,
     B = 1,
@@ -41,5 +41,11 @@ impl File {
     pub const fn from_u8(file: u8) -> Self {
         debug_assert!(file < 8);
         unsafe { std::mem::transmute::<u8, File>(file) }
+    }
+}
+
+impl const PartialEq for File {
+    fn eq(&self, other: &Self) -> bool {
+        *self as u8 == *other as u8
     }
 }

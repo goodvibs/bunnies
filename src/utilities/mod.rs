@@ -4,6 +4,7 @@
 mod display;
 mod mask_iterators;
 mod move_direction;
+
 mod squares_mapping;
 
 pub use display::*;

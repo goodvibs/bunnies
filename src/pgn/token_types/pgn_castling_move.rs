@@ -1,9 +1,9 @@
-use crate::Flank;
 use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
 use crate::position::TypedPosition;
+use crate::{File, Flank};
 use logos::Lexer;
 use regex::Regex;
 use std::sync::LazyLock;
@@ -31,8 +31,8 @@ impl PgnMove for PgnCastlingMove {
     fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &TypedPosition<N>) -> bool {
         let flag = mv.flag();
         let matches_flank = match self.flank {
-            Flank::Kingside => mv.destination().file() == 6,
-            Flank::Queenside => mv.destination().file() == 2,
+            Flank::Kingside => mv.destination().file() == File::G,
+            Flank::Queenside => mv.destination().file() == File::C,
         };
         if flag != MoveFlag::Castling || !matches_flank {
             return false;

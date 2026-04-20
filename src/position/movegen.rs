@@ -2,53 +2,20 @@
 
 use crate::Rank;
 use crate::Square;
+use crate::SquareDelta;
+use crate::SquareDeltaUtils;
 use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
 use crate::r#move::{Move, MoveFlag, MoveList};
 use crate::position::Position;
-use crate::position::legal_gen_kind::LegalGenKind;
 use crate::{Bitboard, Color, Flank};
 use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
     Piece::PROMOTION_PIECES
         .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
-}
-
-unsafe fn pawn_push_origin(stm: Color, dst_square: Square) -> Square {
-    match stm {
-        Color::White => unsafe { dst_square.down().unwrap_unchecked() },
-        Color::Black => unsafe { dst_square.up().unwrap_unchecked() },
-    }
-}
-
-unsafe fn pawn_double_push_origin(stm: Color, dst_square: Square) -> Square {
-    match stm {
-        Color::White => unsafe {
-            dst_square
-                .down()
-                .unwrap_unchecked()
-                .down()
-                .unwrap_unchecked()
-        },
-        Color::Black => unsafe { dst_square.up().unwrap_unchecked().up().unwrap_unchecked() },
-    }
-}
-
-const fn additional_pawn_push_rank_mask(stm: Color) -> Bitboard {
-    match stm {
-        Color::White => Rank::Three.mask(),
-        Color::Black => Rank::Six.mask(),
-    }
-}
-
-const fn castling_king_src_square_for(stm: Color) -> Square {
-    match stm {
-        Color::White => Square::E1,
-        Color::Black => Square::E8,
-    }
 }
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -71,7 +38,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     ) {
         let opposite_side_pieces = self.board.color_mask_at(STM.other());
 
-        let promotion_rank = self.current_side_promotion_rank();
+        let promotion_rank = Rank::Eight.from_perspective(STM);
 
         let current_side_pawns =
             self.board.piece_mask::<{ Piece::Pawn }>() & self.board.color_mask_at(STM);
@@ -141,7 +108,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
                 if src_square.mask() & current_side_pawns != 0 {
                     if self.context().checkers != 0
-                        || current_side_king & Rank::from_u8(src_square.rank()).mask() != 0
+                        || current_side_king & src_square.rank().mask() != 0
                     {
                         let mut board_copy = self.board.clone();
 
@@ -213,9 +180,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied_mask;
         let single_push_dsts_without_check = single_push_dsts & possible_dsts;
         for dst_square in single_push_dsts_without_check.iter_set_bits_as_squares() {
-            let src_square = unsafe { pawn_push_origin(STM, dst_square) };
-
-            if dst_square.rank() == self.current_side_promotion_rank() {
+            let src_square = dst_square
+                .relative(SquareDelta::DOWN.from_perspective(STM))
+                .unwrap();
+            if dst_square.rank() == Rank::Eight.from_perspective(STM) {
                 moves.push_all(generate_pawn_promotions(src_square, dst_square));
             } else {
                 moves.push(Move::new_non_promotion(
@@ -226,12 +194,18 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
         }
 
-        let double_push_dsts =
-            multi_pawn_moves(single_push_dsts & additional_pawn_push_rank_mask(STM), STM)
-                & !occupied_mask
-                & possible_dsts;
+        let double_push_dsts = multi_pawn_moves(
+            single_push_dsts & Rank::Three.from_perspective(STM).mask(),
+            STM,
+        ) & !occupied_mask
+            & possible_dsts;
+        let double_push_step = SquareDelta::DOWN.from_perspective(STM);
         for dst_square in double_push_dsts.iter_set_bits_as_squares() {
-            let src_square = unsafe { pawn_double_push_origin(STM, dst_square) };
+            let src_square = dst_square
+                .relative(double_push_step)
+                .unwrap()
+                .relative(double_push_step)
+                .unwrap();
             moves.push(Move::new_non_promotion(
                 src_square,
                 dst_square,
@@ -366,7 +340,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
      * @param moves Mutable reference to a vector where generated moves will be added
      */
     fn add_legal_castling_moves(&self, moves: &mut MoveList) {
-        let king_src_square = castling_king_src_square_for(STM);
+        let king_src_square = STM.king_initial_square();
 
         for flank in Flank::ALL {
             if self.can_legally_castle(flank) {
@@ -384,38 +358,36 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     /// Fills `out` with all legal moves (stack allocation only; clears `out` first).
-    pub fn generate_legal_moves(&self, out: &mut MoveList) {
-        out.clear();
-
+    pub fn generate_legal_moves(&self, moves: &mut MoveList) {
         let pinned_bb = self.context().pinned;
         let mut possible_non_king_dsts = !self.board.color_mask_at(STM);
 
         match self.context().checkers {
             0 => {
-                self.add_legal_non_ep_pawn_captures(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_en_passants(pinned_bb, out);
-                self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, out);
+                self.add_legal_non_ep_pawn_captures(possible_non_king_dsts, pinned_bb, moves);
+                self.add_legal_en_passants(pinned_bb, moves);
+                self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, moves);
+                self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, moves);
                 self.add_legal_sliding_piece_moves(
                     Piece::Bishop,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
                 self.add_legal_sliding_piece_moves(
                     Piece::Rook,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
                 self.add_legal_sliding_piece_moves(
                     Piece::Queen,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
-                self.add_legal_king_moves(out);
-                self.add_legal_castling_moves(out);
+                self.add_legal_king_moves(moves);
+                self.add_legal_castling_moves(moves);
             }
             checkers if checkers.count_ones() == 1 => {
                 let checker_square = Square::from_bitboard(checkers).expect("single checker");
@@ -434,42 +406,34 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     possible_non_king_dsts = checker_square.mask();
                 }
 
-                self.add_legal_non_ep_pawn_captures(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_en_passants(pinned_bb, out);
-                self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, out);
-                self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, out);
+                self.add_legal_non_ep_pawn_captures(possible_non_king_dsts, pinned_bb, moves);
+                self.add_legal_en_passants(pinned_bb, moves);
+                self.add_legal_pawn_pushes(possible_non_king_dsts, pinned_bb, moves);
+                self.add_legal_knight_moves(possible_non_king_dsts, pinned_bb, moves);
                 self.add_legal_sliding_piece_moves(
                     Piece::Bishop,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
                 self.add_legal_sliding_piece_moves(
                     Piece::Rook,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
                 self.add_legal_sliding_piece_moves(
                     Piece::Queen,
                     possible_non_king_dsts,
                     pinned_bb,
-                    out,
+                    moves,
                 );
-                self.add_legal_king_moves(out);
+                self.add_legal_king_moves(moves);
             }
             _ => {
-                self.add_legal_king_moves(out);
+                self.add_legal_king_moves(moves);
             }
         }
-    }
-
-    /// Pseudo-legal move generation for fast search.
-    ///
-    /// **Currently** this is identical to [`Self::generate_legal_moves`]. A dedicated
-    /// pseudo-legal path (faster, then filtered with [`Self::is_legal_move`]) is left as a future optimization.
-    pub fn generate_pseudolegal_moves(&self, out: &mut MoveList) {
-        self.generate_legal_moves(out);
     }
 
     /// Whether `mv` is fully legal from this position (mover's king not left in check).
@@ -493,31 +457,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
         }
     }
-
-    /// Legal moves, optionally restricted to captures or quiets (post-filter; allocates a temp list).
-    pub fn generate_legal_moves_kind(&self, kind: LegalGenKind, out: &mut MoveList) {
-        match kind {
-            LegalGenKind::All => self.generate_legal_moves(out),
-            LegalGenKind::Captures | LegalGenKind::Quiets => {
-                let mut tmp = MoveList::new();
-                self.generate_legal_moves(&mut tmp);
-                out.clear();
-                let want_captures = matches!(kind, LegalGenKind::Captures);
-                for &mv in tmp.as_slice() {
-                    let is_cap = self.is_capture_move(mv);
-                    if want_captures == is_cap {
-                        out.push(mv);
-                    }
-                }
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{LegalGenKind, Position};
-    use crate::{Color, Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
+    use crate::{Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
     use std::collections::HashSet;
 
     fn expected_moves_test<const M: usize>(
@@ -817,30 +761,5 @@ mod tests {
             is_castling_move,
             [],
         );
-    }
-
-    #[test]
-    fn pseudo_generator_matches_legal_until_fast_impl() {
-        let pos = TypedPosition::<1>::from_fen(
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        )
-        .unwrap();
-        let mut legal = MoveList::new();
-        let mut pseudo = MoveList::new();
-        pos.generate_legal_moves(&mut legal);
-        pos.generate_pseudolegal_moves(&mut pseudo);
-        assert_eq!(legal.as_slice(), pseudo.as_slice());
-    }
-
-    #[test]
-    fn legal_gen_kind_partitions_startpos() {
-        let pos = Position::<1, { Color::White }>::initial();
-        let mut all = MoveList::new();
-        let mut cap = MoveList::new();
-        let mut quiet = MoveList::new();
-        pos.generate_legal_moves_kind(LegalGenKind::All, &mut all);
-        pos.generate_legal_moves_kind(LegalGenKind::Captures, &mut cap);
-        pos.generate_legal_moves_kind(LegalGenKind::Quiets, &mut quiet);
-        assert_eq!(all.len(), cap.len() + quiet.len());
     }
 }

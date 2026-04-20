@@ -1,10 +1,12 @@
-//! This crate requires a **nightly** Rust toolchain (see repository `rust-toolchain.toml`).
-#![feature(const_for)] // Reserved: `for` in `const fn` over arrays needs const `Iterator` (rust#87575).
+#![feature(const_for)]
 #![feature(const_trait_impl)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
+#![feature(const_param_ty_trait)]
+#![feature(const_cmp)]
+#![feature(transmutability)]
 #![allow(incomplete_features)]
-#![allow(unused_features)] // Reserved for `const_for` over arrays when const `Iterator` stabilizes.
+#![allow(unused_features)]
 
 pub mod attacks;
 mod bitboard;
