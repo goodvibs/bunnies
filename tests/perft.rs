@@ -18,6 +18,6 @@ define_perft_tests! {
     test_perft_initial_position => (PerftCase::Initial, 6);
     test_perft_kiwipete => (PerftCase::Kiwipete, 5);
     test_perft_position_3 => (PerftCase::Position3, 7);
-    test_perft_position_4 => (PerftCase::Position4, 5);
+    test_perft_position_4 => (PerftCase::Position4, 6);
     test_perft_position_5 => (PerftCase::Position5, 5);
 }
