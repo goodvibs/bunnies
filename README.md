@@ -1,6 +1,7 @@
 # bunnies
 
 [![Crates.io](https://img.shields.io/crates/v/bunnies)](https://crates.io/crates/bunnies)
+[![gitcgr](https://gitcgr.com/badge/goodvibs/bunnies.svg)](https://gitcgr.com/goodvibs/bunnies)
 
 A fast chess library for chess engines. **Currently in alpha**.
 
