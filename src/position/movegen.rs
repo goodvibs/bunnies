@@ -179,10 +179,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied_mask;
         let single_push_dsts_without_check = single_push_dsts & possible_dsts;
-        for dst_square in single_push_dsts_without_check.iter_set_bits_as_squares() {
-            let src_square = dst_square
-                .relative(SquareDelta::DOWN.from_perspective(STM))
-                .unwrap();
+        let origins = multi_pawn_moves(single_push_dsts_without_check, STM.other());
+        for (src_square, dst_square) in origins
+            .iter_set_bits_as_squares()
+            .zip(single_push_dsts_without_check.iter_set_bits_as_squares())
+        {
             if dst_square.rank() == Rank::Eight.from_perspective(STM) {
                 moves.push_all(generate_pawn_promotions(src_square, dst_square));
             } else {
