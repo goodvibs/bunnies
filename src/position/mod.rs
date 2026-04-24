@@ -18,7 +18,6 @@ mod perft;
 mod r#struct;
 mod termination;
 mod typed_position;
-mod unmake_move;
 mod validation;
 mod zobrist;
 
