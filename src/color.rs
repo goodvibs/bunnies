@@ -1,4 +1,4 @@
-use crate::Square;
+use crate::{Rank, Square};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
@@ -28,6 +28,13 @@ impl Color {
         match self {
             Color::White => Square::E1,
             Color::Black => Square::E8,
+        }
+    }
+
+    pub const fn en_passant_capture_rank(self) -> Rank {
+        match self {
+            Self::White => Rank::Five,
+            Self::Black => Rank::Four,
         }
     }
 

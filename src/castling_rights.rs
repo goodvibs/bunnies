@@ -60,6 +60,16 @@ impl CastlingRights {
         Self::from_bits(self.bits() & !crate::Flank::rights_mask_both_flanks(color))
     }
 
+    /// Clears any rights that a move touching `affected_square` invalidates.
+    ///
+    /// Apply once for the source square and once for the destination square in [`Position::make_move`];
+    /// together this handles a king leaving home, a rook leaving its starting corner, and a rook being
+    /// captured on its starting corner. All other squares pass through unchanged.
+    #[inline]
+    pub const fn after_move(self, affected_square: Square) -> Self {
+        Self::from_bits(self.bits() & CASTLING_RIGHTS_MASK[affected_square as usize].bits())
+    }
+
     /// Clear the right corresponding to a rook on its home corner (FEN loss of castling).
     pub const fn clear_for_rook_square(self, on: Square) -> Self {
         let b = match on {
@@ -78,6 +88,22 @@ impl Default for CastlingRights {
         CastlingRights::NONE
     }
 }
+
+/// Per-square AND mask applied to the castling-rights nibble after a move touches that square.
+///
+/// `make_move` ANDs the previous rights with both `MASK[from]` and `MASK[to]`, which collectively
+/// handle every right-clearing case: a king leaving its home, a rook leaving its starting corner,
+/// and a rook being captured on its starting corner. All other squares pass through unchanged.
+const CASTLING_RIGHTS_MASK: [CastlingRights; 64] = {
+    let mut mask = [CastlingRights::from_bits(0b1111u8); 64];
+    mask[Square::E1 as usize] = CastlingRights::from_bits(!0b1100u8 & 0b1111);
+    mask[Square::E8 as usize] = CastlingRights::from_bits(!0b0011u8 & 0b1111);
+    mask[Square::A1 as usize] = CastlingRights::from_bits(!0b0100u8 & 0b1111);
+    mask[Square::H1 as usize] = CastlingRights::from_bits(!0b1000u8 & 0b1111);
+    mask[Square::A8 as usize] = CastlingRights::from_bits(!0b0001u8 & 0b1111);
+    mask[Square::H8 as usize] = CastlingRights::from_bits(!0b0010u8 & 0b1111);
+    mask
+};
 
 #[cfg(test)]
 mod tests {
