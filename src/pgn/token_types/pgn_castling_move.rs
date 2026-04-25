@@ -1,4 +1,4 @@
-use crate::r#move::{Move, MoveFlag};
+use crate::r#move::{Move, MoveType};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
@@ -29,12 +29,12 @@ pub struct PgnCastlingMove {
 
 impl PgnMove for PgnCastlingMove {
     fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &TypedPosition<N>) -> bool {
-        let flag = mv.flag();
+        let ty = mv.move_type();
         let matches_flank = match self.flank {
             Flank::Kingside => mv.destination().file() == File::G,
             Flank::Queenside => mv.destination().file() == File::C,
         };
-        if flag != MoveFlag::Castling || !matches_flank {
+        if ty != MoveType::Castling || !matches_flank {
             return false;
         }
 
@@ -91,7 +91,7 @@ impl ParsablePgnToken for PgnCastlingMove {
 mod tests {
     use super::*;
     use crate::Square;
-    use crate::r#move::{Move, MoveFlag};
+    use crate::r#move::{Move, MoveType};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
     use crate::position::{INITIAL_FEN, TypedPosition};
@@ -204,10 +204,8 @@ mod tests {
             },
         };
         let state = TypedPosition::<1>::from_fen(INITIAL_FEN).unwrap();
-        let kingside_castling_move =
-            Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
-        let queenside_castling_move =
-            Move::new_non_promotion(Square::E8, Square::C8, MoveFlag::Castling);
+        let kingside_castling_move = Move::new(Square::E8, Square::G8, MoveType::Castling);
+        let queenside_castling_move = Move::new(Square::E8, Square::C8, MoveType::Castling);
         assert_eq!(
             castling_move.matches_move(kingside_castling_move, &state),
             true

@@ -2,7 +2,7 @@ use crate::File;
 use crate::Piece;
 use crate::Rank;
 use crate::Square;
-use crate::r#move::{Move, MoveFlag};
+use crate::r#move::Move;
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
@@ -45,10 +45,10 @@ impl PgnMove for PgnNonCastlingMove {
     fn matches_move<const N: usize>(&self, mv: Move, initial_state: &TypedPosition<N>) -> bool {
         let dst = mv.destination();
         let src = mv.source();
-        let flag = mv.flag();
-        let promotion = match flag {
-            MoveFlag::Promotion => mv.promotion(),
-            _ => Piece::Null,
+        let promotion = if mv.move_type().is_promotion() {
+            mv.move_type().promotion_piece()
+        } else {
+            Piece::Null
         };
 
         if self.to != dst {
@@ -163,7 +163,7 @@ mod tests {
     use super::*;
     use crate::Piece;
     use crate::Square;
-    use crate::r#move::Move;
+    use crate::r#move::{Move, MoveType};
     use crate::pgn::token::PgnToken;
     use logos::Logos;
 
@@ -366,7 +366,7 @@ mod tests {
             },
         };
 
-        let actual_move = Move::new_non_promotion(Square::F3, Square::D4, MoveFlag::NormalMove);
+        let actual_move = Move::new(Square::F3, Square::D4, MoveType::Normal);
 
         assert!(knight_move.matches_move(actual_move, &state));
 

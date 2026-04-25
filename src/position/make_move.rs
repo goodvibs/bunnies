@@ -5,7 +5,7 @@ use crate::ColoredPiece;
 use crate::Flank;
 use crate::Piece;
 use crate::Square;
-use crate::r#move::{Move, MoveFlag};
+use crate::r#move::{Move, MoveType};
 use crate::position::Position;
 use crate::position::context::PositionContext;
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
@@ -134,24 +134,26 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         self.board.move_color(STM, dst_square, src_square);
 
-        match mv.flag() {
-            MoveFlag::NormalMove => {
+        let move_type = mv.move_type();
+
+        match move_type {
+            MoveType::Normal | MoveType::DoublePawnPush | MoveType::NormalCapture => {
                 self.process_normal(STM, dst_square, src_square, &mut new_context);
             }
-            MoveFlag::Promotion => {
+            MoveType::Castling => {
+                self.process_castling(STM, dst_square, src_square, &mut new_context);
+            }
+            MoveType::EnPassant => {
+                self.process_en_passant(STM, dst_square, src_square, &mut new_context);
+            }
+            _ => {
                 self.process_promotion(
                     STM,
                     dst_square,
                     src_square,
-                    mv.promotion(),
+                    move_type.promotion_piece(),
                     &mut new_context,
                 );
-            }
-            MoveFlag::EnPassant => {
-                self.process_en_passant(STM, dst_square, src_square, &mut new_context);
-            }
-            MoveFlag::Castling => {
-                self.process_castling(STM, dst_square, src_square, &mut new_context);
             }
         }
 

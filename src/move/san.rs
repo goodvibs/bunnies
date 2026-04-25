@@ -1,5 +1,5 @@
 use crate::r#move::Move;
-use crate::r#move::flag::MoveFlag;
+use crate::r#move::MoveType;
 use crate::{File, Piece};
 
 impl Move {
@@ -13,9 +13,9 @@ impl Move {
         is_capture: bool,
     ) -> String {
         let dst_square = self.destination();
-        let flag = self.flag();
+        let ty = self.move_type();
 
-        let move_str = if flag == MoveFlag::Castling {
+        let move_str = if ty == MoveType::Castling {
             match dst_square.file() {
                 File::G => "O-O".to_string(),
                 File::C => "O-O-O".to_string(),
@@ -23,7 +23,11 @@ impl Move {
             }
         } else {
             let src_square = self.source();
-            let promotion = self.promotion();
+            let promotion = if self.move_type().is_promotion() {
+                self.move_type().promotion_piece()
+            } else {
+                Piece::Null
+            };
 
             let piece_str = match moved_piece {
                 Piece::Pawn => {
@@ -43,7 +47,7 @@ impl Move {
 
             let capture_str = if is_capture { "x" } else { "" };
 
-            let promotion_str = if flag == MoveFlag::Promotion {
+            let promotion_str = if ty.is_promotion() {
                 format!("={}", promotion.uppercase_ascii())
             } else {
                 "".to_string()

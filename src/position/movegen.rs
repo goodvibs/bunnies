@@ -8,14 +8,29 @@ use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
-use crate::r#move::{Move, MoveFlag, MoveList};
+use crate::r#move::{Move, MoveList, MoveType};
 use crate::position::Position;
 use crate::{Bitboard, Color, Flank};
 use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
 
-fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
-    Piece::PROMOTION_PIECES
-        .map(|promotion_piece| Move::new_promotion(src_square, dst_square, promotion_piece))
+fn generate_pawn_promotions(src_square: Square, dst_square: Square, capture: bool) -> [Move; 4] {
+    Piece::PROMOTION_PIECES.map(|promotion_piece| {
+        Move::new(
+            src_square,
+            dst_square,
+            MoveType::for_promotion(capture, promotion_piece),
+        )
+    })
+}
+
+#[inline]
+const fn quiet_or_capture_move(src: Square, dst: Square, enemy_pieces: Bitboard) -> Move {
+    let ty = if enemy_pieces & dst.mask() != 0 {
+        MoveType::NormalCapture
+    } else {
+        MoveType::Normal
+    };
+    Move::new(src, dst, ty)
 }
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -61,13 +76,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
             for dst_square in possible_captures.iter_set_bits_as_squares() {
                 if dst_square.rank() == promotion_rank {
-                    moves.push_all(generate_pawn_promotions(src_square, dst_square));
+                    moves.push_all(generate_pawn_promotions(src_square, dst_square, true));
                 } else {
-                    moves.push(Move::new_non_promotion(
-                        src_square,
-                        dst_square,
-                        MoveFlag::NormalMove,
-                    ));
+                    moves.push(Move::new(src_square, dst_square, MoveType::NormalCapture));
                 }
             }
         }
@@ -121,18 +132,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                             Square::from_bitboard(current_side_king).expect("king mask"),
                             STM.other(),
                         ) {
-                            moves.push(Move::new_non_promotion(
-                                src_square,
-                                dst_square,
-                                MoveFlag::EnPassant,
-                            ));
+                            moves.push(Move::new(src_square, dst_square, MoveType::EnPassant));
                         }
                     } else {
-                        moves.push(Move::new_non_promotion(
-                            src_square,
-                            dst_square,
-                            MoveFlag::EnPassant,
-                        ));
+                        moves.push(Move::new(src_square, dst_square, MoveType::EnPassant));
                     }
                 }
             }
@@ -185,13 +188,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             .zip(single_push_dsts_without_check.iter_set_bits_as_squares())
         {
             if dst_square.rank() == Rank::Eight.from_perspective(STM) {
-                moves.push_all(generate_pawn_promotions(src_square, dst_square));
+                moves.push_all(generate_pawn_promotions(src_square, dst_square, false));
             } else {
-                moves.push(Move::new_non_promotion(
-                    src_square,
-                    dst_square,
-                    MoveFlag::NormalMove,
-                ));
+                moves.push(Move::new(src_square, dst_square, MoveType::Normal));
             }
         }
 
@@ -207,11 +206,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 .unwrap()
                 .relative(double_push_step)
                 .unwrap();
-            moves.push(Move::new_non_promotion(
-                src_square,
-                dst_square,
-                MoveFlag::NormalMove,
-            ));
+            moves.push(Move::new(src_square, dst_square, MoveType::DoublePawnPush));
         }
     }
 
@@ -234,17 +229,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let movable_knights = self.board.piece_mask::<{ Piece::Knight }>()
             & self.board.color_mask_at(STM)
             & !pinned_bb;
+        let enemies = self.board.color_mask_at(STM.other());
 
         for src_square in movable_knights.iter_set_bits_as_squares() {
             let knight_attacks = single_knight_attacks(src_square);
             let knight_moves = knight_attacks & possible_dsts;
 
             for dst_square in knight_moves.iter_set_bits_as_squares() {
-                moves.push(Move::new_non_promotion(
-                    src_square,
-                    dst_square,
-                    MoveFlag::NormalMove,
-                ));
+                moves.push(quiet_or_capture_move(src_square, dst_square, enemies));
             }
         }
     }
@@ -270,6 +262,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let all_occupancy_bb = self.board.pieces();
         let current_side_king =
             self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(STM);
+        let enemies = self.board.color_mask_at(STM.other());
 
         let piece_mask = self.board.piece_mask_at(piece) & self.board.color_mask_at(STM);
 
@@ -286,11 +279,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
 
             for dst_square in possible_moves.iter_set_bits_as_squares() {
-                moves.push(Move::new_non_promotion(
-                    src_square,
-                    dst_square,
-                    MoveFlag::NormalMove,
-                ));
+                moves.push(quiet_or_capture_move(src_square, dst_square, enemies));
             }
         }
     }
@@ -306,6 +295,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
      */
     fn add_legal_king_moves(&self, moves: &mut MoveList) {
         let current_side_mask = self.board.color_mask_at(STM);
+        let enemies = self.board.color_mask_at(STM.other());
 
         let king_src_bb = self.board.piece_mask::<{ Piece::King }>() & current_side_mask;
         let king_src_square = Square::from_bitboard(king_src_bb).expect("king mask");
@@ -319,11 +309,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 STM.other(),
                 king_src_bb | dst_square.mask(),
             ) {
-                moves.push(Move::new_non_promotion(
-                    king_src_square,
-                    dst_square,
-                    MoveFlag::NormalMove,
-                ));
+                moves.push(quiet_or_capture_move(king_src_square, dst_square, enemies));
             }
         }
     }
@@ -349,10 +335,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     Flank::Kingside => Square::from_u8(king_src_square as u8 + 2),
                     Flank::Queenside => Square::from_u8(king_src_square as u8 - 2),
                 };
-                moves.push(Move::new_non_promotion(
+                moves.push(Move::new(
                     king_src_square,
                     king_dst_square,
-                    MoveFlag::Castling,
+                    MoveType::Castling,
                 ));
             }
         }
@@ -446,23 +432,13 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Capture or en passant (for move ordering); castling and quiet promotions are not captures.
     pub fn is_capture_move(&self, mv: Move) -> bool {
-        match mv.flag() {
-            MoveFlag::Castling => false,
-            MoveFlag::EnPassant => true,
-            MoveFlag::NormalMove | MoveFlag::Promotion => {
-                let dst = mv.destination();
-                if !self.board.is_occupied_at(dst) {
-                    return false;
-                }
-                self.board.get_colored_piece_at(dst).color() != STM
-            }
-        }
+        mv.move_type().is_capture()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
+    use crate::{Move, MoveList, MoveType, Piece, Square, TypedPosition};
     use std::collections::HashSet;
 
     fn expected_moves_test<const M: usize>(
@@ -499,10 +475,10 @@ mod tests {
             "r5k1/pP1n2np/Q7/bbpnp1R1/Np6/1B6/RPPP2P1/4K1N1 b - - 5 12",
             is_knight_move,
             [
-                Move::new_non_promotion(Square::D7, Square::F6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::F8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::B6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::B8, MoveFlag::NormalMove),
+                Move::new(Square::D7, Square::F6, MoveType::Normal),
+                Move::new(Square::D7, Square::F8, MoveType::Normal),
+                Move::new(Square::D7, Square::B6, MoveType::Normal),
+                Move::new(Square::D7, Square::B8, MoveType::Normal),
             ],
         );
 
@@ -510,9 +486,9 @@ mod tests {
             "Rn3k2/pP1n2np/Q7/bbpnpR2/Np6/1B6/RPPP2P1/4K1N1 b - - 7 13",
             is_knight_move,
             [
-                Move::new_non_promotion(Square::G7, Square::F5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D5, Square::F6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::F6, MoveFlag::NormalMove),
+                Move::new(Square::G7, Square::F5, MoveType::NormalCapture),
+                Move::new(Square::D5, Square::F6, MoveType::Normal),
+                Move::new(Square::D7, Square::F6, MoveType::Normal),
             ],
         );
     }
@@ -534,14 +510,14 @@ mod tests {
             "r2q1rk1/pP1q3p/Q4n2/bbp1p3/Np4q1/1B1r1NRn/pPbP1PPP/R3K2R b KQ - 0 1",
             is_sliding_piece_move,
             [
-                Move::new_non_promotion(Square::F8, Square::F7, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::D5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::E6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D7, Square::F7, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::B5, Square::C4, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::D5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C2, Square::B3, MoveFlag::NormalMove),
+                Move::new(Square::F8, Square::F7, MoveType::Normal),
+                Move::new(Square::D7, Square::D5, MoveType::Normal),
+                Move::new(Square::D7, Square::E6, MoveType::Normal),
+                Move::new(Square::D7, Square::F7, MoveType::Normal),
+                Move::new(Square::B5, Square::C4, MoveType::Normal),
+                Move::new(Square::D3, Square::B3, MoveType::NormalCapture),
+                Move::new(Square::D3, Square::D5, MoveType::Normal),
+                Move::new(Square::C2, Square::B3, MoveType::NormalCapture),
             ],
         );
 
@@ -549,25 +525,25 @@ mod tests {
             "2B2rk1/pP5p/Q2p1n2/2p1p3/Npq3r1/1B1r1NRn/1P1P1PPP/R3K2R b KQ - 0 1",
             is_sliding_piece_move,
             [
-                Move::new_non_promotion(Square::F8, Square::F7, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F8, Square::E8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F8, Square::D8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F8, Square::C8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::F3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::E3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::C3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::D2, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::D4, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D3, Square::D5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G4, Square::G3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G4, Square::G5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G4, Square::G6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G4, Square::G7, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C4, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C4, Square::D5, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C4, Square::E6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C4, Square::F7, MoveFlag::NormalMove),
+                Move::new(Square::F8, Square::F7, MoveType::Normal),
+                Move::new(Square::F8, Square::E8, MoveType::Normal),
+                Move::new(Square::F8, Square::D8, MoveType::Normal),
+                Move::new(Square::F8, Square::C8, MoveType::NormalCapture),
+                Move::new(Square::D3, Square::F3, MoveType::NormalCapture),
+                Move::new(Square::D3, Square::E3, MoveType::Normal),
+                Move::new(Square::D3, Square::C3, MoveType::Normal),
+                Move::new(Square::D3, Square::B3, MoveType::NormalCapture),
+                Move::new(Square::D3, Square::D2, MoveType::NormalCapture),
+                Move::new(Square::D3, Square::D4, MoveType::Normal),
+                Move::new(Square::D3, Square::D5, MoveType::Normal),
+                Move::new(Square::G4, Square::G3, MoveType::NormalCapture),
+                Move::new(Square::G4, Square::G5, MoveType::Normal),
+                Move::new(Square::G4, Square::G6, MoveType::Normal),
+                Move::new(Square::G4, Square::G7, MoveType::Normal),
+                Move::new(Square::C4, Square::B3, MoveType::NormalCapture),
+                Move::new(Square::C4, Square::D5, MoveType::Normal),
+                Move::new(Square::C4, Square::E6, MoveType::Normal),
+                Move::new(Square::C4, Square::F7, MoveType::Normal),
             ],
         );
     }
@@ -586,18 +562,34 @@ mod tests {
             "2bb3k/P1Ppqp1P/bn2pnp1/3Pr3/1p5b/2NQ3p/PPPPPPPP/R3K2R w KQ - 0 1",
             is_pawn_push,
             [
-                Move::new_non_promotion(Square::A2, Square::A3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::A2, Square::A4, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::B2, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::E2, Square::E3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::E2, Square::E4, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G2, Square::G3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G2, Square::G4, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::D5, Square::D6, MoveFlag::NormalMove),
-                Move::new_promotion(Square::A7, Square::A8, Piece::Knight),
-                Move::new_promotion(Square::A7, Square::A8, Piece::Bishop),
-                Move::new_promotion(Square::A7, Square::A8, Piece::Rook),
-                Move::new_promotion(Square::A7, Square::A8, Piece::Queen),
+                Move::new(Square::A2, Square::A3, MoveType::Normal),
+                Move::new(Square::A2, Square::A4, MoveType::DoublePawnPush),
+                Move::new(Square::B2, Square::B3, MoveType::Normal),
+                Move::new(Square::E2, Square::E3, MoveType::Normal),
+                Move::new(Square::E2, Square::E4, MoveType::DoublePawnPush),
+                Move::new(Square::G2, Square::G3, MoveType::Normal),
+                Move::new(Square::G2, Square::G4, MoveType::DoublePawnPush),
+                Move::new(Square::D5, Square::D6, MoveType::Normal),
+                Move::new(
+                    Square::A7,
+                    Square::A8,
+                    MoveType::for_promotion(false, Piece::Knight),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::A8,
+                    MoveType::for_promotion(false, Piece::Bishop),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::A8,
+                    MoveType::for_promotion(false, Piece::Rook),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::A8,
+                    MoveType::for_promotion(false, Piece::Queen),
+                ),
             ],
         );
     }
@@ -609,7 +601,7 @@ mod tests {
                 & pos.board().color_mask_at(pos.side_to_move())
                 & mv.source().mask()
                 != 0
-                && mv.flag() != MoveFlag::EnPassant
+                && mv.move_type() != MoveType::EnPassant
                 && (mv.source() as i8 - mv.destination() as i8) % 8 != 0
         };
 
@@ -617,29 +609,77 @@ mod tests {
             "1qbb3k/P1PpqP1P/bn2pnp1/3Pr3/1p5b/1nNQ3p/PPPPPPPP/Rqn1Kb1R w KQ - 0 1",
             is_non_ep_pawn_capture,
             [
-                Move::new_non_promotion(Square::A2, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::C2, Square::B3, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::G2, Square::H3, MoveFlag::NormalMove),
-                Move::new_promotion(Square::A7, Square::B8, Piece::Knight),
-                Move::new_promotion(Square::A7, Square::B8, Piece::Bishop),
-                Move::new_promotion(Square::A7, Square::B8, Piece::Rook),
-                Move::new_promotion(Square::A7, Square::B8, Piece::Queen),
-                Move::new_promotion(Square::C7, Square::B8, Piece::Knight),
-                Move::new_promotion(Square::C7, Square::B8, Piece::Bishop),
-                Move::new_promotion(Square::C7, Square::B8, Piece::Rook),
-                Move::new_promotion(Square::C7, Square::B8, Piece::Queen),
-                Move::new_promotion(Square::C7, Square::D8, Piece::Knight),
-                Move::new_promotion(Square::C7, Square::D8, Piece::Bishop),
-                Move::new_promotion(Square::C7, Square::D8, Piece::Rook),
-                Move::new_promotion(Square::C7, Square::D8, Piece::Queen),
-                Move::new_non_promotion(Square::D5, Square::E6, MoveFlag::NormalMove),
+                Move::new(Square::A2, Square::B3, MoveType::NormalCapture),
+                Move::new(Square::C2, Square::B3, MoveType::NormalCapture),
+                Move::new(Square::G2, Square::H3, MoveType::NormalCapture),
+                Move::new(
+                    Square::A7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Knight),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Bishop),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Rook),
+                ),
+                Move::new(
+                    Square::A7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Queen),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Knight),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Bishop),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Rook),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::B8,
+                    MoveType::for_promotion(true, Piece::Queen),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::D8,
+                    MoveType::for_promotion(true, Piece::Knight),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::D8,
+                    MoveType::for_promotion(true, Piece::Bishop),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::D8,
+                    MoveType::for_promotion(true, Piece::Rook),
+                ),
+                Move::new(
+                    Square::C7,
+                    Square::D8,
+                    MoveType::for_promotion(true, Piece::Queen),
+                ),
+                Move::new(Square::D5, Square::E6, MoveType::NormalCapture),
             ],
         );
     }
 
     #[test]
     fn test_en_passant_movegen() {
-        let is_en_passant = |mv: Move, _: &TypedPosition<1>| mv.flag() == MoveFlag::EnPassant;
+        let is_en_passant = |mv: Move, _: &TypedPosition<1>| mv.move_type() == MoveType::EnPassant;
 
         expected_moves_test(
             "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
@@ -657,8 +697,8 @@ mod tests {
             "8/8/3p4/KPpP3r/1R3p1k/8/4P1P1/8 w - c6 0 2",
             is_en_passant,
             [
-                Move::new_non_promotion(Square::D5, Square::C6, MoveFlag::EnPassant),
-                Move::new_non_promotion(Square::B5, Square::C6, MoveFlag::EnPassant),
+                Move::new(Square::D5, Square::C6, MoveType::EnPassant),
+                Move::new(Square::B5, Square::C6, MoveType::EnPassant),
             ],
         );
 
@@ -666,26 +706,22 @@ mod tests {
             "8/B7/3p4/kPpP3r/3K1p2/8/4P1P1/8 w - c6 0 2",
             is_en_passant,
             [
-                Move::new_non_promotion(Square::D5, Square::C6, MoveFlag::EnPassant),
-                Move::new_non_promotion(Square::B5, Square::C6, MoveFlag::EnPassant),
+                Move::new(Square::D5, Square::C6, MoveType::EnPassant),
+                Move::new(Square::B5, Square::C6, MoveType::EnPassant),
             ],
         );
 
         expected_moves_test(
             "8/8/b2p4/kPpP3r/2K2p2/8/4P1P1/8 w - c6 0 2",
             is_en_passant,
-            [Move::new_non_promotion(
-                Square::D5,
-                Square::C6,
-                MoveFlag::EnPassant,
-            )],
+            [Move::new(Square::D5, Square::C6, MoveType::EnPassant)],
         );
     }
 
     #[test]
     fn test_king_movegen() {
         let is_king_move = |mv: Move, pos: &TypedPosition<1>| {
-            mv.flag() == MoveFlag::NormalMove
+            matches!(mv.move_type(), MoveType::Normal | MoveType::NormalCapture)
                 && pos.board().piece_mask::<{ Piece::King }>()
                     & pos.board().color_mask_at(pos.side_to_move())
                     & mv.source().mask()
@@ -696,10 +732,10 @@ mod tests {
             "3N3B/5k1P/R4b2/8/8/3K4/8/8 b - - 0 1",
             is_king_move,
             [
-                Move::new_non_promotion(Square::F7, Square::G6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F7, Square::F8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F7, Square::E8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F7, Square::E7, MoveFlag::NormalMove),
+                Move::new(Square::F7, Square::G6, MoveType::Normal),
+                Move::new(Square::F7, Square::F8, MoveType::Normal),
+                Move::new(Square::F7, Square::E8, MoveType::Normal),
+                Move::new(Square::F7, Square::E7, MoveType::Normal),
             ],
         );
 
@@ -707,54 +743,43 @@ mod tests {
             "5R1B/5k1P/R4b2/8/8/3K4/8/8 b - - 0 1",
             is_king_move,
             [
-                Move::new_non_promotion(Square::F7, Square::G6, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F7, Square::F8, MoveFlag::NormalMove),
-                Move::new_non_promotion(Square::F7, Square::E7, MoveFlag::NormalMove),
+                Move::new(Square::F7, Square::G6, MoveType::Normal),
+                Move::new(Square::F7, Square::F8, MoveType::NormalCapture),
+                Move::new(Square::F7, Square::E7, MoveType::Normal),
             ],
         );
     }
 
     #[test]
     fn test_white_castling_movegen() {
-        let is_castling_move = |mv: Move, _: &TypedPosition<1>| mv.flag() == MoveFlag::Castling;
+        let is_castling_move =
+            |mv: Move, _: &TypedPosition<1>| mv.move_type() == MoveType::Castling;
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
             is_castling_move,
             [
-                Move::new_non_promotion(Square::E1, Square::C1, MoveFlag::Castling),
-                Move::new_non_promotion(Square::E1, Square::G1, MoveFlag::Castling),
+                Move::new(Square::E1, Square::C1, MoveType::Castling),
+                Move::new(Square::E1, Square::G1, MoveType::Castling),
             ],
         );
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBB1bP/R3K2R w KQkq - 0 1",
             is_castling_move,
-            [Move::new_non_promotion(
-                Square::E1,
-                Square::C1,
-                MoveFlag::Castling,
-            )],
+            [Move::new(Square::E1, Square::C1, MoveType::Castling)],
         );
 
         expected_moves_test(
             "4k3/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2b2Q1p/PrPBB1rP/R3K2R w KQ - 0 1",
             is_castling_move,
-            [Move::new_non_promotion(
-                Square::E1,
-                Square::C1,
-                MoveFlag::Castling,
-            )],
+            [Move::new(Square::E1, Square::C1, MoveType::Castling)],
         );
 
         expected_moves_test(
             "4k3/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2b2Q1p/PrrBB1RP/R3K2R w KQ - 0 1",
             is_castling_move,
-            [Move::new_non_promotion(
-                Square::E1,
-                Square::G1,
-                MoveFlag::Castling,
-            )],
+            [Move::new(Square::E1, Square::G1, MoveType::Castling)],
         );
 
         expected_moves_test(

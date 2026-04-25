@@ -1,6 +1,6 @@
 use crate::Color;
 use crate::Piece;
-use crate::r#move::{MoveFlag, MoveList};
+use crate::r#move::MoveList;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::rendering_config::PgnRenderingConfig;
 use crate::position::{GameResult, TypedPosition};
@@ -135,13 +135,7 @@ impl MoveTreeNode {
                 }
             };
 
-            let is_capture = match mv.flag() {
-                MoveFlag::EnPassant => true,
-                MoveFlag::Castling => false,
-                MoveFlag::NormalMove | MoveFlag::Promotion => {
-                    state.board().piece_at(mv_dest) != Piece::Null
-                }
-            };
+            let is_capture = mv.move_type().is_capture();
             state = state.make_move(mv);
             let is_check = state.is_current_side_in_check();
             let is_checkmate = match is_check {

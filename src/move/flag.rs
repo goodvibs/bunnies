@@ -3,7 +3,7 @@ use crate::Piece;
 /// Enum representing the different types of moves that can be made in a game of chess.
 /// Used in the Move struct.
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
 #[rustfmt::skip]
 pub enum MoveType {
     Normal                   = 0b0000,
@@ -25,10 +25,23 @@ pub enum MoveType {
 }
 
 impl MoveType {
-    /// Converts a u8 value to a MoveType.
+    /// Converts the low 4 bits of `value` to a [`MoveType`] (packed in [`crate::Move`]).
     pub const unsafe fn from_u8(value: u8) -> MoveType {
-        debug_assert!(value < 4, "Invalid MoveType value");
-        unsafe { std::mem::transmute::<u8, MoveType>(value) }
+        debug_assert!(value <= 0b1111, "MoveType must fit in 4 bits");
+        unsafe { std::mem::transmute::<u8, MoveType>(value & 0b1111) }
+    }
+
+    /// `piece` must be Knight, Bishop, Rook, or Queen.
+    pub const fn for_promotion(is_capture: bool, piece: Piece) -> Self {
+        let low: u8 = match piece {
+            Piece::Knight => 0,
+            Piece::Bishop => 1,
+            Piece::Rook => 2,
+            Piece::Queen => 3,
+            _ => 0,
+        };
+        let high: u8 = if is_capture { 0b1100 } else { 0b1000 };
+        unsafe { Self::from_u8(high | low) }
     }
 
     pub const fn is_capture(self) -> bool {
@@ -52,7 +65,8 @@ impl MoveType {
         self as u8 & 0b0011
     }
 
+    /// Only valid when [`Self::is_promotion`] is true.
     pub const fn promotion_piece(self) -> Piece {
-        unsafe { Piece::from(self.promotion_bits() - Piece::Knight as u8) }
+        unsafe { Piece::from(self.promotion_bits() + Piece::Knight as u8) }
     }
 }
