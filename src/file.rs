@@ -1,6 +1,6 @@
 //! Chess files a–h. Line masks derived from a single file-a bitboard, shifted by file index (chmog-style).
 
-use crate::Bitboard;
+use crate::{Bitboard, Flank};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
 #[repr(u8)]
@@ -41,6 +41,11 @@ impl File {
     pub const fn from_u8(file: u8) -> Self {
         debug_assert!(file < 8);
         unsafe { std::mem::transmute::<u8, File>(file) }
+    }
+
+    pub const fn flank(self) -> Flank {
+        let is_queenside = self as u8 <= File::D as u8;
+        Flank::from_bool(is_queenside)
     }
 }
 

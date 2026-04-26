@@ -96,24 +96,16 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         src_square: Square,
         new_context: &mut PositionContext,
     ) {
-        let dst_mask = dst_square.mask();
-
         self.board.move_piece(Piece::King, dst_square, src_square);
 
-        let flank = if dst_mask & Flank::Kingside.castling_gap_mask(stm) != 0 {
-            Flank::Kingside
-        } else {
-            Flank::Queenside
-        };
-
-        let (rook_src_square, rook_dst_square) = match flank {
+        let (rook_src_square, rook_dst_square) = match dst_square.file().flank() {
             Flank::Kingside => (
-                Square::from_u8(src_square as u8 + 3),
-                Square::from_u8(src_square as u8 + 1),
+                src_square.relative(3).expect("src_square is incorrect"),
+                src_square.relative(1).unwrap(),
             ),
             Flank::Queenside => (
-                Square::from_u8(src_square as u8 - 4),
-                Square::from_u8(src_square as u8 - 1),
+                src_square.relative(-4).expect("src_square is incorrect"),
+                src_square.relative(-1).unwrap(),
             ),
         };
 

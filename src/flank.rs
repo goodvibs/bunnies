@@ -1,5 +1,7 @@
 //! Kingside vs queenside (short vs long castling).
 
+use std::mem;
+
 use crate::Bitboard;
 use crate::Color;
 use crate::Square;
@@ -15,6 +17,10 @@ pub enum Flank {
 
 impl Flank {
     pub const ALL: [Flank; 2] = [Flank::Kingside, Flank::Queenside];
+
+    pub const fn from_bool(is_queenside: bool) -> Self {
+        unsafe { mem::transmute(is_queenside) }
+    }
 
     /// Bit mask for this flank in the 4-bit castling rights nibble (same layout as FEN / [`crate::CastlingRights`]).
     pub const fn rights_mask(self, color: Color) -> u8 {
