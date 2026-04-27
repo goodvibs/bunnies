@@ -1,5 +1,7 @@
 //! Board struct and methods
 
+use crate::File;
+use crate::Flank;
 use crate::Piece;
 use crate::Rank;
 use crate::Square;
@@ -291,6 +293,170 @@ impl Board {
         self.remove_piece_at(piece_type, square);
     }
 
+    pub const fn xor_piece_mask(&mut self, piece_type: Piece, mask: Bitboard) {
+        self.piece_masks[piece_type as usize] ^= mask;
+    }
+
+    pub const fn xor_occupied_mask(&mut self, mask: Bitboard) {
+        self.xor_piece_mask(Piece::ALL_PIECES, mask);
+    }
+
+    pub const fn xor_color_mask(&mut self, color: Color, mask: Bitboard) {
+        self.color_masks[color as usize] ^= mask;
+    }
+
+    pub const fn apply_castling_xor(&mut self, dst: Square, src: Square, for_color: Color) {
+        let king_move_mask = src.mask() | dst.mask();
+        let rook_move_mask = castling_rook_move_mask(dst.file().flank(), for_color);
+
+        self.xor_piece_mask(Piece::King, king_move_mask);
+        self.xor_piece_mask(Piece::Rook, rook_move_mask);
+        self.xor_color_mask(for_color, king_move_mask | rook_move_mask);
+        self.xor_occupied_mask(king_move_mask | rook_move_mask);
+    }
+
+    pub fn apply_en_passant_xor(&mut self, dst: Square, src: Square, for_color: Color) {
+        let capture_square =
+            Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
+        let capture_mask = capture_square.mask();
+
+        self.xor_piece_mask(Piece::Pawn, src.mask() | dst.mask() | capture_mask);
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_color_mask(for_color.other(), capture_mask);
+        self.xor_occupied_mask(src.mask() | dst.mask() | capture_mask);
+    }
+
+    pub fn apply_normal_noncapture_xor(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+        moved_piece: Piece,
+    ) {
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_occupied_mask(src.mask() | dst.mask());
+
+        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
+    }
+
+    pub fn apply_normal_capture_xor(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+        moved_piece: Piece,
+        captured_piece: Piece,
+    ) {
+        debug_assert!(captured_piece != Piece::King);
+
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_occupied_mask(src.mask());
+
+        self.xor_piece_mask(captured_piece, dst.mask());
+        self.xor_color_mask(for_color.other(), dst.mask());
+
+        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
+    }
+
+    pub fn apply_promotion_noncapture_xor(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+        promotion_piece: Piece,
+    ) {
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_occupied_mask(src.mask() | dst.mask());
+
+        self.xor_piece_mask(Piece::Pawn, src.mask());
+        self.xor_piece_mask(promotion_piece, dst.mask());
+    }
+
+    pub fn apply_promotion_capture_xor(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+        captured_piece: Piece,
+        promotion_piece: Piece,
+    ) {
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_occupied_mask(src.mask());
+
+        self.xor_piece_mask(captured_piece, dst.mask());
+        self.xor_color_mask(for_color.other(), dst.mask());
+
+        self.xor_piece_mask(Piece::Pawn, src.mask());
+        self.xor_piece_mask(promotion_piece, dst.mask());
+    }
+
+    pub fn shift_mailbox_castling_make(&mut self, dst: Square, src: Square, for_color: Color) {
+        let flank = dst.file().flank();
+        let rook_from = castling_rook_from_square(flank, for_color);
+        let rook_to = castling_rook_to_square(flank, for_color);
+        self.pieces[src as usize] = Piece::Null;
+        self.pieces[dst as usize] = Piece::King;
+        self.pieces[rook_from as usize] = Piece::Null;
+        self.pieces[rook_to as usize] = Piece::Rook;
+    }
+
+    pub fn shift_mailbox_castling_unmake(&mut self, dst: Square, src: Square, for_color: Color) {
+        let flank = dst.file().flank();
+        let rook_from = castling_rook_from_square(flank, for_color);
+        let rook_to = castling_rook_to_square(flank, for_color);
+        self.pieces[dst as usize] = Piece::Null;
+        self.pieces[src as usize] = Piece::King;
+        self.pieces[rook_to as usize] = Piece::Null;
+        self.pieces[rook_from as usize] = Piece::Rook;
+    }
+
+    pub fn shift_mailbox_en_passant_make(&mut self, dst: Square, src: Square, for_color: Color) {
+        let capture_square =
+            Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
+        self.pieces[src as usize] = Piece::Null;
+        self.pieces[capture_square as usize] = Piece::Null;
+        self.pieces[dst as usize] = Piece::Pawn;
+    }
+
+    pub fn shift_mailbox_en_passant_unmake(&mut self, dst: Square, src: Square, for_color: Color) {
+        let capture_square =
+            Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
+        self.pieces[dst as usize] = Piece::Null;
+        self.pieces[capture_square as usize] = Piece::Pawn;
+        self.pieces[src as usize] = Piece::Pawn;
+    }
+
+    pub fn shift_mailbox_normal_or_promotion_make(
+        &mut self,
+        dst: Square,
+        src: Square,
+        moved_or_promotion_piece: Piece,
+    ) {
+        self.pieces[src as usize] = Piece::Null;
+        self.pieces[dst as usize] = moved_or_promotion_piece;
+    }
+
+    pub fn shift_mailbox_normal_move_unmake(
+        &mut self,
+        dst: Square,
+        src: Square,
+        moved_piece: Piece,
+        captured_piece: Piece,
+    ) {
+        self.pieces[dst as usize] = captured_piece;
+        self.pieces[src as usize] = moved_piece;
+    }
+
+    pub fn shift_mailbox_promotion_unmake(
+        &mut self,
+        dst: Square,
+        src: Square,
+        captured_piece: Piece,
+    ) {
+        self.pieces[dst as usize] = captured_piece;
+        self.pieces[src as usize] = Piece::Pawn;
+    }
+
     /// Moves `piece_type` from `src_square` to `dst_square`.
     /// Does not update color.
     pub const fn move_piece(&mut self, piece_type: Piece, dst_square: Square, src_square: Square) {
@@ -457,6 +623,26 @@ impl Board {
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.unicode_charboard().to_string())
+    }
+}
+
+const fn castling_rook_move_mask(flank: Flank, color: Color) -> Bitboard {
+    flank.castling_rook_files_mask() & Rank::One.from_perspective(color).mask()
+}
+
+fn castling_rook_from_square(flank: Flank, color: Color) -> Square {
+    let rank = Rank::One.from_perspective(color);
+    match flank {
+        Flank::Kingside => Square::from_rank_and_file(rank, File::H),
+        Flank::Queenside => Square::from_rank_and_file(rank, File::A),
+    }
+}
+
+fn castling_rook_to_square(flank: Flank, color: Color) -> Square {
+    let rank = Rank::One.from_perspective(color);
+    match flank {
+        Flank::Kingside => Square::from_rank_and_file(rank, File::F),
+        Flank::Queenside => Square::from_rank_and_file(rank, File::D),
     }
 }
 

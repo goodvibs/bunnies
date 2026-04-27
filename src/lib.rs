@@ -1,5 +1,6 @@
 #![feature(const_for)]
 #![feature(const_trait_impl)]
+#![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
 #![feature(const_param_ty_trait)]

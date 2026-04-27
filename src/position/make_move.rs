@@ -11,113 +11,6 @@ use crate::position::context::PositionContext;
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
-    fn process_promotion(
-        &mut self,
-        stm: Color,
-        dst_square: Square,
-        src_square: Square,
-        promotion: Piece,
-        new_context: &mut PositionContext,
-    ) {
-        self.process_possible_capture(stm, dst_square, new_context);
-
-        self.board.remove_piece_at(Piece::Pawn, src_square);
-        self.board.put_piece_at(promotion, dst_square);
-
-        new_context.process_promotion_disregarding_capture();
-    }
-
-    fn process_normal(
-        &mut self,
-        stm: Color,
-        dst_square: Square,
-        src_square: Square,
-        new_context: &mut PositionContext,
-    ) {
-        self.process_possible_capture(stm, dst_square, new_context);
-
-        let moved_piece = self.board.piece_at(src_square);
-        debug_assert_ne!(moved_piece, Piece::Null);
-        self.board.move_piece(moved_piece, dst_square, src_square);
-        new_context.process_normal_disregarding_capture(
-            ColoredPiece::new(stm, moved_piece),
-            dst_square,
-            src_square,
-        );
-    }
-
-    fn process_possible_capture(
-        &mut self,
-        stm: Color,
-        dst_square: Square,
-        new_context: &mut PositionContext,
-    ) {
-        let opposite_color = stm.other();
-
-        self.board.remove_color_at(opposite_color, dst_square);
-
-        let captured_piece = self.board.piece_at(dst_square);
-        if captured_piece != Piece::Null {
-            self.board.remove_piece_at(captured_piece, dst_square);
-            new_context.process_capture(
-                ColoredPiece::new(opposite_color, captured_piece),
-                dst_square,
-            );
-        }
-    }
-
-    fn process_en_passant(
-        &mut self,
-        stm: Color,
-        dst_square: Square,
-        src_square: Square,
-        new_context: &mut PositionContext,
-    ) {
-        let opposite_color = stm.other();
-
-        let en_passant_capture_square = match opposite_color {
-            Color::White => Square::from_u8(dst_square as u8 - 8),
-            Color::Black => Square::from_u8(dst_square as u8 + 8),
-        };
-
-        self.board
-            .remove_color_at(opposite_color, en_passant_capture_square);
-        self.board.move_piece(Piece::Pawn, dst_square, src_square);
-        self.board
-            .remove_piece_at(Piece::Pawn, en_passant_capture_square);
-
-        new_context.process_en_passant();
-    }
-
-    fn process_castling(
-        &mut self,
-        stm: Color,
-        dst_square: Square,
-        src_square: Square,
-        new_context: &mut PositionContext,
-    ) {
-        self.board.move_piece(Piece::King, dst_square, src_square);
-
-        let (rook_src_square, rook_dst_square) = match dst_square.file().flank() {
-            Flank::Kingside => (
-                src_square.relative(3).expect("src_square is incorrect"),
-                src_square.relative(1).unwrap(),
-            ),
-            Flank::Queenside => (
-                src_square.relative(-4).expect("src_square is incorrect"),
-                src_square.relative(-1).unwrap(),
-            ),
-        };
-
-        self.board.move_colored_piece(
-            ColoredPiece::new(stm, Piece::Rook),
-            rook_dst_square,
-            rook_src_square,
-        );
-
-        new_context.process_castling(stm);
-    }
-
     /// Applies a move in place, updating board state for the opponent.
     ///
     /// After this returns, the layout matches the destination type of [`Position::make_move`]
@@ -127,33 +20,117 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         let src_square = mv.source();
         let dst_square = mv.destination();
+        let opposite_color = STM.other();
 
         let mut new_context = PositionContext::blank();
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
-        self.board.move_color(STM, dst_square, src_square);
-
         let move_type = mv.move_type();
 
         match move_type {
-            MoveType::Normal | MoveType::DoublePawnPush | MoveType::NormalCapture => {
-                self.process_normal(STM, dst_square, src_square, &mut new_context);
-            }
-            MoveType::Castling => {
-                self.process_castling(STM, dst_square, src_square, &mut new_context);
-            }
-            MoveType::EnPassant => {
-                self.process_en_passant(STM, dst_square, src_square, &mut new_context);
-            }
-            _ => {
-                self.process_promotion(
-                    STM,
+            MoveType::Normal | MoveType::DoublePawnPush => {
+                let moved_piece = self.board.piece_at(src_square);
+                debug_assert_ne!(moved_piece, Piece::Null);
+                debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
+                self.board
+                    .apply_normal_noncapture_xor(dst_square, src_square, STM, moved_piece);
+
+                self.board.shift_mailbox_normal_or_promotion_make(
                     dst_square,
                     src_square,
-                    move_type.promotion_piece(),
-                    &mut new_context,
+                    moved_piece,
                 );
+                new_context.process_normal_disregarding_capture(
+                    ColoredPiece::new(STM, moved_piece),
+                    dst_square,
+                    src_square,
+                );
+            }
+            MoveType::NormalCapture => {
+                let moved_piece = self.board.piece_at(src_square);
+                let captured_piece = self.board.piece_at(dst_square);
+                debug_assert_ne!(moved_piece, Piece::Null);
+                debug_assert_ne!(captured_piece, Piece::Null);
+                debug_assert_ne!(captured_piece, Piece::King);
+
+                new_context.process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_square);
+                self.board.apply_normal_capture_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    moved_piece,
+                    captured_piece,
+                );
+                self.board.shift_mailbox_normal_or_promotion_make(
+                    dst_square,
+                    src_square,
+                    moved_piece,
+                );
+                new_context.process_normal_disregarding_capture(
+                    ColoredPiece::new(STM, moved_piece),
+                    dst_square,
+                    src_square,
+                );
+            }
+            MoveType::Castling => {
+                self.board.apply_castling_xor(dst_square, src_square, STM);
+                self.board
+                    .shift_mailbox_castling_make(dst_square, src_square, STM);
+                new_context.process_castling(STM);
+            }
+            MoveType::EnPassant => {
+                self.board.apply_en_passant_xor(dst_square, src_square, STM);
+                self.board
+                    .shift_mailbox_en_passant_make(dst_square, src_square, STM);
+                new_context.process_en_passant();
+            }
+            MoveType::PushPromotionToKnight
+            | MoveType::PushPromotionToBishop
+            | MoveType::PushPromotionToRook
+            | MoveType::PushPromotionToQueen => {
+                let promotion_piece = move_type.promotion_piece();
+                debug_assert_ne!(promotion_piece, Piece::Null);
+                debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
+
+                self.board.apply_promotion_noncapture_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    promotion_piece,
+                );
+
+                self.board.shift_mailbox_normal_or_promotion_make(
+                    dst_square,
+                    src_square,
+                    promotion_piece,
+                );
+                new_context.process_promotion_disregarding_capture();
+            }
+            MoveType::CapturePromotionToKnight
+            | MoveType::CapturePromotionToBishop
+            | MoveType::CapturePromotionToRook
+            | MoveType::CapturePromotionToQueen => {
+                let promotion_piece = move_type.promotion_piece();
+                let captured_piece = self.board.piece_at(dst_square);
+                debug_assert_ne!(promotion_piece, Piece::Null);
+                debug_assert_ne!(captured_piece, Piece::Null);
+                debug_assert_ne!(captured_piece, Piece::King);
+
+                new_context.process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_square);
+                self.board.apply_promotion_capture_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    captured_piece,
+                    promotion_piece,
+                );
+                self.board.shift_mailbox_normal_or_promotion_make(
+                    dst_square,
+                    src_square,
+                    promotion_piece,
+                );
+                new_context.process_promotion_disregarding_capture();
             }
         }
 

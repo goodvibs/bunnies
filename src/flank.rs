@@ -65,4 +65,11 @@ impl Flank {
             (Color::Black, Flank::Queenside) => Square::D8.mask() | Square::C8.mask(),
         }
     }
+
+    pub const fn castling_rook_files_mask(self) -> Bitboard {
+        match self {
+            Self::Kingside => File::H.mask() | File::F.mask(),
+            Flank::Queenside => File::A.mask() | File::D.mask(),
+        }
+    }
 }
