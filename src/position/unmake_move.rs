@@ -20,7 +20,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 debug_assert_ne!(moved_piece, Piece::Null);
                 self.board
                     .apply_normal_noncapture_xor(dst_square, src_square, mover, moved_piece);
-                self.board.shift_mailbox_normal_move_unmake(
+                self.board.shift_mailbox_normal_or_promotion_unmake(
                     dst_square,
                     src_square,
                     moved_piece,
@@ -39,7 +39,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     moved_piece,
                     captured_piece,
                 );
-                self.board.shift_mailbox_normal_move_unmake(
+                self.board.shift_mailbox_normal_or_promotion_unmake(
                     dst_square,
                     src_square,
                     moved_piece,
@@ -87,8 +87,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                         promotion_piece,
                     );
                 }
-                self.board
-                    .shift_mailbox_promotion_unmake(dst_square, src_square, captured_piece);
+                self.board.shift_mailbox_normal_or_promotion_unmake(
+                    dst_square,
+                    src_square,
+                    Piece::Pawn,
+                    captured_piece,
+                );
             }
         }
 

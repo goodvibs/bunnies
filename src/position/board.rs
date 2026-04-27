@@ -445,31 +445,21 @@ impl Board {
         &mut self,
         dst: Square,
         src: Square,
-        moved_or_promotion_piece: Piece,
+        moved_final_piece: Piece,
     ) {
         self.pieces[src as usize] = Piece::Null;
-        self.pieces[dst as usize] = moved_or_promotion_piece;
+        self.pieces[dst as usize] = moved_final_piece;
     }
 
-    pub const fn shift_mailbox_normal_move_unmake(
+    pub const fn shift_mailbox_normal_or_promotion_unmake(
         &mut self,
         dst: Square,
         src: Square,
-        moved_piece: Piece,
+        moved_initial_piece: Piece,
         captured_piece: Piece,
     ) {
         self.pieces[dst as usize] = captured_piece;
-        self.pieces[src as usize] = moved_piece;
-    }
-
-    pub const fn shift_mailbox_promotion_unmake(
-        &mut self,
-        dst: Square,
-        src: Square,
-        captured_piece: Piece,
-    ) {
-        self.pieces[dst as usize] = captured_piece;
-        self.pieces[src as usize] = Piece::Pawn;
+        self.pieces[src as usize] = moved_initial_piece;
     }
 
     /// Moves `piece_type` from `src_square` to `dst_square`.
