@@ -315,7 +315,7 @@ impl Board {
         self.xor_occupied_mask(king_move_mask | rook_move_mask);
     }
 
-    pub fn apply_en_passant_xor(&mut self, dst: Square, src: Square, for_color: Color) {
+    pub const fn apply_en_passant_xor(&mut self, dst: Square, src: Square, for_color: Color) {
         let capture_square =
             Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
         let capture_mask = capture_square.mask();
@@ -326,7 +326,7 @@ impl Board {
         self.xor_occupied_mask(src.mask() | dst.mask() | capture_mask);
     }
 
-    pub fn apply_normal_noncapture_xor(
+    pub const fn apply_normal_noncapture_xor(
         &mut self,
         dst: Square,
         src: Square,
@@ -339,7 +339,7 @@ impl Board {
         self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
     }
 
-    pub fn apply_normal_capture_xor(
+    pub const fn apply_normal_capture_xor(
         &mut self,
         dst: Square,
         src: Square,
@@ -358,7 +358,7 @@ impl Board {
         self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
     }
 
-    pub fn apply_promotion_noncapture_xor(
+    pub const fn apply_promotion_noncapture_xor(
         &mut self,
         dst: Square,
         src: Square,
@@ -372,7 +372,7 @@ impl Board {
         self.xor_piece_mask(promotion_piece, dst.mask());
     }
 
-    pub fn apply_promotion_capture_xor(
+    pub const fn apply_promotion_capture_xor(
         &mut self,
         dst: Square,
         src: Square,
@@ -400,7 +400,12 @@ impl Board {
         self.pieces[rook_to as usize] = Piece::Rook;
     }
 
-    pub fn shift_mailbox_castling_unmake(&mut self, dst: Square, src: Square, for_color: Color) {
+    pub const fn shift_mailbox_castling_unmake(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+    ) {
         let flank = dst.file().flank();
         let rook_from = castling_rook_from_square(flank, for_color);
         let rook_to = castling_rook_to_square(flank, for_color);
@@ -410,7 +415,12 @@ impl Board {
         self.pieces[rook_from as usize] = Piece::Rook;
     }
 
-    pub fn shift_mailbox_en_passant_make(&mut self, dst: Square, src: Square, for_color: Color) {
+    pub const fn shift_mailbox_en_passant_make(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+    ) {
         let capture_square =
             Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
         self.pieces[src as usize] = Piece::Null;
@@ -418,7 +428,12 @@ impl Board {
         self.pieces[dst as usize] = Piece::Pawn;
     }
 
-    pub fn shift_mailbox_en_passant_unmake(&mut self, dst: Square, src: Square, for_color: Color) {
+    pub const fn shift_mailbox_en_passant_unmake(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+    ) {
         let capture_square =
             Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
         self.pieces[dst as usize] = Piece::Null;
@@ -426,7 +441,7 @@ impl Board {
         self.pieces[src as usize] = Piece::Pawn;
     }
 
-    pub fn shift_mailbox_normal_or_promotion_make(
+    pub const fn shift_mailbox_normal_or_promotion_make(
         &mut self,
         dst: Square,
         src: Square,
@@ -436,7 +451,7 @@ impl Board {
         self.pieces[dst as usize] = moved_or_promotion_piece;
     }
 
-    pub fn shift_mailbox_normal_move_unmake(
+    pub const fn shift_mailbox_normal_move_unmake(
         &mut self,
         dst: Square,
         src: Square,
@@ -447,7 +462,7 @@ impl Board {
         self.pieces[src as usize] = moved_piece;
     }
 
-    pub fn shift_mailbox_promotion_unmake(
+    pub const fn shift_mailbox_promotion_unmake(
         &mut self,
         dst: Square,
         src: Square,
@@ -630,7 +645,7 @@ const fn castling_rook_move_mask(flank: Flank, color: Color) -> Bitboard {
     flank.castling_rook_files_mask() & Rank::One.from_perspective(color).mask()
 }
 
-fn castling_rook_from_square(flank: Flank, color: Color) -> Square {
+const fn castling_rook_from_square(flank: Flank, color: Color) -> Square {
     let rank = Rank::One.from_perspective(color);
     match flank {
         Flank::Kingside => Square::from_rank_and_file(rank, File::H),
@@ -638,7 +653,7 @@ fn castling_rook_from_square(flank: Flank, color: Color) -> Square {
     }
 }
 
-fn castling_rook_to_square(flank: Flank, color: Color) -> Square {
+const fn castling_rook_to_square(flank: Flank, color: Color) -> Square {
     let rank = Rank::One.from_perspective(color);
     match flank {
         Flank::Kingside => Square::from_rank_and_file(rank, File::F),

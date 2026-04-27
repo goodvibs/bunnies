@@ -54,7 +54,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 debug_assert_ne!(captured_piece, Piece::Null);
                 debug_assert_ne!(captured_piece, Piece::King);
 
-                new_context.process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_square);
+                new_context.process_capture(
+                    ColoredPiece::new(opposite_color, captured_piece),
+                    dst_square,
+                );
                 self.board.apply_normal_capture_xor(
                     dst_square,
                     src_square,
@@ -117,7 +120,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 debug_assert_ne!(captured_piece, Piece::Null);
                 debug_assert_ne!(captured_piece, Piece::King);
 
-                new_context.process_capture(ColoredPiece::new(opposite_color, captured_piece), dst_square);
+                new_context.process_capture(
+                    ColoredPiece::new(opposite_color, captured_piece),
+                    dst_square,
+                );
                 self.board.apply_promotion_capture_xor(
                     dst_square,
                     src_square,
