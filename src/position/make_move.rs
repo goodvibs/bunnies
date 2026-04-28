@@ -1,5 +1,7 @@
 //! Contains [`Position::make_move`] and [`Position::unmake_move`].
 
+use std::hint;
+
 use crate::Color;
 use crate::ColoredPiece;
 use crate::File;
@@ -103,11 +105,17 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let mover = STM.other();
         let moved = self.board.piece_at(dst_square);
 
+        let src_piece = if hint::unlikely(move_type.is_promotion()) {
+            Piece::Pawn
+        } else {
+            moved
+        };
+
         self.board
             .remove_colored_piece_at(ColoredPiece::new(mover, moved), dst_square);
 
         self.board
-            .put_colored_piece_at(ColoredPiece::new(mover, moved), src_square);
+            .put_colored_piece_at(ColoredPiece::new(mover, src_piece), src_square);
 
         match move_type {
             MoveType::Castling => {
@@ -126,7 +134,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     Square::from_rank_and_file(mover.en_passant_capture_rank(), dst_square.file());
 
                 self.board
-                    .put_colored_piece_at(ColoredPiece::new(mover, Piece::Pawn), capture_square);
+                    .put_colored_piece_at(ColoredPiece::new(STM, Piece::Pawn), capture_square);
             }
             _ => {}
         }
@@ -136,13 +144,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 ColoredPiece::new(STM, self.context().captured_piece),
                 dst_square,
             );
-        }
-
-        if move_type.is_promotion() {
-            let promotion_piece = move_type.promotion_piece();
-
-            self.board
-                .remove_colored_piece_at(ColoredPiece::new(mover, promotion_piece), dst_square);
         }
 
         self.halfmove -= 1;
