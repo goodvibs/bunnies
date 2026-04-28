@@ -33,8 +33,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 let moved_piece = self.board.piece_at(src_square);
                 debug_assert_ne!(moved_piece, Piece::Null);
                 debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
-                self.board
-                    .apply_normal_noncapture_xor(dst_square, src_square, STM, moved_piece);
+                self.board.apply_move_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    moved_piece,
+                    Piece::Null,
+                    move_type,
+                );
 
                 self.board.shift_mailbox_normal_or_promotion_make(
                     dst_square,
@@ -64,7 +70,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     STM,
                     moved_piece,
                     captured_piece,
-                    Piece::Null,
+                    move_type,
                 );
                 self.board.shift_mailbox_normal_or_promotion_make(
                     dst_square,
@@ -78,13 +84,27 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 );
             }
             MoveType::Castling => {
-                self.board.apply_castling_xor(dst_square, src_square, STM);
+                self.board.apply_move_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    Piece::King,
+                    Piece::Null,
+                    move_type,
+                );
                 self.board
                     .shift_mailbox_castling_make(dst_square, src_square, STM);
                 new_context.process_castling(STM);
             }
             MoveType::EnPassant => {
-                self.board.apply_en_passant_xor(dst_square, src_square, STM);
+                self.board.apply_move_xor(
+                    dst_square,
+                    src_square,
+                    STM,
+                    Piece::Pawn,
+                    Piece::Pawn,
+                    move_type,
+                );
                 self.board
                     .shift_mailbox_en_passant_make(dst_square, src_square, STM);
                 new_context.process_en_passant();
@@ -103,7 +123,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     STM,
                     Piece::Pawn,
                     Piece::Null,
-                    promotion_piece,
+                    move_type,
                 );
 
                 self.board.shift_mailbox_normal_or_promotion_make(
@@ -133,7 +153,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     STM,
                     Piece::Pawn,
                     captured_piece,
-                    promotion_piece,
+                    move_type,
                 );
                 self.board.shift_mailbox_normal_or_promotion_make(
                     dst_square,
