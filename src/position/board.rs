@@ -326,6 +326,33 @@ impl Board {
         self.xor_occupied_mask(src.mask() | dst.mask() | capture_mask);
     }
 
+    pub const fn apply_move_xor(
+        &mut self,
+        dst: Square,
+        src: Square,
+        for_color: Color,
+        moved_piece: Piece,
+        captured_piece: Piece,
+        promotion_piece: Piece,
+    ) {
+        self.xor_color_mask(for_color, src.mask() | dst.mask());
+        self.xor_occupied_mask(src.mask() | dst.mask());
+
+        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
+
+        if captured_piece != Piece::Null {
+            self.xor_occupied_mask(dst.mask());
+
+            self.xor_piece_mask(captured_piece, dst.mask());
+            self.xor_color_mask(for_color.other(), dst.mask());
+        }
+
+        if promotion_piece != Piece::Null {
+            self.xor_piece_mask(Piece::Pawn, dst.mask());
+            self.xor_piece_mask(promotion_piece, dst.mask());
+        }
+    }
+
     pub const fn apply_normal_noncapture_xor(
         &mut self,
         dst: Square,

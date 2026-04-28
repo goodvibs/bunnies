@@ -58,12 +58,13 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     ColoredPiece::new(opposite_color, captured_piece),
                     dst_square,
                 );
-                self.board.apply_normal_capture_xor(
+                self.board.apply_move_xor(
                     dst_square,
                     src_square,
                     STM,
                     moved_piece,
                     captured_piece,
+                    Piece::Null,
                 );
                 self.board.shift_mailbox_normal_or_promotion_make(
                     dst_square,
@@ -96,10 +97,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 debug_assert_ne!(promotion_piece, Piece::Null);
                 debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
 
-                self.board.apply_promotion_noncapture_xor(
+                self.board.apply_move_xor(
                     dst_square,
                     src_square,
                     STM,
+                    Piece::Pawn,
+                    Piece::Null,
                     promotion_piece,
                 );
 
@@ -124,10 +127,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     ColoredPiece::new(opposite_color, captured_piece),
                     dst_square,
                 );
-                self.board.apply_promotion_capture_xor(
+                self.board.apply_move_xor(
                     dst_square,
                     src_square,
                     STM,
+                    Piece::Pawn,
                     captured_piece,
                     promotion_piece,
                 );
