@@ -20,60 +20,16 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         let src_square = mv.source();
         let dst_square = mv.destination();
-        let opposite_color = STM.other();
 
         let mut new_context = PositionContext::blank();
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
         let move_type = mv.move_type();
+        let moved_piece = self.board.piece_at(src_square);
+        let captured_piece = self.board.piece_at(dst_square);
 
         match move_type {
-            MoveType::Normal | MoveType::DoublePawnPush => {
-                let moved_piece = self.board.piece_at(src_square);
-                debug_assert_ne!(moved_piece, Piece::Null);
-                debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
-                self.board.apply_move::<true>(
-                    dst_square,
-                    src_square,
-                    STM,
-                    moved_piece,
-                    Piece::Null,
-                    move_type,
-                );
-
-                new_context.process_normal_disregarding_capture(
-                    ColoredPiece::new(STM, moved_piece),
-                    dst_square,
-                    src_square,
-                );
-            }
-            MoveType::NormalCapture => {
-                let moved_piece = self.board.piece_at(src_square);
-                let captured_piece = self.board.piece_at(dst_square);
-                debug_assert_ne!(moved_piece, Piece::Null);
-                debug_assert_ne!(captured_piece, Piece::Null);
-                debug_assert_ne!(captured_piece, Piece::King);
-
-                new_context.process_capture(
-                    ColoredPiece::new(opposite_color, captured_piece),
-                    dst_square,
-                );
-                self.board.apply_move::<true>(
-                    dst_square,
-                    src_square,
-                    STM,
-                    moved_piece,
-                    captured_piece,
-                    move_type,
-                );
-
-                new_context.process_normal_disregarding_capture(
-                    ColoredPiece::new(STM, moved_piece),
-                    dst_square,
-                    src_square,
-                );
-            }
             MoveType::Castling => {
                 self.board.apply_move::<true>(
                     dst_square,
@@ -92,45 +48,29 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     src_square,
                     STM,
                     Piece::Pawn,
-                    Piece::Null, // necessary for en passant
+                    Piece::Null,
                     move_type,
                 );
 
                 new_context.process_en_passant();
             }
-            MoveType::PushPromotionToKnight
-            | MoveType::PushPromotionToBishop
-            | MoveType::PushPromotionToRook
-            | MoveType::PushPromotionToQueen => {
-                let promotion_piece = move_type.promotion_piece();
-                debug_assert_ne!(promotion_piece, Piece::Null);
-                debug_assert_eq!(self.board.piece_at(dst_square), Piece::Null);
-
+            MoveType::Normal | MoveType::DoublePawnPush | MoveType::NormalCapture => {
                 self.board.apply_move::<true>(
                     dst_square,
                     src_square,
                     STM,
-                    Piece::Pawn,
-                    Piece::Null,
+                    moved_piece,
+                    captured_piece,
                     move_type,
                 );
 
-                new_context.process_promotion_disregarding_capture();
-            }
-            MoveType::CapturePromotionToKnight
-            | MoveType::CapturePromotionToBishop
-            | MoveType::CapturePromotionToRook
-            | MoveType::CapturePromotionToQueen => {
-                let promotion_piece = move_type.promotion_piece();
-                let captured_piece = self.board.piece_at(dst_square);
-                debug_assert_ne!(promotion_piece, Piece::Null);
-                debug_assert_ne!(captured_piece, Piece::Null);
-                debug_assert_ne!(captured_piece, Piece::King);
-
-                new_context.process_capture(
-                    ColoredPiece::new(opposite_color, captured_piece),
+                new_context.process_normal_disregarding_capture(
+                    ColoredPiece::new(STM, moved_piece),
                     dst_square,
+                    src_square,
                 );
+            }
+            _ => {
                 self.board.apply_move::<true>(
                     dst_square,
                     src_square,
@@ -142,6 +82,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
                 new_context.process_promotion_disregarding_capture();
             }
+        }
+
+        if move_type.is_capture() && move_type != MoveType::EnPassant {
+            new_context.process_capture(ColoredPiece::new(STM.other(), captured_piece), dst_square);
         }
 
         self.halfmove += 1;
