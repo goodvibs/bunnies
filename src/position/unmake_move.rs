@@ -18,13 +18,13 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             MoveType::Normal | MoveType::DoublePawnPush => {
                 let moved_piece = self.board.piece_at(dst_square);
                 debug_assert_ne!(moved_piece, Piece::Null);
-                self.board
-                    .apply_normal_noncapture_xor(dst_square, src_square, mover, moved_piece);
-                self.board.shift_mailbox_normal_or_promotion_unmake(
+                self.board.apply_move::<false>(
                     dst_square,
                     src_square,
+                    mover,
                     moved_piece,
-                    Piece::Null,
+                    captured_piece,
+                    move_type,
                 );
             }
             MoveType::NormalCapture => {
@@ -32,31 +32,35 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 debug_assert_ne!(moved_piece, Piece::Null);
                 debug_assert_ne!(captured_piece, Piece::Null);
                 debug_assert_ne!(captured_piece, Piece::King);
-                self.board.apply_normal_capture_xor(
+                self.board.apply_move::<false>(
                     dst_square,
                     src_square,
                     mover,
                     moved_piece,
                     captured_piece,
-                );
-                self.board.shift_mailbox_normal_or_promotion_unmake(
-                    dst_square,
-                    src_square,
-                    moved_piece,
-                    captured_piece,
+                    move_type,
                 );
             }
             MoveType::Castling => {
-                self.board.apply_castling_xor(dst_square, src_square, mover);
-                self.board
-                    .shift_mailbox_castling_unmake(dst_square, src_square, mover);
+                self.board.apply_move::<false>(
+                    dst_square,
+                    src_square,
+                    mover,
+                    Piece::King,
+                    captured_piece,
+                    move_type,
+                );
             }
             MoveType::EnPassant => {
                 debug_assert_eq!(captured_piece, Piece::Pawn);
-                self.board
-                    .apply_en_passant_xor(dst_square, src_square, mover);
-                self.board
-                    .shift_mailbox_en_passant_unmake(dst_square, src_square, mover);
+                self.board.apply_move::<false>(
+                    dst_square,
+                    src_square,
+                    mover,
+                    Piece::Pawn,
+                    Piece::Null,
+                    move_type,
+                );
             }
             MoveType::PushPromotionToKnight
             | MoveType::PushPromotionToBishop
@@ -71,28 +75,25 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 if move_type.is_capture() {
                     debug_assert_ne!(captured_piece, Piece::Null);
                     debug_assert_ne!(captured_piece, Piece::King);
-                    self.board.apply_promotion_capture_xor(
+                    self.board.apply_move::<false>(
                         dst_square,
                         src_square,
                         mover,
+                        Piece::Pawn,
                         captured_piece,
-                        promotion_piece,
+                        move_type,
                     );
                 } else {
                     debug_assert_eq!(captured_piece, Piece::Null);
-                    self.board.apply_promotion_noncapture_xor(
+                    self.board.apply_move::<false>(
                         dst_square,
                         src_square,
                         mover,
-                        promotion_piece,
+                        Piece::Pawn,
+                        captured_piece,
+                        move_type,
                     );
                 }
-                self.board.shift_mailbox_normal_or_promotion_unmake(
-                    dst_square,
-                    src_square,
-                    Piece::Pawn,
-                    captured_piece,
-                );
             }
         }
 

@@ -306,47 +306,58 @@ impl Board {
         self.color_masks[color as usize] ^= mask;
     }
 
-    pub const fn apply_castling_xor(&mut self, dst: Square, src: Square, for_color: Color) {
-        let king_move_mask = src.mask() | dst.mask();
-        let rook_move_mask = castling_rook_move_mask(dst.file().flank(), for_color);
-
-        self.xor_piece_mask(Piece::King, king_move_mask);
-        self.xor_piece_mask(Piece::Rook, rook_move_mask);
-        self.xor_color_mask(for_color, king_move_mask | rook_move_mask);
-        self.xor_occupied_mask(king_move_mask | rook_move_mask);
+    pub const fn put_piece_in_mailbox(&mut self, piece: Piece, at: Square) {
+        self.pieces[at as usize] = piece;
     }
 
-    pub const fn apply_en_passant_xor(&mut self, dst: Square, src: Square, for_color: Color) {
-        let capture_square =
-            Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
-        let capture_mask = capture_square.mask();
-
-        self.xor_piece_mask(Piece::Pawn, src.mask() | dst.mask() | capture_mask);
-        self.xor_color_mask(for_color, src.mask() | dst.mask());
-        self.xor_color_mask(for_color.other(), capture_mask);
-        self.xor_occupied_mask(src.mask() | dst.mask() | capture_mask);
+    pub const fn clear_piece_in_mailbox(&mut self, at: Square) {
+        self.put_piece_in_mailbox(Piece::Null, at);
     }
 
-    pub const fn apply_move_xor(
+    pub const fn mail_piece_move<const FORWARD: bool>(
+        &mut self,
+        moved: Piece,
+        captured: Piece,
+        dst: Square,
+        src: Square,
+    ) {
+        let (src_piece, dst_piece) = match FORWARD {
+            true => (Piece::Null, moved),
+            false => (moved, captured),
+        };
+
+        self.put_piece_in_mailbox(src_piece, src);
+        self.put_piece_in_mailbox(dst_piece, dst);
+    }
+
+    pub const fn apply_move<const FORWARD: bool>(
         &mut self,
         dst: Square,
         src: Square,
         for_color: Color,
-        moved_piece: Piece,
-        captured_piece: Piece,
+        moved: Piece,
+        captured: Piece,
         move_type: MoveType,
     ) {
         self.xor_color_mask(for_color, src.mask() | dst.mask());
         self.xor_occupied_mask(src.mask() | dst.mask());
-        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
+        self.xor_piece_mask(moved, src.mask() | dst.mask());
+
+        self.mail_piece_move::<{ FORWARD }>(moved, captured, dst, src);
 
         match move_type {
             MoveType::Castling => {
-                let rook_move_mask = castling_rook_move_mask(dst.file().flank(), for_color);
+                let flank = dst.file().flank();
+                let rook_from = castling_rook_from_square(flank, for_color);
+                let rook_to = castling_rook_to_square(flank, for_color);
+
+                let rook_move_mask = rook_from.mask() | rook_to.mask();
 
                 self.xor_color_mask(for_color, rook_move_mask);
                 self.xor_occupied_mask(rook_move_mask);
                 self.xor_piece_mask(Piece::Rook, rook_move_mask);
+
+                self.mail_piece_move::<{ FORWARD }>(Piece::Rook, Piece::Null, rook_to, rook_from);
             }
             MoveType::EnPassant => {
                 let capture_square =
@@ -356,6 +367,14 @@ impl Board {
                 self.xor_occupied_mask(capture_mask);
                 self.xor_piece_mask(Piece::Pawn, capture_mask);
                 self.xor_color_mask(for_color.other(), capture_mask);
+
+                self.put_piece_in_mailbox(
+                    match FORWARD {
+                        true => Piece::Null,
+                        false => Piece::Pawn,
+                    },
+                    capture_square,
+                );
             }
             _ => (),
         }
@@ -363,78 +382,23 @@ impl Board {
         if move_type.is_capture() && move_type != MoveType::EnPassant {
             self.xor_occupied_mask(dst.mask());
 
-            self.xor_piece_mask(captured_piece, dst.mask());
+            self.xor_piece_mask(captured, dst.mask());
             self.xor_color_mask(for_color.other(), dst.mask());
         }
 
         if move_type.is_promotion() {
+            let promotion_piece = move_type.promotion_piece();
             self.xor_piece_mask(Piece::Pawn, dst.mask());
-            self.xor_piece_mask(move_type.promotion_piece(), dst.mask());
+            self.xor_piece_mask(promotion_piece, dst.mask());
+
+            self.put_piece_in_mailbox(
+                match FORWARD {
+                    true => promotion_piece,
+                    false => captured,
+                },
+                dst,
+            );
         }
-    }
-
-    pub const fn apply_normal_noncapture_xor(
-        &mut self,
-        dst: Square,
-        src: Square,
-        for_color: Color,
-        moved_piece: Piece,
-    ) {
-        self.xor_color_mask(for_color, src.mask() | dst.mask());
-        self.xor_occupied_mask(src.mask() | dst.mask());
-
-        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
-    }
-
-    pub const fn apply_normal_capture_xor(
-        &mut self,
-        dst: Square,
-        src: Square,
-        for_color: Color,
-        moved_piece: Piece,
-        captured_piece: Piece,
-    ) {
-        debug_assert!(captured_piece != Piece::King);
-
-        self.xor_color_mask(for_color, src.mask() | dst.mask());
-        self.xor_occupied_mask(src.mask());
-
-        self.xor_piece_mask(captured_piece, dst.mask());
-        self.xor_color_mask(for_color.other(), dst.mask());
-
-        self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
-    }
-
-    pub const fn apply_promotion_noncapture_xor(
-        &mut self,
-        dst: Square,
-        src: Square,
-        for_color: Color,
-        promotion_piece: Piece,
-    ) {
-        self.xor_color_mask(for_color, src.mask() | dst.mask());
-        self.xor_occupied_mask(src.mask() | dst.mask());
-
-        self.xor_piece_mask(Piece::Pawn, src.mask());
-        self.xor_piece_mask(promotion_piece, dst.mask());
-    }
-
-    pub const fn apply_promotion_capture_xor(
-        &mut self,
-        dst: Square,
-        src: Square,
-        for_color: Color,
-        captured_piece: Piece,
-        promotion_piece: Piece,
-    ) {
-        self.xor_color_mask(for_color, src.mask() | dst.mask());
-        self.xor_occupied_mask(src.mask());
-
-        self.xor_piece_mask(captured_piece, dst.mask());
-        self.xor_color_mask(for_color.other(), dst.mask());
-
-        self.xor_piece_mask(Piece::Pawn, src.mask());
-        self.xor_piece_mask(promotion_piece, dst.mask());
     }
 
     pub fn shift_mailbox_castling_make(&mut self, dst: Square, src: Square, for_color: Color) {
