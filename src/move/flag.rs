@@ -3,7 +3,8 @@ use crate::Piece;
 /// Enum representing the different types of moves that can be made in a game of chess.
 /// Used in the Move struct.
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
+#[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
+#[derive_const(PartialEq)]
 #[rustfmt::skip]
 pub enum MoveType {
     Normal                   = 0b0000,

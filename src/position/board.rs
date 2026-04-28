@@ -2,6 +2,7 @@
 
 use crate::File;
 use crate::Flank;
+use crate::MoveType;
 use crate::Piece;
 use crate::Rank;
 use crate::Square;
@@ -333,23 +334,42 @@ impl Board {
         for_color: Color,
         moved_piece: Piece,
         captured_piece: Piece,
-        promotion_piece: Piece,
+        move_type: MoveType,
     ) {
         self.xor_color_mask(for_color, src.mask() | dst.mask());
         self.xor_occupied_mask(src.mask() | dst.mask());
-
         self.xor_piece_mask(moved_piece, src.mask() | dst.mask());
 
-        if captured_piece != Piece::Null {
+        match move_type {
+            MoveType::Castling => {
+                let rook_move_mask = castling_rook_move_mask(dst.file().flank(), for_color);
+
+                self.xor_color_mask(for_color, rook_move_mask);
+                self.xor_occupied_mask(rook_move_mask);
+                self.xor_piece_mask(Piece::Rook, rook_move_mask);
+            }
+            MoveType::EnPassant => {
+                let capture_square =
+                    Square::from_rank_and_file(for_color.en_passant_capture_rank(), dst.file());
+                let capture_mask = capture_square.mask();
+
+                self.xor_occupied_mask(capture_mask);
+                self.xor_piece_mask(Piece::Pawn, capture_mask);
+                self.xor_color_mask(for_color.other(), capture_mask);
+            }
+            _ => (),
+        }
+
+        if move_type.is_capture() && move_type != MoveType::EnPassant {
             self.xor_occupied_mask(dst.mask());
 
             self.xor_piece_mask(captured_piece, dst.mask());
             self.xor_color_mask(for_color.other(), dst.mask());
         }
 
-        if promotion_piece != Piece::Null {
+        if move_type.is_promotion() {
             self.xor_piece_mask(Piece::Pawn, dst.mask());
-            self.xor_piece_mask(promotion_piece, dst.mask());
+            self.xor_piece_mask(move_type.promotion_piece(), dst.mask());
         }
     }
 
