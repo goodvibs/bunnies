@@ -160,7 +160,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.halfmove -= 1;
         self.decrement_context_stack_for_unmake();
         self.result = GameResult::None;
-        self.update_pins_and_checks_for_stm(STM.other());
     }
 }
 
