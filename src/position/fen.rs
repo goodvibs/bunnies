@@ -116,9 +116,9 @@ fn parse_fen_board_row(
                 ColoredPiece::NoPiece => {
                     return Err(FenParseError::InvalidBoardRow(row.to_string()));
                 }
-                colored_piece => {
+                cp => {
                     let dst = Square::from_u8(row_from_top * 8 + file);
-                    board.put_colored_piece_at(colored_piece, dst);
+                    board.put_piece_and_color(cp.color(), cp.piece(), dst);
 
                     file += 1;
                 }

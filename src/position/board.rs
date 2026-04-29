@@ -259,13 +259,10 @@ impl Board {
         self.pieces[square as usize] = piece_type;
     }
 
-    /// Populates a square with `colored_piece`.
-    pub const fn put_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
-        let piece_type = colored_piece.piece();
-        let color = colored_piece.color();
-
+    /// Populates a square with both `color` and `piece`.
+    pub const fn put_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.put_color_at(color, square);
-        self.put_piece_at(piece_type, square);
+        self.put_piece_at(piece, square);
     }
 
     /// Removes `color` from a square, but not piece type.
@@ -282,13 +279,10 @@ impl Board {
         self.pieces[square as usize] = Piece::Null;
     }
 
-    /// Removes `colored_piece` from a square.
-    pub const fn remove_colored_piece_at(&mut self, colored_piece: ColoredPiece, square: Square) {
-        let piece_type = colored_piece.piece();
-        let color = colored_piece.color();
-
+    /// Removes both `color` and `piece` from a square.
+    pub const fn remove_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.remove_color_at(color, square);
-        self.remove_piece_at(piece_type, square);
+        self.remove_piece_at(piece, square);
     }
 
     /// Moves `piece_type` from `src_square` to `dst_square`.
@@ -315,18 +309,16 @@ impl Board {
         self.color_masks[color as usize] ^= src_dst_mask;
     }
 
-    /// Moves a `colored_piece` from `src_square` to `dst_square`.
-    pub const fn move_colored_piece(
+    /// Moves both `color` and `piece` from `src_square` to `dst_square`.
+    pub const fn move_piece_and_color(
         &mut self,
-        colored_piece: ColoredPiece,
+        color: Color,
+        piece: Piece,
         dst_square: Square,
         src_square: Square,
     ) {
-        let piece_type = colored_piece.piece();
-        let color = colored_piece.color();
-
         self.move_color(color, dst_square, src_square);
-        self.move_piece(piece_type, dst_square, src_square);
+        self.move_piece(piece, dst_square, src_square);
     }
 
     /// Returns the piece type at `square` (from the mailbox; kept in sync with [`Self::piece_masks`]).
@@ -343,13 +335,6 @@ impl Board {
     pub const fn color_at(&self, square: Square) -> Color {
         let mask = square.mask();
         Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
-    }
-
-    /// Returns the colored piece at `square`.
-    pub const fn get_colored_piece_at(&self, square: Square) -> ColoredPiece {
-        let piece_type = self.piece_at(square);
-        let color = self.color_at(square);
-        ColoredPiece::new(color, piece_type)
     }
 
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).
@@ -438,8 +423,9 @@ impl Board {
     pub fn ascii_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
-            let colored_piece = self.get_colored_piece_at(square);
-            cb[i / 8][i % 8] = colored_piece.ascii();
+            let piece = self.piece_at(square);
+            let color = self.color_at(square);
+            cb[i / 8][i % 8] = ColoredPiece::new(color, piece).ascii();
         }
         cb
     }
@@ -447,8 +433,9 @@ impl Board {
     pub fn unicode_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for (i, square) in Square::ALL.into_iter().enumerate() {
-            let colored_piece = self.get_colored_piece_at(square);
-            cb[i / 8][i % 8] = colored_piece.unicode();
+            let piece = self.piece_at(square);
+            let color = self.color_at(square);
+            cb[i / 8][i % 8] = ColoredPiece::new(color, piece).unicode();
         }
         cb
     }

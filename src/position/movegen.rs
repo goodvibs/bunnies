@@ -454,7 +454,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 if !self.board.is_occupied_at(dst) {
                     return false;
                 }
-                self.board.get_colored_piece_at(dst).color() != STM
+                self.board.color_at(dst) != STM
             }
         }
     }
