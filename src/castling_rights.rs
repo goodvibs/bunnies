@@ -50,16 +50,6 @@ impl CastlingRights {
         self.bits() & mask != 0
     }
 
-    #[inline]
-    pub const fn with_cleared(self, flank: Flank, color: Color) -> Self {
-        Self::from_bits(self.bits() & !flank.rights_mask(color))
-    }
-
-    #[inline]
-    pub const fn with_cleared_color(self, color: Color) -> Self {
-        Self::from_bits(self.bits() & !crate::Flank::rights_mask_both_flanks(color))
-    }
-
     /// Clears any rights that a move touching `affected_square` invalidates.
     ///
     /// Apply once for the source square and once for the destination square in [`Position::make_move`];
@@ -68,18 +58,6 @@ impl CastlingRights {
     #[inline]
     pub const fn after_move(self, affected_square: Square) -> Self {
         Self::from_bits(self.bits() & CASTLING_RIGHTS_MASK[affected_square as usize].bits())
-    }
-
-    /// Clear the right corresponding to a rook on its home corner (FEN loss of castling).
-    pub const fn clear_for_rook_square(self, on: Square) -> Self {
-        let b = match on {
-            Square::A1 => self.bits() & !0b0100,
-            Square::H1 => self.bits() & !0b1000,
-            Square::A8 => self.bits() & !0b0001,
-            Square::H8 => self.bits() & !0b0010,
-            _ => self.bits(),
-        };
-        Self::from_bits(b)
     }
 }
 
