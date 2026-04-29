@@ -1,5 +1,7 @@
 include!(concat!(env!("CARGO_MANIFEST_DIR"), "/perft_case.rs"));
 
+use std::time::Duration;
+
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 macro_rules! define_perft_benches {
@@ -33,5 +35,9 @@ define_perft_benches! {
     bench_perft_position_5 => (PerftCase::Position5, 3);
 }
 
-criterion_group!(benches, bench_perft_positions);
+criterion_group! {
+    name = benches;
+    config = Criterion::default().warm_up_time(Duration::from_secs(1));
+    targets = bench_perft_positions
+}
 criterion_main!(benches);
