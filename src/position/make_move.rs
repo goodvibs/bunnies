@@ -3,7 +3,6 @@
 use std::hint;
 
 use crate::Color;
-use crate::ColoredPiece;
 use crate::File;
 use crate::Flank;
 use crate::Piece;
@@ -34,7 +33,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         if move_type.is_capture() && move_type != MoveType::EnPassant {
             self.board
-                .remove_colored_piece_at(ColoredPiece::new(STM.other(), captured), dst_square);
+                .remove_piece_and_color(STM.other(), captured, dst_square);
             new_context.captured_piece = captured;
             new_context.halfmove_clock = 0;
         }
@@ -47,51 +46,37 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         match move_type {
             MoveType::Castling => {
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::King),
-                    dst_square,
-                    src_square,
-                );
+                self.board
+                    .move_piece_and_color(STM, Piece::King, dst_square, src_square);
                 let flank = dst_square.file().flank();
                 let rook_from = castling_rook_from_square(flank, STM);
                 let rook_to = castling_rook_to_square(flank, STM);
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::Rook),
-                    rook_to,
-                    rook_from,
-                );
+                self.board
+                    .move_piece_and_color(STM, Piece::Rook, rook_to, rook_from);
                 new_context.halfmove_clock = 0;
             }
             MoveType::EnPassant => {
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::Pawn),
-                    dst_square,
-                    src_square,
-                );
+                self.board
+                    .move_piece_and_color(STM, Piece::Pawn, dst_square, src_square);
                 let capture_square =
                     Square::from_rank_and_file(STM.en_passant_capture_rank(), dst_square.file());
-                self.board.remove_colored_piece_at(
-                    ColoredPiece::new(STM.other(), Piece::Pawn),
-                    capture_square,
-                );
+                self.board
+                    .remove_piece_and_color(STM.other(), Piece::Pawn, capture_square);
                 new_context.captured_piece = Piece::Pawn;
                 new_context.halfmove_clock = 0;
             }
             MoveType::DoublePawnPush => {
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::Pawn),
-                    dst_square,
-                    src_square,
-                );
+                self.board
+                    .move_piece_and_color(STM, Piece::Pawn, dst_square, src_square);
                 new_context.double_pawn_push_file =
                     DoublePawnPushFile::from_pawn_step(dst_square, src_square);
                 new_context.halfmove_clock = 0;
             }
             _ => {
                 self.board
-                    .remove_colored_piece_at(ColoredPiece::new(STM, moved), src_square);
+                    .remove_piece_and_color(STM, moved, src_square);
                 self.board
-                    .put_colored_piece_at(ColoredPiece::new(STM, dst_piece), dst_square);
+                    .put_piece_and_color(STM, dst_piece, dst_square);
                 if moved == Piece::Pawn {
                     new_context.halfmove_clock = 0;
                 }
@@ -123,10 +108,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         };
 
         self.board
-            .remove_colored_piece_at(ColoredPiece::new(mover, moved), dst_square);
+            .remove_piece_and_color(mover, moved, dst_square);
 
         self.board
-            .put_colored_piece_at(ColoredPiece::new(mover, src_piece), src_square);
+            .put_piece_and_color(mover, src_piece, src_square);
 
         match move_type {
             MoveType::Castling => {
@@ -134,25 +119,23 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 let rook_from = castling_rook_from_square(flank, mover);
                 let rook_to = castling_rook_to_square(flank, mover);
 
-                self.board.move_colored_piece(
-                    ColoredPiece::new(mover, Piece::Rook),
-                    rook_from,
-                    rook_to,
-                );
+                self.board
+                    .move_piece_and_color(mover, Piece::Rook, rook_from, rook_to);
             }
             MoveType::EnPassant => {
                 let capture_square =
                     Square::from_rank_and_file(mover.en_passant_capture_rank(), dst_square.file());
 
                 self.board
-                    .put_colored_piece_at(ColoredPiece::new(STM, Piece::Pawn), capture_square);
+                    .put_piece_and_color(STM, Piece::Pawn, capture_square);
             }
             _ => {}
         }
 
         if move_type.is_capture() && move_type != MoveType::EnPassant {
-            self.board.put_colored_piece_at(
-                ColoredPiece::new(STM, self.context().captured_piece),
+            self.board.put_piece_and_color(
+                STM,
+                self.context().captured_piece,
                 dst_square,
             );
         }
