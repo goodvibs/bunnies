@@ -1,7 +1,6 @@
 //! Contains [`Position::make_move`] and [`Position::unmake_move`].
 
 use crate::Color;
-use crate::ColoredPiece;
 use crate::File;
 use crate::Flank;
 use crate::Piece;
@@ -31,7 +30,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let piece_at_dst = self.board.piece_at(dst_square);
         if piece_at_dst != Piece::Null {
             self.board
-                .remove_colored_piece_at(ColoredPiece::new(STM.other(), piece_at_dst), dst_square);
+                .remove_piece_and_color(STM.other(), piece_at_dst, dst_square);
             new_context.captured_piece = piece_at_dst;
             new_context.halfmove_clock = 0;
         }
@@ -44,7 +43,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         }
 
         self.board
-            .move_colored_piece(ColoredPiece::new(STM, piece_at_src), dst_square, src_square);
+            .move_piece_and_color(STM, piece_at_src, dst_square, src_square);
 
         match flag {
             MoveFlag::Promotion => {
@@ -56,10 +55,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 let capture_square = Square::from_u8(
                     (dst_square as u8).wrapping_add_signed(en_passant_capture_offset(STM)),
                 );
-                self.board.remove_colored_piece_at(
-                    ColoredPiece::new(STM.other(), Piece::Pawn),
-                    capture_square,
-                );
+                self.board
+                    .remove_piece_and_color(STM.other(), Piece::Pawn, capture_square);
                 new_context.captured_piece = Piece::Pawn;
                 new_context.halfmove_clock = 0;
             }
