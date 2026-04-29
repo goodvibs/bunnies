@@ -1,7 +1,5 @@
 //! Contains [`Position::make_move`] and [`Position::unmake_move`].
 
-use std::hint;
-
 use crate::Color;
 use crate::ColoredPiece;
 use crate::File;
@@ -25,49 +23,39 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let src_square = mv.source();
         let dst_square = mv.destination();
         let flag = mv.flag();
-        let moved = self.board.piece_at(src_square);
 
         let mut new_context = PositionContext::blank();
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
-        // Capture detection lives here only for NormalMove and Promotion; EnPassant handles its
-        // own capture inside the match, and Castling is never a capture.
-        if matches!(flag, MoveFlag::NormalMove | MoveFlag::Promotion) {
-            let captured = self.board.piece_at(dst_square);
-            if captured != Piece::Null {
-                self.board
-                    .remove_colored_piece_at(ColoredPiece::new(STM.other(), captured), dst_square);
-                new_context.captured_piece = captured;
-                new_context.halfmove_clock = 0;
-            }
+        let piece_at_dst = self.board.piece_at(dst_square);
+        if piece_at_dst != Piece::Null {
+            self.board
+                .remove_colored_piece_at(ColoredPiece::new(STM.other(), piece_at_dst), dst_square);
+            new_context.captured_piece = piece_at_dst;
+            new_context.halfmove_clock = 0;
         }
 
+        let piece_at_src = self.board.piece_at(src_square);
+        if piece_at_src == Piece::Pawn {
+            new_context.halfmove_clock = 0;
+            new_context.double_pawn_push_file =
+                DoublePawnPushFile::from_pawn_step(dst_square, src_square);
+        }
+
+        self.board
+            .move_colored_piece(ColoredPiece::new(STM, piece_at_src), dst_square, src_square);
+
         match flag {
-            MoveFlag::Castling => {
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::King),
-                    dst_square,
-                    src_square,
-                );
-                let flank = dst_square.file().flank();
-                let rook_from = castling_rook_from_square(flank, STM);
-                let rook_to = castling_rook_to_square(flank, STM);
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::Rook),
-                    rook_to,
-                    rook_from,
-                );
+            MoveFlag::Promotion => {
+                self.board.remove_piece_at(Piece::Pawn, dst_square);
+                self.board.put_piece_at(mv.promotion(), dst_square);
                 new_context.halfmove_clock = 0;
             }
             MoveFlag::EnPassant => {
-                self.board.move_colored_piece(
-                    ColoredPiece::new(STM, Piece::Pawn),
-                    dst_square,
-                    src_square,
+                let capture_square = Square::from_u8(
+                    (dst_square as u8).wrapping_add_signed(en_passant_capture_offset(STM)),
                 );
-                let capture_square =
-                    Square::from_rank_and_file(STM.en_passant_capture_rank(), dst_square.file());
                 self.board.remove_colored_piece_at(
                     ColoredPiece::new(STM.other(), Piece::Pawn),
                     capture_square,
@@ -75,25 +63,15 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                 new_context.captured_piece = Piece::Pawn;
                 new_context.halfmove_clock = 0;
             }
-            MoveFlag::Promotion => {
-                self.board
-                    .remove_colored_piece_at(ColoredPiece::new(STM, Piece::Pawn), src_square);
-                self.board
-                    .put_colored_piece_at(ColoredPiece::new(STM, mv.promotion()), dst_square);
+            MoveFlag::Castling => {
+                let flank = dst_square.file().flank();
+                let rook_from = castling_rook_from_square(flank, STM);
+                let rook_to = castling_rook_to_square(flank, STM);
+                self.board.move_color(STM, rook_to, rook_from);
+                self.board.move_piece(Piece::Rook, rook_to, rook_from);
                 new_context.halfmove_clock = 0;
             }
-            MoveFlag::NormalMove => {
-                self.board
-                    .remove_colored_piece_at(ColoredPiece::new(STM, moved), src_square);
-                self.board
-                    .put_colored_piece_at(ColoredPiece::new(STM, moved), dst_square);
-                if moved == Piece::Pawn {
-                    new_context.halfmove_clock = 0;
-                    // Returns NONE for non-double-push pawn steps, so it is safe to call unconditionally.
-                    new_context.double_pawn_push_file =
-                        DoublePawnPushFile::from_pawn_step(dst_square, src_square);
-                }
-            }
+            _ => {}
         }
 
         new_context.castling_rights = new_context
@@ -112,55 +90,60 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let dst_square = mv.destination();
         let flag = mv.flag();
         let mover = STM.other();
-        let moved = self.board.piece_at(dst_square);
 
-        let src_piece = if hint::unlikely(flag == MoveFlag::Promotion) {
-            Piece::Pawn
-        } else {
-            moved
-        };
-
-        self.board
-            .remove_colored_piece_at(ColoredPiece::new(mover, moved), dst_square);
-
-        self.board
-            .put_colored_piece_at(ColoredPiece::new(mover, src_piece), src_square);
+        // Color mask up front: undoes the make-side's `move_color` for every move type.
+        self.board.move_color(mover, src_square, dst_square);
 
         match flag {
+            MoveFlag::NormalMove => {
+                let moved = self.board.piece_at(dst_square);
+                self.board.move_piece(moved, src_square, dst_square);
+                self.unprocess_possible_capture(dst_square);
+            }
+            MoveFlag::Promotion => {
+                let promoted = self.board.piece_at(dst_square);
+                self.board.remove_piece_at(promoted, dst_square);
+                self.board.put_piece_at(Piece::Pawn, src_square);
+                self.unprocess_possible_capture(dst_square);
+            }
+            MoveFlag::EnPassant => {
+                self.board.move_piece(Piece::Pawn, src_square, dst_square);
+                let capture_square = Square::from_u8(
+                    (dst_square as u8).wrapping_add_signed(en_passant_capture_offset(mover)),
+                );
+                self.board.put_color_at(STM, capture_square);
+                self.board.put_piece_at(Piece::Pawn, capture_square);
+            }
             MoveFlag::Castling => {
+                self.board.move_piece(Piece::King, src_square, dst_square);
                 let flank = dst_square.file().flank();
                 let rook_from = castling_rook_from_square(flank, mover);
                 let rook_to = castling_rook_to_square(flank, mover);
-
-                self.board.move_colored_piece(
-                    ColoredPiece::new(mover, Piece::Rook),
-                    rook_from,
-                    rook_to,
-                );
-            }
-            MoveFlag::EnPassant => {
-                let capture_square =
-                    Square::from_rank_and_file(mover.en_passant_capture_rank(), dst_square.file());
-
-                self.board
-                    .put_colored_piece_at(ColoredPiece::new(STM, Piece::Pawn), capture_square);
-            }
-            MoveFlag::NormalMove | MoveFlag::Promotion => {
-                let captured = self.context().captured_piece;
-                if captured != Piece::Null {
-                    self.board
-                        .put_colored_piece_at(ColoredPiece::new(STM, captured), dst_square);
-                }
+                self.board.move_color(mover, rook_from, rook_to);
+                self.board.move_piece(Piece::Rook, rook_from, rook_to);
             }
         }
 
         self.halfmove -= 1;
-        // Popping is enough to restore castling rights, the double-pawn-push file, the halfmove
-        // clock, and the captured piece -- they all live on the previous context. Pins and checkers
-        // are recomputed below since they describe the side now to move.
+        // Pins, checkers, castling rights, double-pawn-push file, halfmove clock, and captured
+        // piece all live on the previous context; popping restores them verbatim. No recompute.
         self.decrement_context_stack_for_unmake();
         self.result = GameResult::None;
-        self.update_pins_and_checks_for_stm(STM.other());
+    }
+
+    fn unprocess_possible_capture(&mut self, dst_square: Square) {
+        let captured = self.context().captured_piece;
+        if captured != Piece::Null {
+            self.board.put_color_at(STM, dst_square);
+            self.board.put_piece_at(captured, dst_square);
+        }
+    }
+}
+
+const fn en_passant_capture_offset(stm: Color) -> i8 {
+    match stm {
+        Color::White => 8,
+        Color::Black => -8,
     }
 }
 

@@ -3,7 +3,6 @@
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
-#![feature(likely_unlikely)]
 #![feature(const_param_ty_trait)]
 #![feature(const_cmp)]
 #![feature(transmutability)]
