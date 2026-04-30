@@ -86,11 +86,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let src_square = mv.source();
         let dst_square = mv.destination();
         let flag = mv.flag();
-        let mover = STM.other();
+        let side_just_moved = STM.other();
 
         let piece_at_dst = self.board.piece_at(dst_square);
         self.board
-            .move_piece_and_color(mover, piece_at_dst, src_square, dst_square);
+            .move_piece_and_color(side_just_moved, piece_at_dst, src_square, dst_square);
 
         let captured_piece = self.context().captured_piece;
         if captured_piece != Piece::Null {
@@ -107,23 +107,22 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
             MoveFlag::EnPassant => {
                 let capture_square = Square::from_u8(
-                    (dst_square as u8).wrapping_add_signed(en_passant_capture_offset(mover)),
+                    (dst_square as u8)
+                        .wrapping_add_signed(en_passant_capture_offset(side_just_moved)),
                 );
                 self.board
                     .move_piece_and_color(STM, Piece::Pawn, capture_square, dst_square);
             }
             MoveFlag::Castling => {
                 let flank = dst_square.file().flank();
-                let rook_from = castling_rook_from_square(flank, mover);
-                let rook_to = castling_rook_to_square(flank, mover);
+                let rook_from = castling_rook_from_square(flank, side_just_moved);
+                let rook_to = castling_rook_to_square(flank, side_just_moved);
                 self.board
-                    .move_piece_and_color(mover, Piece::Rook, rook_from, rook_to);
+                    .move_piece_and_color(side_just_moved, Piece::Rook, rook_from, rook_to);
             }
         }
 
         self.halfmove -= 1;
-        // Pins, checkers, castling rights, double-pawn-push file, halfmove clock, and captured
-        // piece all live on the previous context; popping restores them verbatim. No recompute.
         self.decrement_context_stack_for_unmake();
         self.result = GameResult::None;
     }
