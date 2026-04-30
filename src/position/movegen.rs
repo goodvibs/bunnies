@@ -437,13 +437,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         }
     }
 
-    /// Whether `mv` is fully legal from this position (mover's king not left in check).
-    pub fn is_legal_move(&self, mv: Move) -> bool {
-        let mut clone = self.clone();
-        clone.make_move(mv);
-        !clone.is_opposite_side_in_check()
-    }
-
     /// Capture or en passant (for move ordering); castling and quiet promotions are not captures.
     pub fn is_capture_move(&self, mv: Move) -> bool {
         match mv.flag() {

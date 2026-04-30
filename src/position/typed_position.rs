@@ -70,14 +70,6 @@ impl<const N: usize> TypedPosition<N> {
         }
     }
 
-    #[inline]
-    pub fn is_legal_move(&self, mv: Move) -> bool {
-        match self {
-            TypedPosition::White(p) => p.is_legal_move(mv),
-            TypedPosition::Black(p) => p.is_legal_move(mv),
-        }
-    }
-
     /// Applies a legal move and flips the side-to-move marker type.
     ///
     /// This uses [`Position::make_move_in_place`] plus [`Position::rebrand_stm`] instead of
