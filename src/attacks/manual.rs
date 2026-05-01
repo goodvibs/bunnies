@@ -30,6 +30,20 @@ pub const fn multi_king_attacks(kings_mask: Bitboard) -> Bitboard {
         | (kings_mask >> 1 & !File::A.mask())
 }
 
+pub fn multi_pawn_attacks_left(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+    match by_color {
+        Color::White => pawns_mask << 9 & !File::H.mask(),
+        Color::Black => pawns_mask >> 9 & !File::A.mask(),
+    }
+}
+
+pub fn multi_pawn_attacks_right(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+    match by_color {
+        Color::White => pawns_mask << 7 & !File::A.mask(),
+        Color::Black => pawns_mask >> 7 & !File::H.mask(),
+    }
+}
+
 /// Returns a bitboard with all squares attacked by pawns indicated by the bits in `pawns_mask`
 pub fn multi_pawn_attacks(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
     match by_color {

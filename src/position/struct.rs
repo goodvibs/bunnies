@@ -48,11 +48,6 @@ impl<const N: usize, const STM: Color> PartialEq for Position<N, STM> {
 impl<const N: usize, const STM: Color> Eq for Position<N, STM> {}
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
-    #[inline]
-    pub const fn side_to_move(&self) -> Color {
-        STM
-    }
-
     /// Builds a [`Position`] with a different const `STM` from the same fields (layout does not depend on `STM`).
     ///
     /// Only use when the underlying state already corresponds to side to move `NEXT` (for example after
@@ -110,6 +105,15 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         res
     }
 
+    /// Square of the king for `side`. Legal positions have exactly one such king.
+    #[inline]
+    pub(crate) fn king_square(&self, side: Color) -> Square {
+        Square::from_bitboard(
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(side),
+        )
+        .expect("king present for side")
+    }
+
     pub fn context(&self) -> &PositionContext {
         debug_assert!(self.context_len > 0);
         &self.contexts[self.context_len - 1]
@@ -158,7 +162,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             return;
         }
 
-        let current_side_king_square = Square::from_bitboard(current_side_king).expect("king mask");
+        let current_side_king_square = self.king_square(stm);
 
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
@@ -232,7 +236,6 @@ mod state_tests {
     #[test]
     fn test_initial_state() {
         let state = Position::<1, { Color::White }>::initial();
-        assert_eq!(state.side_to_move(), Color::White);
         assert_eq!(state.halfmove, 0);
         assert_eq!(state.get_fullmove(), 1);
     }

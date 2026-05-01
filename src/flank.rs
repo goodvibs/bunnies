@@ -65,4 +65,14 @@ impl Flank {
             (Color::Black, Flank::Queenside) => Square::D8.mask() | Square::C8.mask(),
         }
     }
+
+    /// Square the king lands on after castling on this flank.
+    pub const fn king_castled_square(self, color: Color) -> Square {
+        match (color, self) {
+            (Color::White, Flank::Kingside) => Square::G1,
+            (Color::White, Flank::Queenside) => Square::C1,
+            (Color::Black, Flank::Kingside) => Square::G8,
+            (Color::Black, Flank::Queenside) => Square::C8,
+        }
+    }
 }
