@@ -123,20 +123,12 @@ impl Board {
         occupied: Bitboard,
         attackers: Bitboard,
     ) -> bool {
-        let diagonal_attackers = self.diagonal_sliders() & attackers;
-        let orthogonal_attackers = self.orthogonal_sliders() & attackers;
-
-        let relevant_diagonals = square.diagonals_mask();
-        let relevant_orthogonals = square.orthogonals_mask();
-
-        let relevant_diagonal_attackers = diagonal_attackers & relevant_diagonals;
-        let relevant_orthogonal_attackers = orthogonal_attackers & relevant_orthogonals;
-        let relevant_sliding_attackers =
-            relevant_diagonal_attackers | relevant_orthogonal_attackers;
+        let relevant_sliding_attackers = ((self.diagonal_sliders() & square.diagonals_mask())
+            | (self.orthogonal_sliders() & square.orthogonals_mask()))
+            & attackers;
 
         for attacker_square in relevant_sliding_attackers.iter_set_bits_as_squares() {
-            let blockers = Bitboard::between(square, attacker_square) & occupied;
-            if blockers == 0 {
+            if Bitboard::between(square, attacker_square) & occupied == 0 {
                 return true;
             }
         }
