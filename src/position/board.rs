@@ -138,13 +138,11 @@ impl Board {
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
         let attackers = self.color_mask_at(by_color);
 
-        if (multi_pawn_attacks(mask, by_color.other())
-            & self.piece_mask::<{ Piece::Pawn }>()
-            & attackers
-            != 0)
-            || (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>() & attackers
-                != 0)
-            || (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
+        if attackers
+            & ((multi_pawn_attacks(mask, by_color.other()) & self.piece_mask::<{ Piece::Pawn }>())
+                | (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>())
+                | (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>()))
+            != 0
         {
             true
         } else {
@@ -160,18 +158,13 @@ impl Board {
     pub fn is_square_attacked(&self, square: Square, by_color: Color) -> bool {
         let attackers = self.color_mask_at(by_color);
 
-        if (multi_pawn_attacks(square.mask(), by_color.other())
-            & self.piece_mask::<{ Piece::Pawn }>()
-            & attackers
-            != 0)
-            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers
-                != 0)
-            || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
-        {
-            true
-        } else {
-            self.is_square_attacked_by_sliding(square, self.pieces(), attackers)
-        }
+        attackers
+            & ((multi_pawn_attacks(square.mask(), by_color.other())
+                & self.piece_mask::<{ Piece::Pawn }>())
+                | (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>())
+                | (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>()))
+            != 0
+            || self.is_square_attacked_by_sliding(square, self.pieces(), attackers)
     }
 
     pub fn is_square_attacked_after_king_move(
