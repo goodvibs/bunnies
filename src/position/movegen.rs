@@ -282,12 +282,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             king_sq,
             ctx.pinned,
             |src, dst, capture_square| {
-                let occ_after = occupied ^ src.mask() ^ capture_square.mask() ^ dst.mask();
-                !board.is_square_attacked_after_en_passant(
+                !board.is_square_attacked_after_move(
                     king_sq,
                     STM.other(),
-                    occ_after,
-                    capture_square,
+                    src.mask() | dst.mask() | capture_square.mask(),
                 )
             },
             moves,

@@ -181,36 +181,6 @@ impl Board {
             || self.is_square_attacked_by_sliding(square, self.pieces() ^ move_mask, attackers)
     }
 
-    /// Whether `square` is attacked by `by_color` after a side makes en passant on
-    /// `src -> dst` removing the opponent pawn at `capture_square`.
-    ///
-    /// `occupied` must be the all-pieces occupancy **after** the EP capture:
-    /// `self.pieces() ^ src.mask() ^ capture_square.mask() ^ dst.mask()`.
-    /// Slider rays use `occupied`; knights and kings use current piece boards; opponent pawns
-    /// exclude `capture_square` (the captured pawn).
-    pub fn is_square_attacked_after_en_passant(
-        &self,
-        square: Square,
-        by_color: Color,
-        occupied: Bitboard,
-        capture_square: Square,
-    ) -> bool {
-        let opp_pawns = self.piece_mask::<{ Piece::Pawn }>()
-            & self.color_mask_at(by_color)
-            & !capture_square.mask();
-        let attackers = self.color_mask_at(by_color);
-
-        if (multi_pawn_attacks(square.mask(), by_color.other()) & opp_pawns != 0)
-            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers
-                != 0)
-            || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
-        {
-            true
-        } else {
-            self.is_square_attacked_by_sliding(square, occupied, attackers)
-        }
-    }
-
     /// Populates a square with `color`, but no piece type.
     pub const fn put_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
