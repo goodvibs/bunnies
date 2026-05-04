@@ -135,15 +135,24 @@ impl Board {
         false
     }
 
+    #[inline]
+    pub fn non_sliding_attacks_on_mask(&self, mask: Bitboard, by: Color) -> Bitboard {
+        (multi_pawn_attacks(mask, by.other()) & self.piece_mask::<{ Piece::Pawn }>())
+            | (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>())
+            | (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>())
+    }
+
+    #[inline]
+    pub fn non_sliding_attacks_on_square(&self, square: Square, by: Color) -> Bitboard {
+        (multi_pawn_attacks(square.mask(), by.other()) & self.piece_mask::<{ Piece::Pawn }>())
+            | (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>())
+            | (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>())
+    }
+
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
         let attackers = self.color_mask_at(by_color);
 
-        if attackers
-            & ((multi_pawn_attacks(mask, by_color.other()) & self.piece_mask::<{ Piece::Pawn }>())
-                | (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>())
-                | (multi_king_attacks(mask) & self.piece_mask::<{ Piece::King }>()))
-            != 0
-        {
+        if attackers & self.non_sliding_attacks_on_mask(mask, by_color) != 0 {
             true
         } else {
             for defending_square in mask.iter_set_bits_as_squares() {
@@ -168,12 +177,7 @@ impl Board {
     ) -> bool {
         let attackers = self.color_mask_at(by_color) & !move_mask;
 
-        attackers
-            & ((multi_pawn_attacks(square.mask(), by_color.other())
-                & self.piece_mask::<{ Piece::Pawn }>())
-                | (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>())
-                | (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>()))
-            != 0
+        attackers & self.non_sliding_attacks_on_square(square, by_color) != 0
             || self.is_square_attacked_by_sliding(square, self.pieces() ^ move_mask, attackers)
     }
 
@@ -205,46 +209,6 @@ impl Board {
         } else {
             self.is_square_attacked_by_sliding(square, occupied, attackers)
         }
-    }
-
-    pub fn calc_attacks(&self, by_color: Color) -> Bitboard {
-        let attacking_color_mask = self.color_mask_at(by_color);
-        let occupied_mask = self.pieces();
-
-        let queens_mask = self.piece_mask::<{ Piece::Queen }>();
-
-        let mut attacks = multi_pawn_attacks(
-            self.piece_mask::<{ Piece::Pawn }>() & attacking_color_mask,
-            by_color,
-        );
-
-        for src_square in (self.piece_mask::<{ Piece::Knight }>() & attacking_color_mask)
-            .iter_set_bits_as_squares()
-        {
-            attacks |= non_pawn_piece_attacks(src_square, occupied_mask, Piece::Knight);
-        }
-
-        for src_square in ((self.piece_mask::<{ Piece::Bishop }>() | queens_mask)
-            & attacking_color_mask)
-            .iter_set_bits_as_squares()
-        {
-            attacks |= single_bishop_attacks(src_square, occupied_mask);
-        }
-
-        for src_square in ((self.piece_mask::<{ Piece::Rook }>() | queens_mask)
-            & attacking_color_mask)
-            .iter_set_bits_as_squares()
-        {
-            attacks |= single_rook_attacks(src_square, occupied_mask);
-        }
-
-        for src_square in
-            (self.piece_mask::<{ Piece::King }>() & attacking_color_mask).iter_set_bits_as_squares()
-        {
-            attacks |= non_pawn_piece_attacks(src_square, occupied_mask, Piece::King);
-        }
-
-        attacks
     }
 
     /// Populates a square with `color`, but no piece type.
