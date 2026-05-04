@@ -190,19 +190,17 @@ impl Board {
     ) -> bool {
         let attackers = self.color_mask_at(by_color) & !king_move_src_dst;
 
-        if (multi_pawn_attacks(square.mask(), by_color.other())
-            & self.piece_mask::<{ Piece::Pawn }>()
-            & attackers
-            != 0)
-            || (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>() & attackers
-                != 0)
-            || (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>() & attackers != 0)
-        {
-            true
-        } else {
-            let occupied = self.pieces() ^ king_move_src_dst;
-            self.is_square_attacked_by_sliding(square, occupied, attackers)
-        }
+        attackers
+            & ((multi_pawn_attacks(square.mask(), by_color.other())
+                & self.piece_mask::<{ Piece::Pawn }>())
+                | (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>())
+                | (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>()))
+            != 0
+            || self.is_square_attacked_by_sliding(
+                square,
+                self.pieces() ^ king_move_src_dst,
+                attackers,
+            )
     }
 
     /// Whether `square` is attacked by `by_color` after a side makes en passant on
