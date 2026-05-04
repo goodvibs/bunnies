@@ -244,7 +244,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             king_sq,
             stm_pieces,
             stm_king_bb,
-            |dst, occ| !board.is_square_attacked_after_king_move(dst, STM.other(), occ),
+            |dst, occ| !board.is_square_attacked_after_move(dst, STM.other(), occ),
             moves,
         );
 
