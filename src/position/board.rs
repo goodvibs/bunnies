@@ -108,11 +108,11 @@ impl Board {
         self.piece_mask::<{ Piece::ALL_PIECES }>()
     }
 
-    pub(crate) const fn diagonal_sliders(&self) -> Bitboard {
+    pub const fn diagonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Bishop }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
-    pub(crate) const fn orthogonal_sliders(&self) -> Bitboard {
+    pub const fn orthogonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Rook }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
