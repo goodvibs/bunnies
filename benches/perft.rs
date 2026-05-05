@@ -28,11 +28,11 @@ macro_rules! define_perft_benches {
 }
 
 define_perft_benches! {
-    bench_perft_initial_position => (PerftCase::Initial, 4);
-    bench_perft_kiwipete => (PerftCase::Kiwipete, 3);
-    bench_perft_position_3 => (PerftCase::Position3, 5);
-    bench_perft_position_4 => (PerftCase::Position4, 4);
-    bench_perft_position_5 => (PerftCase::Position5, 3);
+    bench_perft_initial_position => (PerftCase::Initial, 5);
+    bench_perft_kiwipete => (PerftCase::Kiwipete, 4);
+    bench_perft_position_3 => (PerftCase::Position3, 6);
+    bench_perft_position_4 => (PerftCase::Position4, 5);
+    bench_perft_position_5 => (PerftCase::Position5, 4);
 }
 
 criterion_group! {
@@ -40,4 +40,5 @@ criterion_group! {
     config = Criterion::default().warm_up_time(Duration::from_secs(1));
     targets = bench_perft_positions
 }
+
 criterion_main!(benches);
