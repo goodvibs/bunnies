@@ -7,8 +7,8 @@ use crate::Piece;
 use crate::Rank;
 use crate::Square;
 use crate::r#move::{Move, MoveFlag};
+use crate::position::Position;
 use crate::position::context::PositionContext;
-use crate::position::{GameResult, Position};
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -17,7 +17,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     /// After this returns, the layout matches the destination type of [`Position::make_move`]
     /// (`Position<N, { STM.other() }>`).
     pub fn make_move(&mut self, mv: Move) {
-        debug_assert!(self.context_len() < N);
+        debug_assert!(self.num_contexts < N);
 
         let src_square = mv.source();
         let dst_square = mv.destination();
@@ -124,7 +124,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
         self.halfmove -= 1;
         self.decrement_context_stack_for_unmake();
-        self.result = GameResult::None;
     }
 }
 

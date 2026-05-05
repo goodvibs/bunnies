@@ -2,7 +2,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::position::TypedPosition;
+use crate::position::Board;
 use crate::{File, Flank};
 use logos::Lexer;
 use regex::Regex;
@@ -28,7 +28,7 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move<const N: usize>(&self, mv: Move, _initial_state: &TypedPosition<N>) -> bool {
+    fn matches_move(&self, mv: Move, _from_board: &Board) -> bool {
         let flag = mv.flag();
         let matches_flank = match self.flank {
             Flank::Kingside => mv.destination().file() == File::G,
@@ -94,7 +94,8 @@ mod tests {
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
-    use crate::position::{INITIAL_FEN, TypedPosition};
+    use crate::position::{INITIAL_FEN, Position};
+    use crate::Color;
     use logos::Logos;
 
     #[test]
@@ -203,18 +204,17 @@ mod tests {
                 nag: None,
             },
         };
-        let state = TypedPosition::<1>::from_fen(INITIAL_FEN).unwrap();
+        let state = Position::<1, { Color::White }>::from_fen(INITIAL_FEN).unwrap();
         let kingside_castling_move =
             Move::new_non_promotion(Square::E8, Square::G8, MoveFlag::Castling);
         let queenside_castling_move =
             Move::new_non_promotion(Square::E8, Square::C8, MoveFlag::Castling);
+        let kingside_match = castling_move.matches_move(kingside_castling_move, &state.board);
+        let queenside_match = castling_move.matches_move(queenside_castling_move, &state.board);
         assert_eq!(
-            castling_move.matches_move(kingside_castling_move, &state),
+            kingside_match,
             true
         );
-        assert_eq!(
-            castling_move.matches_move(queenside_castling_move, &state),
-            false
-        );
+        assert_eq!(queenside_match, false);
     }
 }

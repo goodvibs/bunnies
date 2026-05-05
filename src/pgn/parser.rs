@@ -1,5 +1,6 @@
 use crate::Color;
 use crate::r#move::MoveList;
+use crate::pgn::buffered_position_context::PgnBufferedPositionContextDyn;
 use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::object::PgnObject;
@@ -12,7 +13,7 @@ use crate::pgn::token_types::PgnMove;
 use crate::pgn::token_types::PgnMoveNumber;
 use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
-use crate::position::{Position, TypedPosition};
+use crate::position::Position;
 use logos::{Lexer, Logos};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
@@ -20,7 +21,7 @@ use logos::{Lexer, Logos};
 pub struct PgnParser<'a, const N: usize> {
     pub lexer: Lexer<'a, PgnToken>,
     pub parse_state: PgnParsingState,
-    pub constructed_object: PgnObject,
+    pub constructed_object: PgnObject<N>,
     buffered_position_manager: PgnBufferedPositionBrancher<N>,
 }
 
@@ -31,7 +32,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager = PgnBufferedPositionBrancher::new(
             &current_node,
-            TypedPosition::White(Position::<N, { Color::White }>::initial()),
+            Position::<N, { Color::White }>::initial(),
         );
         PgnParser {
             lexer,
@@ -133,9 +134,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                     let expected_fullmove = self
                         .buffered_position_manager
                         .current_and_previous
-                        .current
-                        .state_after_move
-                        .get_fullmove();
+                        .fullmove();
                     if pgn_move_number.fullmove_number == expected_fullmove {
                         self.parse_state = PgnParsingState::Moves {
                             move_number_just_seen: true,
@@ -166,21 +165,35 @@ impl<'a, const N: usize> PgnParser<'a, N> {
             } => {
                 let current_state = &self
                     .buffered_position_manager
-                    .current_and_previous
-                    .current
-                    .state_after_move;
-                if !move_number_just_seen && current_state.side_to_move() == Color::White {
+                    .current_and_previous;
+                let side_to_move = current_state.side_to_move();
+                if !move_number_just_seen && side_to_move == Color::White {
                     return Err(PgnParsingError::UnexpectedToken(format!(
                         "Unexpected move token: {:?}",
                         pgn_move
                     )));
                 }
                 let mut possible_moves = MoveList::new();
-                current_state.generate_legal_moves(&mut possible_moves);
+                match current_state {
+                    PgnBufferedPositionContextDyn::White(ctx) => {
+                        ctx.current.state_after_move.generate_legal_moves(&mut possible_moves)
+                    }
+                    PgnBufferedPositionContextDyn::Black(ctx) => {
+                        ctx.current.state_after_move.generate_legal_moves(&mut possible_moves)
+                    }
+                }
 
                 let mut matched_move = None;
                 for &possible_move in possible_moves.as_slice() {
-                    if pgn_move.matches_move(possible_move, current_state) {
+                    let is_match = match current_state {
+                        PgnBufferedPositionContextDyn::White(ctx) => {
+                            pgn_move.matches_move(possible_move, &ctx.current.state_after_move.board)
+                        }
+                        PgnBufferedPositionContextDyn::Black(ctx) => {
+                            pgn_move.matches_move(possible_move, &ctx.current.state_after_move.board)
+                        }
+                    };
+                    if is_match {
                         if matched_move.is_some() {
                             return Err(PgnParsingError::AmbiguousMove(format!(
                                 "Ambiguous move: {:?}",
@@ -193,15 +206,18 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 }
 
                 if let Some(matched_move) = matched_move {
-                    let new_state = current_state.clone().make_move(matched_move);
                     let move_data = PgnMoveData {
                         mv: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
-                    self.buffered_position_manager
+                    let new_context = self
+                        .buffered_position_manager
                         .current_and_previous
-                        .append_new_move(move_data, new_state);
+                        .clone()
+                        .append_move(move_data);
+                    self.buffered_position_manager
+                        .current_and_previous = new_context;
                     self.parse_state = PgnParsingState::Moves {
                         move_number_just_seen: false,
                     };
@@ -228,7 +244,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 if self
                     .buffered_position_manager
                     .current_and_previous
-                    .previous
+                    .previous_as_current()
                     .is_none()
                 {
                     Err(PgnParsingError::UnexpectedToken(

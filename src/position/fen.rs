@@ -3,7 +3,7 @@ use crate::Color;
 use crate::ColoredPiece;
 use crate::File;
 use crate::Square;
-use crate::position::{Board, GameResult, Position, PositionContext, TypedPosition};
+use crate::position::{Board, Position, PositionContext, TypedPosition};
 use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 /// The FEN string representing the starting position of a standard chess game.
@@ -193,9 +193,8 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
                     let mut state = Position::<N, { Color::White }> {
                         board,
                         halfmove,
-                        result: GameResult::None,
                         contexts,
-                        context_len: 1,
+                        num_contexts: 1,
                     };
                     if state.is_unequivocally_valid() {
                         state.update_pins_and_checks();
@@ -208,9 +207,8 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
                     let mut state = Position::<N, { Color::Black }> {
                         board,
                         halfmove,
-                        result: GameResult::None,
                         contexts,
-                        context_len: 1,
+                        num_contexts: 1,
                     };
                     if state.is_unequivocally_valid() {
                         state.update_pins_and_checks();
@@ -222,6 +220,23 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
             }
         }
         _ => Err(FenParseError::InvalidFieldCount(fen_parts.len())),
+    }
+}
+
+pub fn parse_fen_to_position<const N: usize, const STM: Color>(
+    fen: &str,
+) -> Result<Position<N, STM>, FenParseError> {
+    match parse_fen_to_typed_position::<N>(fen)? {
+        TypedPosition::White(pos) if STM == Color::White => Ok(pos.rebrand_stm::<STM>()),
+        TypedPosition::Black(pos) if STM == Color::Black => Ok(pos.rebrand_stm::<STM>()),
+        TypedPosition::White(_) => Err(FenParseError::InvalidSideToMove("w".to_string())),
+        TypedPosition::Black(_) => Err(FenParseError::InvalidSideToMove("b".to_string())),
+    }
+}
+
+impl<const N: usize, const STM: Color> Position<N, STM> {
+    pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
+        parse_fen_to_position::<N, STM>(fen)
     }
 }
 

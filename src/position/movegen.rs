@@ -329,20 +329,20 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Move, MoveFlag, MoveList, Piece, Square, TypedPosition};
+    use crate::position::Position;
+    use crate::{Color, Move, MoveFlag, MoveList, Piece, Square};
     use std::collections::HashSet;
 
-    fn expected_moves_test<const M: usize>(
-        fen: &str,
-        include_move: fn(Move, &TypedPosition<1>) -> bool,
+    fn expected_moves_test_for_position<const M: usize, const STM: Color>(
+        pos: &Position<1, STM>,
+        include_move: fn(Move, &Position<1, STM>) -> bool,
         expected_moves: [Move; M],
     ) {
-        let pos = TypedPosition::<1>::from_fen(fen).unwrap();
         let mut legal = MoveList::new();
         pos.generate_legal_moves(&mut legal);
         let mut moves_set = HashSet::new();
         for mv in legal.as_slice().iter().copied() {
-            if include_move(mv, &pos) {
+            if include_move(mv, pos) {
                 moves_set.insert(mv);
             }
         }
@@ -353,18 +353,48 @@ mod tests {
         assert!(moves_set.iter().all(|mv| expected_moves_set.contains(mv)));
     }
 
+    fn expected_moves_test<const M: usize>(
+        fen: &str,
+        include_move_white: fn(Move, &Position<1, { Color::White }>) -> bool,
+        include_move_black: fn(Move, &Position<1, { Color::Black }>) -> bool,
+        expected_moves: [Move; M],
+    ) {
+        let side_to_move = fen
+            .split_ascii_whitespace()
+            .nth(1)
+            .expect("valid FEN has side-to-move field");
+        match side_to_move {
+            "w" => {
+                let pos = Position::<1, { Color::White }>::from_fen(fen).unwrap();
+                expected_moves_test_for_position(&pos, include_move_white, expected_moves);
+            }
+            "b" => {
+                let pos = Position::<1, { Color::Black }>::from_fen(fen).unwrap();
+                expected_moves_test_for_position(&pos, include_move_black, expected_moves);
+            }
+            _ => panic!("invalid side-to-move in FEN"),
+        }
+    }
+
     #[test]
     fn test_knight_movegen() {
-        let is_knight_move = |mv: Move, pos: &TypedPosition<1>| {
-            pos.board().piece_mask::<{ Piece::Knight }>()
-                & pos.board().color_mask_at(pos.side_to_move())
+        let is_knight_move_white = |mv: Move, pos: &Position<1, { Color::White }>| {
+            pos.board.piece_mask::<{ Piece::Knight }>()
+                & pos.board.color_mask_at(Color::White)
+                & mv.source().mask()
+                != 0
+        };
+        let is_knight_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
+            pos.board.piece_mask::<{ Piece::Knight }>()
+                & pos.board.color_mask_at(Color::Black)
                 & mv.source().mask()
                 != 0
         };
 
         expected_moves_test(
             "r5k1/pP1n2np/Q7/bbpnp1R1/Np6/1B6/RPPP2P1/4K1N1 b - - 5 12",
-            is_knight_move,
+            is_knight_move_white,
+            is_knight_move_black,
             [
                 Move::new_non_promotion(Square::D7, Square::F6, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::D7, Square::F8, MoveFlag::NormalMove),
@@ -375,7 +405,8 @@ mod tests {
 
         expected_moves_test(
             "Rn3k2/pP1n2np/Q7/bbpnpR2/Np6/1B6/RPPP2P1/4K1N1 b - - 7 13",
-            is_knight_move,
+            is_knight_move_white,
+            is_knight_move_black,
             [
                 Move::new_non_promotion(Square::G7, Square::F5, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::D5, Square::F6, MoveFlag::NormalMove),
@@ -386,12 +417,20 @@ mod tests {
 
     #[test]
     fn test_sliding_piece_movegen() {
-        let is_sliding_piece_move = |mv: Move, pos: &TypedPosition<1>| {
-            let stm = pos.side_to_move();
-            let cur = pos.board().color_mask_at(stm);
-            (pos.board().piece_mask::<{ Piece::Bishop }>()
-                | pos.board().piece_mask::<{ Piece::Rook }>()
-                | pos.board().piece_mask::<{ Piece::Queen }>())
+        let is_sliding_piece_move_white = |mv: Move, pos: &Position<1, { Color::White }>| {
+            let cur = pos.board.color_mask_at(Color::White);
+            (pos.board.piece_mask::<{ Piece::Bishop }>()
+                | pos.board.piece_mask::<{ Piece::Rook }>()
+                | pos.board.piece_mask::<{ Piece::Queen }>())
+                & cur
+                & mv.source().mask()
+                != 0
+        };
+        let is_sliding_piece_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
+            let cur = pos.board.color_mask_at(Color::Black);
+            (pos.board.piece_mask::<{ Piece::Bishop }>()
+                | pos.board.piece_mask::<{ Piece::Rook }>()
+                | pos.board.piece_mask::<{ Piece::Queen }>())
                 & cur
                 & mv.source().mask()
                 != 0
@@ -399,7 +438,8 @@ mod tests {
 
         expected_moves_test(
             "r2q1rk1/pP1q3p/Q4n2/bbp1p3/Np4q1/1B1r1NRn/pPbP1PPP/R3K2R b KQ - 0 1",
-            is_sliding_piece_move,
+            is_sliding_piece_move_white,
+            is_sliding_piece_move_black,
             [
                 Move::new_non_promotion(Square::F8, Square::F7, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::D7, Square::D5, MoveFlag::NormalMove),
@@ -414,7 +454,8 @@ mod tests {
 
         expected_moves_test(
             "2B2rk1/pP5p/Q2p1n2/2p1p3/Npq3r1/1B1r1NRn/1P1P1PPP/R3K2R b KQ - 0 1",
-            is_sliding_piece_move,
+            is_sliding_piece_move_white,
+            is_sliding_piece_move_black,
             [
                 Move::new_non_promotion(Square::F8, Square::F7, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::F8, Square::E8, MoveFlag::NormalMove),
@@ -441,9 +482,16 @@ mod tests {
 
     #[test]
     fn test_white_pawn_push_movegen() {
-        let is_pawn_push = |mv: Move, pos: &TypedPosition<1>| {
-            pos.board().piece_mask::<{ Piece::Pawn }>()
-                & pos.board().color_mask_at(pos.side_to_move())
+        let is_pawn_push_white = |mv: Move, pos: &Position<1, { Color::White }>| {
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(Color::White)
+                & mv.source().mask()
+                != 0
+                && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
+        };
+        let is_pawn_push_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(Color::Black)
                 & mv.source().mask()
                 != 0
                 && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
@@ -451,7 +499,8 @@ mod tests {
 
         expected_moves_test(
             "2bb3k/P1Ppqp1P/bn2pnp1/3Pr3/1p5b/2NQ3p/PPPPPPPP/R3K2R w KQ - 0 1",
-            is_pawn_push,
+            is_pawn_push_white,
+            is_pawn_push_black,
             [
                 Move::new_non_promotion(Square::A2, Square::A3, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::A2, Square::A4, MoveFlag::NormalMove),
@@ -471,9 +520,17 @@ mod tests {
 
     #[test]
     fn test_white_non_ep_pawn_capture_movegen() {
-        let is_non_ep_pawn_capture = |mv: Move, pos: &TypedPosition<1>| {
-            pos.board().piece_mask::<{ Piece::Pawn }>()
-                & pos.board().color_mask_at(pos.side_to_move())
+        let is_non_ep_pawn_capture_white = |mv: Move, pos: &Position<1, { Color::White }>| {
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(Color::White)
+                & mv.source().mask()
+                != 0
+                && mv.flag() != MoveFlag::EnPassant
+                && (mv.source() as i8 - mv.destination() as i8) % 8 != 0
+        };
+        let is_non_ep_pawn_capture_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
+            pos.board.piece_mask::<{ Piece::Pawn }>()
+                & pos.board.color_mask_at(Color::Black)
                 & mv.source().mask()
                 != 0
                 && mv.flag() != MoveFlag::EnPassant
@@ -482,7 +539,8 @@ mod tests {
 
         expected_moves_test(
             "1qbb3k/P1PpqP1P/bn2pnp1/3Pr3/1p5b/1nNQ3p/PPPPPPPP/Rqn1Kb1R w KQ - 0 1",
-            is_non_ep_pawn_capture,
+            is_non_ep_pawn_capture_white,
+            is_non_ep_pawn_capture_black,
             [
                 Move::new_non_promotion(Square::A2, Square::B3, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::C2, Square::B3, MoveFlag::NormalMove),
@@ -506,23 +564,31 @@ mod tests {
 
     #[test]
     fn test_en_passant_movegen() {
-        let is_en_passant = |mv: Move, _: &TypedPosition<1>| mv.flag() == MoveFlag::EnPassant;
+        let is_en_passant_white = |mv: Move, _: &Position<1, { Color::White }>| {
+            mv.flag() == MoveFlag::EnPassant
+        };
+        let is_en_passant_black = |mv: Move, _: &Position<1, { Color::Black }>| {
+            mv.flag() == MoveFlag::EnPassant
+        };
 
         expected_moves_test(
             "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
-            is_en_passant,
+            is_en_passant_white,
+            is_en_passant_black,
             [],
         );
 
         expected_moves_test(
             "8/8/3p4/KPp4r/1R3p1k/8/4P1P1/8 w - c6 0 2",
-            is_en_passant,
+            is_en_passant_white,
+            is_en_passant_black,
             [],
         );
 
         expected_moves_test(
             "8/8/3p4/KPpP3r/1R3p1k/8/4P1P1/8 w - c6 0 2",
-            is_en_passant,
+            is_en_passant_white,
+            is_en_passant_black,
             [
                 Move::new_non_promotion(Square::D5, Square::C6, MoveFlag::EnPassant),
                 Move::new_non_promotion(Square::B5, Square::C6, MoveFlag::EnPassant),
@@ -531,7 +597,8 @@ mod tests {
 
         expected_moves_test(
             "8/B7/3p4/kPpP3r/3K1p2/8/4P1P1/8 w - c6 0 2",
-            is_en_passant,
+            is_en_passant_white,
+            is_en_passant_black,
             [
                 Move::new_non_promotion(Square::D5, Square::C6, MoveFlag::EnPassant),
                 Move::new_non_promotion(Square::B5, Square::C6, MoveFlag::EnPassant),
@@ -540,7 +607,8 @@ mod tests {
 
         expected_moves_test(
             "8/8/b2p4/kPpP3r/2K2p2/8/4P1P1/8 w - c6 0 2",
-            is_en_passant,
+            is_en_passant_white,
+            is_en_passant_black,
             [Move::new_non_promotion(
                 Square::D5,
                 Square::C6,
@@ -551,17 +619,25 @@ mod tests {
 
     #[test]
     fn test_king_movegen() {
-        let is_king_move = |mv: Move, pos: &TypedPosition<1>| {
+        let is_king_move_white = |mv: Move, pos: &Position<1, { Color::White }>| {
             mv.flag() == MoveFlag::NormalMove
-                && pos.board().piece_mask::<{ Piece::King }>()
-                    & pos.board().color_mask_at(pos.side_to_move())
+                && pos.board.piece_mask::<{ Piece::King }>()
+                    & pos.board.color_mask_at(Color::White)
+                    & mv.source().mask()
+                    != 0
+        };
+        let is_king_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
+            mv.flag() == MoveFlag::NormalMove
+                && pos.board.piece_mask::<{ Piece::King }>()
+                    & pos.board.color_mask_at(Color::Black)
                     & mv.source().mask()
                     != 0
         };
 
         expected_moves_test(
             "3N3B/5k1P/R4b2/8/8/3K4/8/8 b - - 0 1",
-            is_king_move,
+            is_king_move_white,
+            is_king_move_black,
             [
                 Move::new_non_promotion(Square::F7, Square::G6, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::F7, Square::F8, MoveFlag::NormalMove),
@@ -572,7 +648,8 @@ mod tests {
 
         expected_moves_test(
             "5R1B/5k1P/R4b2/8/8/3K4/8/8 b - - 0 1",
-            is_king_move,
+            is_king_move_white,
+            is_king_move_black,
             [
                 Move::new_non_promotion(Square::F7, Square::G6, MoveFlag::NormalMove),
                 Move::new_non_promotion(Square::F7, Square::F8, MoveFlag::NormalMove),
@@ -583,11 +660,17 @@ mod tests {
 
     #[test]
     fn test_white_castling_movegen() {
-        let is_castling_move = |mv: Move, _: &TypedPosition<1>| mv.flag() == MoveFlag::Castling;
+        let is_castling_move_white = |mv: Move, _: &Position<1, { Color::White }>| {
+            mv.flag() == MoveFlag::Castling
+        };
+        let is_castling_move_black = |mv: Move, _: &Position<1, { Color::Black }>| {
+            mv.flag() == MoveFlag::Castling
+        };
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-            is_castling_move,
+            is_castling_move_white,
+            is_castling_move_black,
             [
                 Move::new_non_promotion(Square::E1, Square::C1, MoveFlag::Castling),
                 Move::new_non_promotion(Square::E1, Square::G1, MoveFlag::Castling),
@@ -596,7 +679,8 @@ mod tests {
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBB1bP/R3K2R w KQkq - 0 1",
-            is_castling_move,
+            is_castling_move_white,
+            is_castling_move_black,
             [Move::new_non_promotion(
                 Square::E1,
                 Square::C1,
@@ -606,7 +690,8 @@ mod tests {
 
         expected_moves_test(
             "4k3/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2b2Q1p/PrPBB1rP/R3K2R w KQ - 0 1",
-            is_castling_move,
+            is_castling_move_white,
+            is_castling_move_black,
             [Move::new_non_promotion(
                 Square::E1,
                 Square::C1,
@@ -616,7 +701,8 @@ mod tests {
 
         expected_moves_test(
             "4k3/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2b2Q1p/PrrBB1RP/R3K2R w KQ - 0 1",
-            is_castling_move,
+            is_castling_move_white,
+            is_castling_move_black,
             [Move::new_non_promotion(
                 Square::E1,
                 Square::G1,
@@ -626,7 +712,8 @@ mod tests {
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBB2P/RN2K1nR w KQkq - 0 1",
-            is_castling_move,
+            is_castling_move_white,
+            is_castling_move_black,
             [],
         );
     }

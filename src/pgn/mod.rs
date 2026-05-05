@@ -42,7 +42,7 @@ mod tests {
 
         let rendered_pgn = parser
             .constructed_object
-            .render::<PGN_CONTEXT_STACK>(true, PgnRenderingConfig::default());
+            .render(true, PgnRenderingConfig::default());
 
         // Expected PGN after parsing and rendering
         // This will need to be adjusted based on your actual expected output format

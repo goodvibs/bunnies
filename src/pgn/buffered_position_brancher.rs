@@ -1,42 +1,40 @@
-use crate::pgn::buffered_position_context::PgnBufferedPositionContext;
+use crate::Color;
+use crate::pgn::buffered_position_context::{
+    PgnBufferedPositionContext, PgnBufferedPositionContextDyn,
+};
 use crate::pgn::move_tree_node::MoveTreeNode;
 use crate::pgn::position_context::PgnPositionContext;
-use crate::position::TypedPosition;
+use crate::position::Position;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct PgnBufferedPositionBrancher<const N: usize> {
-    pub current_and_previous: PgnBufferedPositionContext<N>,
-    pub stack: Vec<PgnBufferedPositionContext<N>>,
+    pub current_and_previous: PgnBufferedPositionContextDyn<N>,
+    pub stack: Vec<PgnBufferedPositionContextDyn<N>>,
 }
 
 impl<const N: usize> PgnBufferedPositionBrancher<N> {
     pub fn new(
-        root_node: &Rc<RefCell<MoveTreeNode>>,
-        initial_state: TypedPosition<N>,
+        root_node: &Rc<RefCell<MoveTreeNode<N, { Color::White }, { Color::Black }>>>,
+        initial_state: Position<N, { Color::White }>,
     ) -> PgnBufferedPositionBrancher<N> {
         PgnBufferedPositionBrancher {
-            current_and_previous: PgnBufferedPositionContext {
-                current: PgnPositionContext {
+            current_and_previous: PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
+                current: PgnPositionContext::<N, { Color::White }, { Color::Black }> {
                     node: Rc::clone(root_node),
                     state_after_move: initial_state,
                 },
                 previous: None,
-            },
+            }),
             stack: Vec::new(),
         }
     }
 
     pub fn create_branch_from_previous(&mut self) {
-        let clone_of_previous = self
+        let new_context = self
             .current_and_previous
-            .previous
-            .clone()
+            .previous_as_current()
             .expect("No previous node to create branch from");
-        let new_context = PgnBufferedPositionContext {
-            current: clone_of_previous,
-            previous: None,
-        };
         let old_context = std::mem::replace(&mut self.current_and_previous, new_context);
         self.stack.push(old_context);
     }

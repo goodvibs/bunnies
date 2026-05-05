@@ -1,8 +1,7 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
 use crate::Color;
-use crate::r#move::{Move, MoveList};
-use crate::position::{Board, FenParseError, GameResult, Position, PositionContext};
+use crate::position::{FenParseError, Position};
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
@@ -38,103 +37,54 @@ impl<const N: usize> TypedPosition<N> {
         crate::position::fen::parse_fen_to_typed_position(fen)
     }
 
+    /// Dispatches to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub const fn side_to_move(&self) -> Color {
+    pub fn with_ref<R, FW, FB>(
+        &self,
+        white: FW,
+        black: FB,
+    ) -> R
+    where
+        FW: FnOnce(&Position<N, { Color::White }>) -> R,
+        FB: FnOnce(&Position<N, { Color::Black }>) -> R,
+    {
         match self {
-            TypedPosition::White(_) => Color::White,
-            TypedPosition::Black(_) => Color::Black,
+            TypedPosition::White(p) => white(p),
+            TypedPosition::Black(p) => black(p),
         }
     }
 
+    /// Mutable dispatch to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub fn board(&self) -> &Board {
+    pub fn with_mut<R, FW, FB>(
+        &mut self,
+        white: FW,
+        black: FB,
+    ) -> R
+    where
+        FW: FnOnce(&mut Position<N, { Color::White }>) -> R,
+        FB: FnOnce(&mut Position<N, { Color::Black }>) -> R,
+    {
         match self {
-            TypedPosition::White(p) => &p.board,
-            TypedPosition::Black(p) => &p.board,
+            TypedPosition::White(p) => white(p),
+            TypedPosition::Black(p) => black(p),
         }
     }
 
+    /// Consuming dispatch to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub fn context(&self) -> &PositionContext {
+    pub fn into_inner<R, FW, FB>(
+        self,
+        white: FW,
+        black: FB,
+    ) -> R
+    where
+        FW: FnOnce(Position<N, { Color::White }>) -> R,
+        FB: FnOnce(Position<N, { Color::Black }>) -> R,
+    {
         match self {
-            TypedPosition::White(p) => p.context(),
-            TypedPosition::Black(p) => p.context(),
-        }
-    }
-
-    #[inline]
-    pub fn generate_legal_moves(&self, moves: &mut MoveList) {
-        match self {
-            TypedPosition::White(p) => p.generate_legal_moves(moves),
-            TypedPosition::Black(p) => p.generate_legal_moves(moves),
-        }
-    }
-
-    /// Applies a legal move and flips the side-to-move marker type.
-    ///
-    /// This uses [`Position::make_move_in_place`] plus [`Position::rebrand_stm`] instead of
-    /// [`Position::make_move`]. With `generic_const_exprs`, calling the generic
-    /// `make_move -> Position<N, { STM.other() }>` from this `match` does not satisfy
-    /// rustc’s const-generic inference (“unconstrained generic constant”), even when `STM` is fixed
-    /// by each arm; the in-place + rebrand sequence matches [`Position::make_move`] exactly.
-    pub fn make_move(self, mv: Move) -> Self {
-        match self {
-            TypedPosition::White(mut p) => {
-                p.make_move(mv);
-                TypedPosition::Black(p.rebrand_stm::<{ Color::Black }>())
-            }
-            TypedPosition::Black(mut p) => {
-                p.make_move(mv);
-                TypedPosition::White(p.rebrand_stm::<{ Color::White }>())
-            }
-        }
-    }
-
-    #[inline]
-    pub fn get_fullmove(&self) -> u16 {
-        match self {
-            TypedPosition::White(p) => p.get_fullmove(),
-            TypedPosition::Black(p) => p.get_fullmove(),
-        }
-    }
-
-    #[inline]
-    pub fn is_current_side_in_check(&self) -> bool {
-        match self {
-            TypedPosition::White(p) => p.is_current_side_in_check(),
-            TypedPosition::Black(p) => p.is_current_side_in_check(),
-        }
-    }
-
-    #[inline]
-    pub fn is_unequivocally_valid(&self) -> bool {
-        match self {
-            TypedPosition::White(p) => p.is_unequivocally_valid(),
-            TypedPosition::Black(p) => p.is_unequivocally_valid(),
-        }
-    }
-
-    #[inline]
-    pub fn perft(&mut self, depth: u8) -> u64 {
-        match self {
-            TypedPosition::White(p) => p.perft(depth),
-            TypedPosition::Black(p) => p.perft(depth),
-        }
-    }
-
-    #[inline]
-    pub fn result(&self) -> GameResult {
-        match self {
-            TypedPosition::White(p) => p.result,
-            TypedPosition::Black(p) => p.result,
-        }
-    }
-
-    #[inline]
-    pub fn result_mut(&mut self) -> &mut GameResult {
-        match self {
-            TypedPosition::White(p) => &mut p.result,
-            TypedPosition::Black(p) => &mut p.result,
+            TypedPosition::White(p) => white(p),
+            TypedPosition::Black(p) => black(p),
         }
     }
 }

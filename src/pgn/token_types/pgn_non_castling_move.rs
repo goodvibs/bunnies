@@ -6,7 +6,7 @@ use crate::r#move::{Move, MoveFlag};
 use crate::pgn::lexing_error::PgnLexingError;
 use crate::pgn::token::{ParsablePgnToken, PgnToken};
 use crate::pgn::token_types::pgn_move::{PgnCommonMoveInfo, PgnMove};
-use crate::position::TypedPosition;
+use crate::position::Board;
 use logos::Lexer;
 use regex::Regex;
 use std::sync::LazyLock;
@@ -42,7 +42,7 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move<const N: usize>(&self, mv: Move, initial_state: &TypedPosition<N>) -> bool {
+    fn matches_move(&self, mv: Move, board: &Board) -> bool {
         let dst = mv.destination();
         let src = mv.source();
         let flag = mv.flag();
@@ -55,9 +55,9 @@ impl PgnMove for PgnNonCastlingMove {
             return false;
         } else if self.promoted_to != promotion {
             return false;
-        } else if self.piece_moved != initial_state.board().piece_at(src) {
+        } else if self.piece_moved != board.piece_at(src) {
             return false;
-        } else if self.is_capture != mv.is_capture(initial_state) {
+        } else if self.is_capture != mv.is_capture_on_board(board) {
             return false;
         } else if let Some(file) = self.disambiguation_file {
             if src.file() as u8 != file as u8 - 'a' as u8 {
@@ -161,10 +161,12 @@ impl ParsablePgnToken for PgnNonCastlingMove {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Color;
     use crate::Piece;
     use crate::Square;
     use crate::r#move::Move;
     use crate::pgn::token::PgnToken;
+    use crate::position::Position;
     use logos::Logos;
 
     #[test]
@@ -345,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_matches_move() {
-        let state = TypedPosition::<1>::from_fen(
+        let state = Position::<1, { Color::White }>::from_fen(
             "r1bqkbnr/ppp2ppp/2np4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",
         )
         .unwrap();
@@ -368,7 +370,7 @@ mod tests {
 
         let actual_move = Move::new_non_promotion(Square::F3, Square::D4, MoveFlag::NormalMove);
 
-        assert!(knight_move.matches_move(actual_move, &state));
+        assert!(knight_move.matches_move(actual_move, &state.board));
 
         // Test with disambiguation
         let knight_move_with_file = {
@@ -377,7 +379,7 @@ mod tests {
             knight_move
         };
 
-        assert!(knight_move_with_file.matches_move(actual_move, &state));
+        assert!(knight_move_with_file.matches_move(actual_move, &state.board));
 
         // Test with incorrect file disambiguation
         let knight_move_with_wrong_file = {
@@ -386,7 +388,7 @@ mod tests {
             knight_move
         };
 
-        assert!(!knight_move_with_wrong_file.matches_move(actual_move, &state));
+        assert!(!knight_move_with_wrong_file.matches_move(actual_move, &state.board));
     }
 
     #[test]

@@ -6,8 +6,10 @@ macro_rules! define_perft_tests {
             #[test]
             fn $name() {
                 const CONTEXTS_CAPACITY: usize = $depth + 1;
-                let mut pos = ($case).position::<CONTEXTS_CAPACITY>();
-                let nodes_observed = pos.perft($depth);
+                let nodes_observed = ($case).with_position::<CONTEXTS_CAPACITY, _>(
+                    |mut p| p.perft($depth),
+                    |mut p| p.perft($depth),
+                );
                 ($case).verify_perft($depth, nodes_observed);
             }
         )+

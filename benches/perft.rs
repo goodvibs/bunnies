@@ -10,14 +10,16 @@ macro_rules! define_perft_benches {
             $(
             {
                 const CONTEXTS_CAPACITY: usize = $depth + 1;
-                let pos = ($case).position::<CONTEXTS_CAPACITY>();
                 let mut group = c.benchmark_group(($case).name());
                 let nodes = ($case).nodes_at_depth($depth);
                 group.throughput(Throughput::Elements(nodes));
                 group.bench_function(BenchmarkId::new(stringify!($name), $depth), |b| {
                     b.iter(|| {
-                        let mut p = pos.clone();
-                        black_box(p.perft(black_box($depth)))
+                        let nodes = ($case).with_position::<CONTEXTS_CAPACITY, _>(
+                            |mut p| p.perft(black_box($depth)),
+                            |mut p| p.perft(black_box($depth)),
+                        );
+                        black_box(nodes)
                     })
                 });
                 group.finish();

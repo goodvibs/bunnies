@@ -1,7 +1,7 @@
 //! Contains [`Position`], the main struct for representing a position in a chess game.
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
-use crate::position::{Board, GameResult, PositionContext};
+use crate::position::{Board, PositionContext};
 use crate::{Bitboard, BitboardUtils, CastlingRights, Color, ConstBitboardGeometry, Piece, Square};
 use std::fmt;
 
@@ -18,9 +18,8 @@ use std::fmt;
 pub struct Position<const N: usize, const STM: Color> {
     pub board: Board,
     pub halfmove: u16,
-    pub result: GameResult,
     pub(crate) contexts: [PositionContext; N],
-    pub(crate) context_len: usize,
+    pub(crate) num_contexts: usize,
 }
 
 impl<const N: usize, const STM: Color> fmt::Debug for Position<N, STM> {
@@ -29,8 +28,7 @@ impl<const N: usize, const STM: Color> fmt::Debug for Position<N, STM> {
             .field("board", &self.board)
             .field("side_to_move", &STM)
             .field("halfmove", &self.halfmove)
-            .field("result", &self.result)
-            .field("contexts", &&self.contexts[..self.context_len])
+            .field("contexts", &&self.contexts[..self.num_contexts])
             .finish()
     }
 }
@@ -39,9 +37,8 @@ impl<const N: usize, const STM: Color> PartialEq for Position<N, STM> {
     fn eq(&self, other: &Self) -> bool {
         self.board == other.board
             && self.halfmove == other.halfmove
-            && self.result == other.result
-            && self.context_len == other.context_len
-            && self.contexts[..self.context_len] == other.contexts[..other.context_len]
+            && self.num_contexts == other.num_contexts
+            && self.contexts[..self.num_contexts] == other.contexts[..other.num_contexts]
     }
 }
 
@@ -57,27 +54,25 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let Position {
             board,
             halfmove,
-            result,
             contexts,
-            context_len,
+            num_contexts,
         } = self;
         Position {
             board,
             halfmove,
-            result,
             contexts,
-            context_len,
+            num_contexts,
         }
     }
 
     /// Active context stack entries (root at index 0, current at `len - 1`).
     pub fn context_slice(&self) -> &[PositionContext] {
-        &self.contexts[..self.context_len]
+        &self.contexts[..self.num_contexts]
     }
 
     /// Number of contexts on the stack (always >= 1 when valid).
-    pub fn context_len(&self) -> usize {
-        self.context_len
+    pub fn num_contexts(&self) -> usize {
+        self.num_contexts
     }
 
     /// Creates an initial state with the standard starting position (White to move).
@@ -95,9 +90,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let mut res = Position {
             board,
             halfmove: 0,
-            result: GameResult::None,
             contexts,
-            context_len: 1,
+            num_contexts: 1,
         };
         res.update_pins_and_checks();
         debug_assert!(res.is_unequivocally_valid());
@@ -115,31 +109,31 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     pub fn context(&self) -> &PositionContext {
-        debug_assert!(self.context_len > 0);
-        &self.contexts[self.context_len - 1]
+        debug_assert!(self.num_contexts > 0);
+        &self.contexts[self.num_contexts - 1]
     }
 
     pub fn mut_context(&mut self) -> &mut PositionContext {
-        debug_assert!(self.context_len > 0);
-        &mut self.contexts[self.context_len - 1]
+        debug_assert!(self.num_contexts > 0);
+        &mut self.contexts[self.num_contexts - 1]
     }
 
     pub fn push_context(&mut self, context: PositionContext) {
-        debug_assert!(self.context_len < N);
-        self.contexts[self.context_len] = context;
-        self.context_len += 1;
+        debug_assert!(self.num_contexts < N);
+        self.contexts[self.num_contexts] = context;
+        self.num_contexts += 1;
     }
 
     pub fn pop_context(&mut self) -> PositionContext {
-        debug_assert!(self.context_len > 1);
-        let popped = self.contexts[self.context_len - 1];
-        self.context_len -= 1;
+        debug_assert!(self.num_contexts > 1);
+        let popped = self.contexts[self.num_contexts - 1];
+        self.num_contexts -= 1;
         popped
     }
 
     pub(crate) fn decrement_context_stack_for_unmake(&mut self) {
-        debug_assert!(self.context_len > 1);
-        self.context_len -= 1;
+        debug_assert!(self.num_contexts > 1);
+        self.num_contexts -= 1;
     }
 
     /// Gets the fullmove number of the position. 1-based.
@@ -212,19 +206,13 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.context().checkers != 0
     }
 
-    pub fn update_insufficient_material(&mut self, use_uscf_rules: bool) {
-        if self
-            .board
+    pub fn is_insufficient_material(&self, use_uscf_rules: bool) -> bool {
+        self.board
             .are_both_sides_insufficient_material(use_uscf_rules)
-        {
-            self.result = GameResult::InsufficientMaterial;
-        }
     }
 
-    pub fn update_fifty_move_rule(&mut self) {
-        if self.context().halfmove_clock < 100 {
-            self.result = GameResult::FiftyMoveRule;
-        }
+    pub fn is_fifty_move_rule_reached(&self) -> bool {
+        self.context().halfmove_clock >= 100
     }
 }
 
@@ -269,7 +257,7 @@ mod state_tests {
         pos.generate_legal_moves(&mut ml);
         let mv = *ml.as_slice().first().expect("at least one legal move");
         pos.make_move(mv);
-        assert_eq!(pos.context_len(), 2);
+        assert_eq!(pos.num_contexts(), 2);
         ml.clear();
         pos.generate_legal_moves(&mut ml);
         let mv2 = *ml.as_slice().first().expect("at least one legal move");
