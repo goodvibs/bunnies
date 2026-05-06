@@ -1,8 +1,6 @@
 //! All Zobrist hashing-related code.
 
-use crate::position::board::Board;
-use crate::{Bitboard, Piece};
-use crate::{BitboardUtils, Square};
+use crate::{Bitboard, BitboardUtils, Board, Piece, Square};
 
 /// Fixed pseudo-random table (const-evaluated). Keys are stable across runs and builds.
 const fn zobrist_table() -> [[Bitboard; 12]; 64] {

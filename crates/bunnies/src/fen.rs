@@ -1,10 +1,14 @@
 use crate::CastlingRights;
 use crate::Color;
 use crate::ColoredPiece;
+use crate::ConstDoublePawnPushFile;
+use crate::DoublePawnPushFile;
 use crate::File;
+use crate::Board;
+use crate::Position;
+use crate::PositionContext;
 use crate::Square;
-use crate::position::{Board, Position, PositionContext, TypedPosition};
-use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
+use crate::TypedPosition;
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -243,7 +247,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::position::TypedPosition;
+    use crate::TypedPosition;
 
     #[test]
     fn test_from_fen() {

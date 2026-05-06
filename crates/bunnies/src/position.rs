@@ -1,8 +1,10 @@
 //! Contains [`Position`], the main struct for representing a position in a chess game.
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
-use crate::position::{Board, PositionContext};
-use crate::{Bitboard, BitboardUtils, CastlingRights, Color, ConstBitboardGeometry, Piece, Square};
+use crate::{
+    Bitboard, BitboardUtils, Board, CastlingRights, Color, ConstBitboardGeometry, Piece,
+    PositionContext, Square,
+};
 use std::fmt;
 
 /// Chess position with a fixed-size context stack of capacity `N` (root plus at most `N - 1` plies).
@@ -219,7 +221,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 #[cfg(test)]
 mod state_tests {
     use crate::Color;
-    use crate::position::Position;
+    use crate::Position;
 
     #[test]
     fn test_initial_state() {

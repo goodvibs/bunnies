@@ -1,6 +1,5 @@
 use crate::Color;
-use crate::r#move::{Move, MoveList};
-use crate::position::Position;
+use crate::{Move, MoveList, Position};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum TerminalReason {

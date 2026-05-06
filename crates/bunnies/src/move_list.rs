@@ -1,6 +1,6 @@
 //! Stack-allocated list of moves (no heap allocation in the hot path).
 
-use crate::r#move::Move;
+use crate::Move;
 
 /// Fixed-capacity move list stored on the stack, similar to engine-style `MoveList` types.
 #[derive(Clone)]

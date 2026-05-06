@@ -1,6 +1,4 @@
-use crate::r#move::Move;
-use crate::r#move::flag::MoveFlag;
-use crate::{File, Piece};
+use crate::{File, Move, MoveFlag, Piece};
 
 impl Move {
     /// Returns the SAN (Standard Algebraic Notation) representation of the move.

@@ -1,5 +1,4 @@
-use crate::position::Position;
-use crate::{Color, DoublePawnPushFileUtils, Flank, Piece, Square};
+use crate::{Color, DoublePawnPushFileUtils, Flank, Piece, Position, Square};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Rigorous check for whether the current positional information is consistent and valid.

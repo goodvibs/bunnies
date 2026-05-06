@@ -1,5 +1,4 @@
-use crate::position::Position;
-use crate::{Color, Flank, Piece};
+use crate::{Color, Flank, Piece, Position};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Returns whether the current side to move has castling rights on `flank`.

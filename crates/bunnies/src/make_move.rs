@@ -1,15 +1,17 @@
 //! Contains [`Position::make_move`] and [`Position::unmake_move`].
 
 use crate::Color;
+use crate::ConstDoublePawnPushFile;
+use crate::DoublePawnPushFile;
 use crate::File;
 use crate::Flank;
+use crate::Move;
+use crate::MoveFlag;
 use crate::Piece;
+use crate::Position;
+use crate::PositionContext;
 use crate::Rank;
 use crate::Square;
-use crate::r#move::{Move, MoveFlag};
-use crate::position::Position;
-use crate::position::context::PositionContext;
-use crate::{ConstDoublePawnPushFile, DoublePawnPushFile};
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Applies a move in place, updating board state for the opponent.

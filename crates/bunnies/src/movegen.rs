@@ -11,10 +11,9 @@ use crate::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
-use crate::r#move::{Move, MoveFlag, MoveList};
-use crate::position::Position;
 use crate::{Bitboard, Color, DoublePawnPushFile, Flank};
 use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
+use crate::{Move, MoveFlag, MoveList, Position};
 
 /// Returns `to_bb` restricted to squares legal for `from` given current pins.
 /// For non-pinned pieces, returns `to_bb` unchanged. Branchless on the hot path.
@@ -329,7 +328,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
+    use crate::Position;
     use crate::{Color, Move, MoveFlag, MoveList, Piece, Square};
     use std::collections::HashSet;
 

@@ -1,6 +1,5 @@
 use crate::Color;
-use crate::r#move::MoveList;
-use crate::position::Position;
+use crate::{MoveList, Position};
 
 fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, depth: u8) -> u64 {
     if depth == 0 {

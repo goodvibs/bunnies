@@ -1,7 +1,7 @@
+use crate::MoveFlag;
 use crate::Piece;
 use crate::Square;
-use crate::r#move::MoveFlag;
-use crate::position::Board;
+use crate::Board;
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.

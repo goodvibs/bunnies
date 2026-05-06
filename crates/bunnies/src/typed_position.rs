@@ -1,7 +1,7 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
 use crate::Color;
-use crate::position::{FenParseError, Position};
+use crate::{FenParseError, Position};
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl<const N: usize> Eq for TypedPosition<N> {}
 impl<const N: usize> TypedPosition<N> {
     /// Parses a FEN string into a typed position.
     pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
-        crate::position::fen::parse_fen_to_typed_position(fen)
+        crate::parse_fen_to_typed_position(fen)
     }
 
     /// Dispatches to the closure corresponding to the compile-time side to move.
