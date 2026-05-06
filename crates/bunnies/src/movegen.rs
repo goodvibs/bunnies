@@ -71,7 +71,7 @@ fn emit_pawn_dsts(sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard, move
     splat_promotions(sd, promotions, moves);
 }
 
-fn add_legal_pawn_captures<const STM: Color>(
+fn add_non_ep_pawn_captures<const STM: Color>(
     stm_pawns: Bitboard,
     opposite_pieces: Bitboard,
     king_sq: Square,
@@ -108,7 +108,7 @@ fn add_legal_pawn_captures<const STM: Color>(
     }
 }
 
-fn add_legal_en_passants<const STM: Color>(
+fn add_en_passants<const STM: Color>(
     dpf: DoublePawnPushFile,
     checkers: Bitboard,
     stm_pawns: Bitboard,
@@ -142,7 +142,7 @@ fn add_legal_en_passants<const STM: Color>(
     }
 }
 
-fn add_legal_pawn_pushes<const STM: Color>(
+fn add_pawn_pushes<const STM: Color>(
     occupied: Bitboard,
     pawns_stm: Bitboard,
     king_sq: Square,
@@ -166,18 +166,14 @@ fn add_legal_pawn_pushes<const STM: Color>(
     splat_normal_pawn_moves(down * 2, double_push_dsts, moves);
 }
 
-fn add_legal_knight_moves(
-    stm_knights_not_pinned: Bitboard,
-    dst_mask: Bitboard,
-    moves: &mut MoveList,
-) {
+fn add_knight_moves(stm_knights_not_pinned: Bitboard, dst_mask: Bitboard, moves: &mut MoveList) {
     for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
         let to_mask = single_knight_attacks(src_square) & dst_mask;
         splat_moves(src_square, to_mask, moves);
     }
 }
 
-fn add_legal_sliding_moves<const P: Piece>(
+fn add_sliding_moves<const P: Piece>(
     occupancy: Bitboard,
     stm_pieces_of_kind: Bitboard,
     king_sq: Square,
@@ -192,7 +188,7 @@ fn add_legal_sliding_moves<const P: Piece>(
 }
 
 /// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
-fn add_legal_king_moves(
+fn add_king_moves(
     king_sq: Square,
     stm_occupancy: Bitboard,
     king_mask: Bitboard,
@@ -212,10 +208,7 @@ fn add_legal_king_moves(
     }
 }
 
-fn add_legal_castling_moves<const STM: Color>(
-    may_castle: impl Fn(Flank) -> bool,
-    moves: &mut MoveList,
-) {
+fn add_castling_moves<const STM: Color>(may_castle: impl Fn(Flank) -> bool, moves: &mut MoveList) {
     let king_src_square = STM.king_initial_square();
 
     for flank in Flank::ALL {
@@ -231,7 +224,7 @@ fn add_legal_castling_moves<const STM: Color>(
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Fills `moves` with all legal moves (does not clear `moves`; clear or use a fresh list if needed).
-    pub fn generate_legal_moves(&self, moves: &mut MoveList) {
+    pub fn generate_moves(&self, moves: &mut MoveList) {
         let ctx = self.context();
         let board = &self.board;
         let king_sq = self.king_square(STM);
@@ -239,7 +232,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
 
         // 1. King moves are always legal candidates, regardless of check status.
-        add_legal_king_moves(
+        add_king_moves(
             king_sq,
             stm_pieces,
             stm_king_mask,
@@ -272,9 +265,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let opposite = board.color_mask_at(STM.other());
         let occupied = board.pieces();
 
-        add_legal_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned, moves);
+        add_non_ep_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned, moves);
 
-        add_legal_en_passants::<STM>(
+        add_en_passants::<STM>(
             ctx.double_pawn_push_file,
             ctx.checkers,
             pawns,
@@ -290,12 +283,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             moves,
         );
 
-        add_legal_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned, moves);
+        add_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned, moves);
 
         let knights = stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned;
-        add_legal_knight_moves(knights, dst_mask, moves);
+        add_knight_moves(knights, dst_mask, moves);
 
-        add_legal_sliding_moves::<{ Piece::Bishop }>(
+        add_sliding_moves::<{ Piece::Bishop }>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Bishop }>(),
             king_sq,
@@ -303,7 +296,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             ctx.pinned,
             moves,
         );
-        add_legal_sliding_moves::<{ Piece::Rook }>(
+        add_sliding_moves::<{ Piece::Rook }>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Rook }>(),
             king_sq,
@@ -311,7 +304,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             ctx.pinned,
             moves,
         );
-        add_legal_sliding_moves::<{ Piece::Queen }>(
+        add_sliding_moves::<{ Piece::Queen }>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Queen }>(),
             king_sq,
@@ -321,7 +314,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         );
 
         if allow_castling {
-            add_legal_castling_moves::<STM>(|flank| self.can_legally_castle(flank), moves);
+            add_castling_moves::<STM>(|flank| self.can_legally_castle(flank), moves);
         }
     }
 }
@@ -338,7 +331,7 @@ mod tests {
         expected_moves: [Move; M],
     ) {
         let mut legal = MoveList::new();
-        pos.generate_legal_moves(&mut legal);
+        pos.generate_moves(&mut legal);
         let mut moves_set = HashSet::new();
         for mv in legal.as_slice().iter().copied() {
             if include_move(mv, pos) {

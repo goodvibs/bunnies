@@ -108,7 +108,7 @@ fn classify_terminal<const N: usize, const STM: Color>(
     }
 
     let mut replies = MoveList::new();
-    position.generate_legal_moves(&mut replies);
+    position.generate_moves(&mut replies);
     if replies.is_empty() {
         if position.is_current_side_in_check() {
             Some(TerminalReason::Checkmate)
@@ -123,7 +123,7 @@ fn classify_terminal<const N: usize, const STM: Color>(
 impl<const N: usize, const STM: Color> Ongoing<Position<N, STM>> {
     #[inline]
     pub fn legal_moves(&self, moves: &mut MoveList) {
-        self.0.generate_legal_moves(moves);
+        self.0.generate_moves(moves);
     }
 
     #[inline]

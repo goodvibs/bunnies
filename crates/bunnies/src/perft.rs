@@ -9,7 +9,7 @@ fn count_nodes<const N: usize, const STM: Color>(
         return 1;
     }
     let mut moves = MoveList::new();
-    position.generate_legal_moves(&mut moves);
+    position.generate_moves(&mut moves);
 
     if depth == 1 {
         return moves.len() as u64;

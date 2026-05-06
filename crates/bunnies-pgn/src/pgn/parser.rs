@@ -176,11 +176,11 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                     PgnBufferedPositionContextDyn::White(ctx) => ctx
                         .current
                         .state_after_move
-                        .generate_legal_moves(&mut possible_moves),
+                        .generate_moves(&mut possible_moves),
                     PgnBufferedPositionContextDyn::Black(ctx) => ctx
                         .current
                         .state_after_move
-                        .generate_legal_moves(&mut possible_moves),
+                        .generate_moves(&mut possible_moves),
                 }
 
                 let mut matched_move = None;

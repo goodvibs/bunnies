@@ -95,7 +95,7 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                 Piece::Null => panic!("Invalid piece type"),
                 _ => {
                     let mut legal = MoveList::new();
-                    state.generate_legal_moves(&mut legal);
+                    state.generate_moves(&mut legal);
                     let mut disambiguation_moves: MoveList = MoveList::new();
                     for m in legal.as_slice().iter().copied() {
                         if m == move_ {
@@ -251,7 +251,7 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                 Piece::Null => panic!("Invalid piece type"),
                 _ => {
                     let mut legal = MoveList::new();
-                    state.generate_legal_moves(&mut legal);
+                    state.generate_moves(&mut legal);
                     let mut disambiguation_moves: MoveList = MoveList::new();
                     for m in legal.as_slice().iter().copied() {
                         if m == move_ {
@@ -389,7 +389,7 @@ fn apply_white_move<const N: usize>(
     let is_check = next.is_current_side_in_check();
     let is_checkmate = if is_check {
         let mut replies = MoveList::new();
-        next.generate_legal_moves(&mut replies);
+        next.generate_moves(&mut replies);
         replies.is_empty()
     } else {
         false
@@ -406,7 +406,7 @@ fn apply_black_move<const N: usize>(
     let is_check = next.is_current_side_in_check();
     let is_checkmate = if is_check {
         let mut replies = MoveList::new();
-        next.generate_legal_moves(&mut replies);
+        next.generate_moves(&mut replies);
         replies.is_empty()
     } else {
         false

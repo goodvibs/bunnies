@@ -256,12 +256,12 @@ mod state_tests {
 
         let mut pos = Position::<2, { Color::White }>::initial();
         let mut ml = MoveList::new();
-        pos.generate_legal_moves(&mut ml);
+        pos.generate_moves(&mut ml);
         let mv = *ml.as_slice().first().expect("at least one legal move");
         pos.make_move(mv);
         assert_eq!(pos.num_contexts(), 2);
         ml.clear();
-        pos.generate_legal_moves(&mut ml);
+        pos.generate_moves(&mut ml);
         let mv2 = *ml.as_slice().first().expect("at least one legal move");
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             pos.make_move(mv2);
