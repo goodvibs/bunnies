@@ -50,7 +50,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Only use when the underlying state already corresponds to side to move `NEXT` (for example after
     /// `make_move_in_place` or `unmake_move_in_place`).
     #[inline]
-    pub(crate) fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT> {
+    pub fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT> {
         let Position {
             board,
             halfmove,

@@ -41,6 +41,13 @@ version = "0.5.0"
 dependencies = [
  "criterion",
  "fastrand",
+]
+
+[[package]]
+name = "bunnies-pgn"
+version = "0.1.0"
+dependencies = [
+ "bunnies",
  "indexmap",
  "logos",
  "regex",

@@ -1,0 +1,27 @@
+[package]
+name = "bunnies"
+version = "0.5.0"
+edition = "2024"
+description = "A fast chess library for fast chess engines."
+license = "MIT"
+repository = "https://github.com/goodvibs/bunnies"
+readme = "../../README.md"
+keywords = ["chess", "fast", "move", "gen", "engine"]
+categories = ["games", "mathematics"]
+
+[dependencies]
+fastrand = "2.4.1"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[test]]
+name = "perft"
+
+[[bench]]
+name = "attacks"
+harness = false
+
+[[bench]]
+name = "perft"
+harness = false

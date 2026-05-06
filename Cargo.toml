@@ -1,22 +1,6 @@
-[package]
-name = "bunnies"
-version = "0.5.0"
-edition = "2024"
-description = "A fast chess library for fast chess engines."
-license = "MIT"
-repository = "https://github.com/goodvibs/bunnies"
-readme = "README.md"
-keywords = ["chess", "fast", "move", "gen", "engine"]
-categories = ["games", "mathematics"]
-
-[dependencies]
-indexmap = "2.14.0"
-fastrand = "2.4.1"
-logos = "0.16.1"
-regex = "1.12.3"
-
-[dev-dependencies]
-criterion = "0.5.1"
+[workspace]
+members = ["crates/bunnies", "crates/bunnies-pgn"]
+resolver = "3"
 
 [profile.test]
 opt-level = 3
@@ -38,14 +22,3 @@ inherits = "release"
 debug = true
 lto = false
 codegen-units = 256
-
-[[test]]
-name = "perft"
-
-[[bench]]
-name = "attacks"
-harness = false
-
-[[bench]]
-name = "perft"
-harness = false

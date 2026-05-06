@@ -7,6 +7,7 @@ use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_at
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::sync::LazyLock;
 
 /// The size of the attack table for rooks
@@ -17,7 +18,9 @@ const BISHOP_ATTACK_TABLE_SIZE: usize =
     4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
 pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
-    MagicAttacksLookup::load_or_generate("data/magic/rook_magic_attacks_lookup.bin", || {
+    MagicAttacksLookup::load_or_generate(
+        magic_table_path("rook_magic_attacks_lookup.bin"),
+        || {
         MagicAttacksInitializer::new()
             .with_seed(3141592653)
             .init_for_piece(
@@ -25,18 +28,22 @@ pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::n
                 &manual_single_rook_attacks,
                 ROOK_ATTACK_TABLE_SIZE,
             )
-    })
+    },
+    )
     .expect("rook magic table load or generate")
 });
 
 pub static BISHOP_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
-    MagicAttacksLookup::load_or_generate("data/magic/bishop_magic_attacks_lookup.bin", || {
+    MagicAttacksLookup::load_or_generate(
+        magic_table_path("bishop_magic_attacks_lookup.bin"),
+        || {
         MagicAttacksInitializer::new().with_seed(0).init_for_piece(
             &BISHOP_RELEVANT_MASKS,
             &manual_single_bishop_attacks,
             BISHOP_ATTACK_TABLE_SIZE,
         )
-    })
+    },
+    )
     .expect("bishop magic table load or generate")
 });
 
@@ -59,21 +66,18 @@ impl MagicAttacksLookup {
         self.attacks[key]
     }
 
-    pub fn load_or_generate(
-        filename: &str,
-        generate: impl Fn() -> MagicAttacksLookup,
-    ) -> io::Result<Self> {
-        match MagicAttacksLookup::load_from_file(filename) {
+    pub fn load_or_generate(filename: PathBuf, generate: impl Fn() -> MagicAttacksLookup) -> io::Result<Self> {
+        match MagicAttacksLookup::load_from_file(&filename) {
             Ok(lookup) => Ok(lookup),
             Err(_) => {
                 let lookup = generate();
-                lookup.save_to_file(filename)?;
+                lookup.save_to_file(&filename)?;
                 Ok(lookup)
             }
         }
     }
 
-    pub fn save_to_file(&self, filename: &str) -> io::Result<()> {
+    pub fn save_to_file(&self, filename: &PathBuf) -> io::Result<()> {
         let mut file = File::create(filename)?;
 
         // Write the number of squares
@@ -95,7 +99,7 @@ impl MagicAttacksLookup {
         Ok(())
     }
 
-    pub fn load_from_file(filename: &str) -> io::Result<Self> {
+    pub fn load_from_file(filename: &PathBuf) -> io::Result<Self> {
         let mut file = File::open(filename)?;
         let mut buffer = [0u8; 1];
 
@@ -150,4 +154,10 @@ impl MagicAttacksLookup {
             magic_info_for_squares,
         })
     }
+}
+
+fn magic_table_path(file_name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/magic")
+        .join(file_name)
 }

@@ -17,7 +17,6 @@ mod colored_piece;
 mod file;
 pub mod flank;
 mod r#move;
-pub mod pgn;
 mod piece;
 mod position;
 mod rank;
