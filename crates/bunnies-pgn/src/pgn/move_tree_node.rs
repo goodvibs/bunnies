@@ -144,8 +144,7 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                     state.board.piece_at(to) != Piece::Null
                 }
             };
-            let (next_position, is_check, is_checkmate) =
-                apply_white_move(state.clone(), move_);
+            let (next_position, is_check, is_checkmate) = apply_white_move(state.clone(), move_);
             next_state_after_move = Some(next_position);
 
             // Combine move number and move
@@ -301,8 +300,7 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                     state.board.piece_at(to) != Piece::Null
                 }
             };
-            let (next_position, is_check, is_checkmate) =
-                apply_black_move(state.clone(), move_);
+            let (next_position, is_check, is_checkmate) = apply_black_move(state.clone(), move_);
             next_state_after_move = Some(next_position);
 
             move_number_str
