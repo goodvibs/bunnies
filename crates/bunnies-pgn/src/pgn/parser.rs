@@ -1,7 +1,7 @@
 use crate::Color;
 use crate::r#move::MoveList;
-use crate::pgn::buffered_position_context::PgnBufferedPositionContextDyn;
 use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
+use crate::pgn::buffered_position_context::PgnBufferedPositionContextDyn;
 use crate::pgn::move_data::PgnMoveData;
 use crate::pgn::object::PgnObject;
 use crate::pgn::parsing_error::PgnParsingError;
@@ -60,11 +60,11 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 PgnToken::MoveNumber(move_number) => {
                     self.process_move_number(move_number)?;
                 }
-                PgnToken::NonCastlingMove(mv) => {
-                    self.process_move::<PgnNonCastlingMove>(mv)?;
+                PgnToken::NonCastlingMove(pgn_move_value) => {
+                    self.process_move::<PgnNonCastlingMove>(pgn_move_value)?;
                 }
-                PgnToken::CastlingMove(mv) => {
-                    self.process_move::<PgnCastlingMove>(mv)?;
+                PgnToken::CastlingMove(pgn_move_value) => {
+                    self.process_move::<PgnCastlingMove>(pgn_move_value)?;
                 }
                 PgnToken::StartVariation => {
                     self.process_start_variation()?;
@@ -163,9 +163,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
             PgnParsingState::Moves {
                 move_number_just_seen,
             } => {
-                let current_state = &self
-                    .buffered_position_manager
-                    .current_and_previous;
+                let current_state = &self.buffered_position_manager.current_and_previous;
                 let side_to_move = current_state.side_to_move();
                 if !move_number_just_seen && side_to_move == Color::White {
                     return Err(PgnParsingError::UnexpectedToken(format!(
@@ -175,23 +173,23 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                 }
                 let mut possible_moves = MoveList::new();
                 match current_state {
-                    PgnBufferedPositionContextDyn::White(ctx) => {
-                        ctx.current.state_after_move.generate_legal_moves(&mut possible_moves)
-                    }
-                    PgnBufferedPositionContextDyn::Black(ctx) => {
-                        ctx.current.state_after_move.generate_legal_moves(&mut possible_moves)
-                    }
+                    PgnBufferedPositionContextDyn::White(ctx) => ctx
+                        .current
+                        .state_after_move
+                        .generate_legal_moves(&mut possible_moves),
+                    PgnBufferedPositionContextDyn::Black(ctx) => ctx
+                        .current
+                        .state_after_move
+                        .generate_legal_moves(&mut possible_moves),
                 }
 
                 let mut matched_move = None;
                 for &possible_move in possible_moves.as_slice() {
                     let is_match = match current_state {
-                        PgnBufferedPositionContextDyn::White(ctx) => {
-                            pgn_move.matches_move(possible_move, &ctx.current.state_after_move.board)
-                        }
-                        PgnBufferedPositionContextDyn::Black(ctx) => {
-                            pgn_move.matches_move(possible_move, &ctx.current.state_after_move.board)
-                        }
+                        PgnBufferedPositionContextDyn::White(ctx) => pgn_move
+                            .matches_move(possible_move, &ctx.current.state_after_move.board),
+                        PgnBufferedPositionContextDyn::Black(ctx) => pgn_move
+                            .matches_move(possible_move, &ctx.current.state_after_move.board),
                     };
                     if is_match {
                         if matched_move.is_some() {
@@ -207,7 +205,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
 
                 if let Some(matched_move) = matched_move {
                     let move_data = PgnMoveData {
-                        mv: matched_move,
+                        move_: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
                         nag: pgn_move.get_common_move_info().nag.clone(),
                     };
@@ -216,8 +214,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                         .current_and_previous
                         .clone()
                         .append_move(move_data);
-                    self.buffered_position_manager
-                        .current_and_previous = new_context;
+                    self.buffered_position_manager.current_and_previous = new_context;
                     self.parse_state = PgnParsingState::Moves {
                         move_number_just_seen: false,
                     };

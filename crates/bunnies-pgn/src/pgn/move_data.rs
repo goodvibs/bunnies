@@ -3,7 +3,7 @@ use crate::r#move::Move;
 
 #[derive(Debug, Clone)]
 pub(crate) struct PgnMoveData {
-    pub(crate) mv: Move,
+    pub(crate) move_: Move,
     pub(crate) annotation: Option<String>,
     pub(crate) nag: Option<u8>,
 }
@@ -19,7 +19,7 @@ impl PgnMoveData {
         include_annotations: bool,
         include_nags: bool,
     ) -> String {
-        let mut result = self.mv.san(
+        let mut result = self.move_.san(
             moved_piece,
             disambiguation_str,
             is_check,

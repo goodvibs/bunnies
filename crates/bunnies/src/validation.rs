@@ -23,10 +23,11 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     pub fn is_opposite_side_in_check(&self) -> bool {
-        let opp = STM.other();
-        let opp_king = self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(opp);
+        let opponent = STM.other();
+        let opponent_king_mask =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(opponent);
         self.board.is_square_attacked(
-            Square::from_bitboard(opp_king).expect("opponent king mask"),
+            Square::from_bitboard(opponent_king_mask).expect("opponent king mask"),
             STM,
         )
     }
@@ -46,14 +47,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     pub fn has_valid_castling_rights(&self) -> bool {
         let context = self.context();
 
-        let kings_bb = self.board.piece_mask::<{ Piece::King }>();
-        let rooks_bb = self.board.piece_mask::<{ Piece::Rook }>();
+        let kings_mask = self.board.piece_mask::<{ Piece::King }>();
+        let rooks_mask = self.board.piece_mask::<{ Piece::Rook }>();
 
-        let white_bb = self.board.color_mask::<{ Color::White }>();
-        let black_bb = self.board.color_mask::<{ Color::Black }>();
+        let white_mask = self.board.color_mask::<{ Color::White }>();
+        let black_mask = self.board.color_mask::<{ Color::Black }>();
 
-        let is_white_king_in_place = (kings_bb & white_bb & Square::E1.mask()) != 0;
-        let is_black_king_in_place = (kings_bb & black_bb & Square::E8.mask()) != 0;
+        let is_white_king_in_place = (kings_mask & white_mask & Square::E1.mask()) != 0;
+        let is_black_king_in_place = (kings_mask & black_mask & Square::E8.mask()) != 0;
 
         let white_castle =
             Flank::Kingside.rights_mask(Color::White) | Flank::Queenside.rights_mask(Color::White);
@@ -68,28 +69,28 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             return false;
         }
 
-        let is_white_king_side_rook_in_place = (rooks_bb & white_bb & Square::H1.mask()) != 0;
+        let is_white_king_side_rook_in_place = (rooks_mask & white_mask & Square::H1.mask()) != 0;
         if !is_white_king_side_rook_in_place
             && context.castling_rights.has(Flank::Kingside, Color::White)
         {
             return false;
         }
 
-        let is_white_queen_side_rook_in_place = (rooks_bb & white_bb & Square::A1.mask()) != 0;
+        let is_white_queen_side_rook_in_place = (rooks_mask & white_mask & Square::A1.mask()) != 0;
         if !is_white_queen_side_rook_in_place
             && context.castling_rights.has(Flank::Queenside, Color::White)
         {
             return false;
         }
 
-        let is_black_king_side_rook_in_place = (rooks_bb & black_bb & Square::H8.mask()) != 0;
+        let is_black_king_side_rook_in_place = (rooks_mask & black_mask & Square::H8.mask()) != 0;
         if !is_black_king_side_rook_in_place
             && context.castling_rights.has(Flank::Kingside, Color::Black)
         {
             return false;
         }
 
-        let is_black_queen_side_rook_in_place = (rooks_bb & black_bb & Square::A8.mask()) != 0;
+        let is_black_queen_side_rook_in_place = (rooks_mask & black_mask & Square::A8.mask()) != 0;
         if !is_black_queen_side_rook_in_place
             && context.castling_rights.has(Flank::Queenside, Color::Black)
         {

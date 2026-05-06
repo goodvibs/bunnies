@@ -28,11 +28,11 @@ pub struct PgnCastlingMove {
 }
 
 impl PgnMove for PgnCastlingMove {
-    fn matches_move(&self, mv: Move, _from_board: &Board) -> bool {
-        let flag = mv.flag();
+    fn matches_move(&self, move_: Move, _from_board: &Board) -> bool {
+        let flag = move_.flag();
         let matches_flank = match self.flank {
-            Flank::Kingside => mv.destination().file() == File::G,
-            Flank::Queenside => mv.destination().file() == File::C,
+            Flank::Kingside => move_.to().file() == File::G,
+            Flank::Queenside => move_.to().file() == File::C,
         };
         if flag != MoveFlag::Castling || !matches_flank {
             return false;
@@ -90,12 +90,12 @@ impl ParsablePgnToken for PgnCastlingMove {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Color;
     use crate::Square;
     use crate::r#move::{Move, MoveFlag};
     use crate::pgn::token::ParsablePgnToken;
     use crate::pgn::token_types::pgn_move::PgnMove;
     use crate::position::{INITIAL_FEN, Position};
-    use crate::Color;
     use logos::Logos;
 
     #[test]
@@ -211,10 +211,7 @@ mod tests {
             Move::new_non_promotion(Square::E8, Square::C8, MoveFlag::Castling);
         let kingside_match = castling_move.matches_move(kingside_castling_move, &state.board);
         let queenside_match = castling_move.matches_move(queenside_castling_move, &state.board);
-        assert_eq!(
-            kingside_match,
-            true
-        );
+        assert_eq!(kingside_match, true);
         assert_eq!(queenside_match, false);
     }
 }

@@ -1,10 +1,10 @@
+use crate::Board;
 use crate::CastlingRights;
 use crate::Color;
 use crate::ColoredPiece;
 use crate::ConstDoublePawnPushFile;
 use crate::DoublePawnPushFile;
 use crate::File;
-use crate::Board;
 use crate::Position;
 use crate::PositionContext;
 use crate::Square;

@@ -90,10 +90,10 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
         let mut moved_here = false;
         let rendered_move = if let Some(move_data) = &self.move_data {
             moved_here = true;
-            let mv = move_data.mv;
-            let mv_source = mv.source();
-            let mv_dest = mv.destination();
-            let moved_piece = state.board.piece_at(mv_source);
+            let move_ = move_data.move_;
+            let from = move_.from();
+            let to = move_.to();
+            let moved_piece = state.board.piece_at(from);
 
             // Add move number for white's move or at the start of a variation
             let move_number_str = format!("{}. ", state.get_fullmove());
@@ -106,32 +106,30 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                     state.generate_legal_moves(&mut legal);
                     let mut disambiguation_moves: MoveList = MoveList::new();
                     for m in legal.as_slice().iter().copied() {
-                        if m == mv {
+                        if m == move_ {
                             continue;
                         }
-                        if m.destination() == mv_dest
-                            && state.board.piece_at(m.source()) == moved_piece
-                        {
+                        if m.to() == to && state.board.piece_at(m.from()) == moved_piece {
                             disambiguation_moves.push(m);
                         }
                     }
                     match disambiguation_moves.len() {
                         0 => "".to_string(),
                         _ => {
-                            let file = mv_source.file();
-                            let rank = mv_source.rank();
+                            let file = from.file();
+                            let rank = from.rank();
                             let is_file_ambiguous = disambiguation_moves
                                 .as_slice()
                                 .iter()
-                                .any(|m| m.source().file() == file);
+                                .any(|m| m.from().file() == file);
                             let is_rank_ambiguous = disambiguation_moves
                                 .as_slice()
                                 .iter()
-                                .any(|m| m.source().rank() == rank);
+                                .any(|m| m.from().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
-                                (true, true) => mv_source.to_string(),
-                                (true, false) => mv_source.rank_char().to_string(),
-                                (false, true) => mv_source.file_char().to_string(),
+                                (true, true) => from.to_string(),
+                                (true, false) => from.rank_char().to_string(),
+                                (false, true) => from.file_char().to_string(),
                                 (false, false) => "".to_string(),
                             }
                         }
@@ -139,14 +137,15 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                 }
             };
 
-            let is_capture = match mv.flag() {
+            let is_capture = match move_.flag() {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
                 MoveFlag::NormalMove | MoveFlag::Promotion => {
-                    state.board.piece_at(mv_dest) != Piece::Null
+                    state.board.piece_at(to) != Piece::Null
                 }
             };
-            let (next_position, is_check, is_checkmate) = apply_white_move(state.clone(), mv);
+            let (next_position, is_check, is_checkmate) =
+                apply_white_move(state.clone(), move_);
             next_state_after_move = Some(next_position);
 
             // Combine move number and move
@@ -245,10 +244,10 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
         let mut moved_here = false;
         let rendered_move = if let Some(move_data) = &self.move_data {
             moved_here = true;
-            let mv = move_data.mv;
-            let mv_source = mv.source();
-            let mv_dest = mv.destination();
-            let moved_piece = state.board.piece_at(mv_source);
+            let move_ = move_data.move_;
+            let from = move_.from();
+            let to = move_.to();
+            let moved_piece = state.board.piece_at(from);
 
             let move_number_str = if remind_fullmove {
                 format!("{}... ", state.get_fullmove())
@@ -264,32 +263,30 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                     state.generate_legal_moves(&mut legal);
                     let mut disambiguation_moves: MoveList = MoveList::new();
                     for m in legal.as_slice().iter().copied() {
-                        if m == mv {
+                        if m == move_ {
                             continue;
                         }
-                        if m.destination() == mv_dest
-                            && state.board.piece_at(m.source()) == moved_piece
-                        {
+                        if m.to() == to && state.board.piece_at(m.from()) == moved_piece {
                             disambiguation_moves.push(m);
                         }
                     }
                     match disambiguation_moves.len() {
                         0 => "".to_string(),
                         _ => {
-                            let file = mv_source.file();
-                            let rank = mv_source.rank();
+                            let file = from.file();
+                            let rank = from.rank();
                             let is_file_ambiguous = disambiguation_moves
                                 .as_slice()
                                 .iter()
-                                .any(|m| m.source().file() == file);
+                                .any(|m| m.from().file() == file);
                             let is_rank_ambiguous = disambiguation_moves
                                 .as_slice()
                                 .iter()
-                                .any(|m| m.source().rank() == rank);
+                                .any(|m| m.from().rank() == rank);
                             match (is_file_ambiguous, is_rank_ambiguous) {
-                                (true, true) => mv_source.to_string(),
-                                (true, false) => mv_source.rank_char().to_string(),
-                                (false, true) => mv_source.file_char().to_string(),
+                                (true, true) => from.to_string(),
+                                (true, false) => from.rank_char().to_string(),
+                                (false, true) => from.file_char().to_string(),
                                 (false, false) => "".to_string(),
                             }
                         }
@@ -297,14 +294,15 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
                 }
             };
 
-            let is_capture = match mv.flag() {
+            let is_capture = match move_.flag() {
                 MoveFlag::EnPassant => true,
                 MoveFlag::Castling => false,
                 MoveFlag::NormalMove | MoveFlag::Promotion => {
-                    state.board.piece_at(mv_dest) != Piece::Null
+                    state.board.piece_at(to) != Piece::Null
                 }
             };
-            let (next_position, is_check, is_checkmate) = apply_black_move(state.clone(), mv);
+            let (next_position, is_check, is_checkmate) =
+                apply_black_move(state.clone(), move_);
             next_state_after_move = Some(next_position);
 
             move_number_str
@@ -394,9 +392,9 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
 
 fn apply_white_move<const N: usize>(
     mut state: Position<N, { Color::White }>,
-    mv: crate::r#move::Move,
+    move_: crate::r#move::Move,
 ) -> (Position<N, { Color::Black }>, bool, bool) {
-    state.make_move(mv);
+    state.make_move(move_);
     let next = state.rebrand_stm::<{ Color::Black }>();
     let is_check = next.is_current_side_in_check();
     let is_checkmate = if is_check {
@@ -411,9 +409,9 @@ fn apply_white_move<const N: usize>(
 
 fn apply_black_move<const N: usize>(
     mut state: Position<N, { Color::Black }>,
-    mv: crate::r#move::Move,
+    move_: crate::r#move::Move,
 ) -> (Position<N, { Color::White }>, bool, bool) {
-    state.make_move(mv);
+    state.make_move(move_);
     let next = state.rebrand_stm::<{ Color::White }>();
     let is_check = next.is_current_side_in_check();
     let is_checkmate = if is_check {

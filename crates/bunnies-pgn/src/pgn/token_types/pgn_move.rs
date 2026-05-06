@@ -4,7 +4,7 @@ use regex::Match;
 use std::fmt::Debug;
 
 pub trait PgnMove: Debug {
-    fn matches_move(&self, mv: Move, from_board: &Board) -> bool;
+    fn matches_move(&self, move_: Move, from_board: &Board) -> bool;
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 

@@ -10,23 +10,23 @@ impl Move {
         is_checkmate: bool,
         is_capture: bool,
     ) -> String {
-        let dst_square = self.destination();
+        let to = self.to();
         let flag = self.flag();
 
         let move_str = if flag == MoveFlag::Castling {
-            match dst_square.file() {
+            match to.file() {
                 File::G => "O-O".to_string(),
                 File::C => "O-O-O".to_string(),
                 _ => panic!("Invalid castling move"),
             }
         } else {
-            let src_square = self.source();
+            let from = self.from();
             let promotion = self.promotion();
 
             let piece_str = match moved_piece {
                 Piece::Pawn => {
                     if is_capture {
-                        src_square.file_char().to_string()
+                        from.file_char().to_string()
                     } else {
                         "".to_string()
                     }
@@ -52,7 +52,7 @@ impl Move {
                 piece_str,
                 disambiguation_str,
                 capture_str,
-                dst_square.to_string(),
+                to.to_string(),
                 promotion_str
             )
         };

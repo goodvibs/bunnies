@@ -42,29 +42,29 @@ pub struct PgnNonCastlingMove {
 }
 
 impl PgnMove for PgnNonCastlingMove {
-    fn matches_move(&self, mv: Move, board: &Board) -> bool {
-        let dst = mv.destination();
-        let src = mv.source();
-        let flag = mv.flag();
+    fn matches_move(&self, move_: Move, board: &Board) -> bool {
+        let to = move_.to();
+        let from = move_.from();
+        let flag = move_.flag();
         let promotion = match flag {
-            MoveFlag::Promotion => mv.promotion(),
+            MoveFlag::Promotion => move_.promotion(),
             _ => Piece::Null,
         };
 
-        if self.to != dst {
+        if self.to != to {
             return false;
         } else if self.promoted_to != promotion {
             return false;
-        } else if self.piece_moved != board.piece_at(src) {
+        } else if self.piece_moved != board.piece_at(from) {
             return false;
-        } else if self.is_capture != mv.is_capture_on_board(board) {
+        } else if self.is_capture != move_.is_capture_on_board(board) {
             return false;
         } else if let Some(file) = self.disambiguation_file {
-            if src.file() as u8 != file as u8 - 'a' as u8 {
+            if from.file() as u8 != file as u8 - 'a' as u8 {
                 return false;
             }
         } else if let Some(rank) = self.disambiguation_rank {
-            if src.rank() as u8 != rank as u8 - '1' as u8 {
+            if from.rank() as u8 != rank as u8 - '1' as u8 {
                 return false;
             }
         }

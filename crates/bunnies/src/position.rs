@@ -148,29 +148,29 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     /// Recomputes [`PositionContext::pinned`] / [`PositionContext::checkers`] for `stm` (must match the board).
-    pub(crate) fn update_pins_and_checks_for_stm(&mut self, stm: Color) {
-        let opp = stm.other();
+    pub(crate) fn update_pins_and_checks_for_stm(&mut self, side_to_move: Color) {
+        let opponent = side_to_move.other();
 
-        let current_side_king =
-            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(stm);
+        let current_side_king_mask =
+            self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(side_to_move);
 
-        if current_side_king.count_ones() != 1 {
+        if current_side_king_mask.count_ones() != 1 {
             return;
         }
 
-        let current_side_king_square = self.king_square(stm);
+        let current_side_king_square = self.king_square(side_to_move);
 
         let relevant_diagonals = current_side_king_square.diagonals_mask();
         let relevant_orthogonals = current_side_king_square.orthogonals_mask();
 
-        let opp_bb = self.board.color_mask_at(opp);
+        let opponent_mask = self.board.color_mask_at(opponent);
         let relevant_diagonal_attackers = (self.board.piece_mask::<{ Piece::Bishop }>()
             | self.board.piece_mask::<{ Piece::Queen }>())
-            & opp_bb
+            & opponent_mask
             & relevant_diagonals;
         let relevant_orthogonal_attackers = (self.board.piece_mask::<{ Piece::Rook }>()
             | self.board.piece_mask::<{ Piece::Queen }>())
-            & opp_bb
+            & opponent_mask
             & relevant_orthogonals;
         let relevant_sliding_attackers =
             relevant_diagonal_attackers | relevant_orthogonal_attackers;
@@ -190,14 +190,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             }
         }
 
-        pinned &= self.board.color_mask_at(stm);
+        pinned &= self.board.color_mask_at(side_to_move);
 
         checkers |= single_knight_attacks(current_side_king_square)
             & self.board.piece_mask::<{ Piece::Knight }>()
-            & opp_bb;
-        checkers |= multi_pawn_attacks(current_side_king, stm)
+            & opponent_mask;
+        checkers |= multi_pawn_attacks(current_side_king_mask, side_to_move)
             & self.board.piece_mask::<{ Piece::Pawn }>()
-            & opp_bb;
+            & opponent_mask;
 
         let context = self.mut_context();
         context.pinned = pinned;

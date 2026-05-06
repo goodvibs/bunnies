@@ -18,9 +18,7 @@ const BISHOP_ATTACK_TABLE_SIZE: usize =
     4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
 pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
-    MagicAttacksLookup::load_or_generate(
-        magic_table_path("rook_magic_attacks_lookup.bin"),
-        || {
+    MagicAttacksLookup::load_or_generate(magic_table_path("rook_magic_attacks_lookup.bin"), || {
         MagicAttacksInitializer::new()
             .with_seed(3141592653)
             .init_for_piece(
@@ -28,8 +26,7 @@ pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::n
                 &manual_single_rook_attacks,
                 ROOK_ATTACK_TABLE_SIZE,
             )
-    },
-    )
+    })
     .expect("rook magic table load or generate")
 });
 
@@ -37,12 +34,12 @@ pub static BISHOP_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock:
     MagicAttacksLookup::load_or_generate(
         magic_table_path("bishop_magic_attacks_lookup.bin"),
         || {
-        MagicAttacksInitializer::new().with_seed(0).init_for_piece(
-            &BISHOP_RELEVANT_MASKS,
-            &manual_single_bishop_attacks,
-            BISHOP_ATTACK_TABLE_SIZE,
-        )
-    },
+            MagicAttacksInitializer::new().with_seed(0).init_for_piece(
+                &BISHOP_RELEVANT_MASKS,
+                &manual_single_bishop_attacks,
+                BISHOP_ATTACK_TABLE_SIZE,
+            )
+        },
     )
     .expect("bishop magic table load or generate")
 });
@@ -66,7 +63,10 @@ impl MagicAttacksLookup {
         self.attacks[key]
     }
 
-    pub fn load_or_generate(filename: PathBuf, generate: impl Fn() -> MagicAttacksLookup) -> io::Result<Self> {
+    pub fn load_or_generate(
+        filename: PathBuf,
+        generate: impl Fn() -> MagicAttacksLookup,
+    ) -> io::Result<Self> {
         match MagicAttacksLookup::load_from_file(&filename) {
             Ok(lookup) => Ok(lookup),
             Err(_) => {

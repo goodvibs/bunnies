@@ -52,7 +52,7 @@ impl CastlingRights {
 
     /// Clears any rights that a move touching `affected_square` invalidates.
     ///
-    /// Apply once for the source square and once for the destination square in [`Position::make_move`];
+    /// Apply once for the `from` square and once for the `to` square in [`Position::make_move`];
     /// together this handles a king leaving home, a rook leaving its starting corner, and a rook being
     /// captured on its starting corner. All other squares pass through unchanged.
     #[inline]

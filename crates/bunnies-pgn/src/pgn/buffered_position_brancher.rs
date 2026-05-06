@@ -19,13 +19,15 @@ impl<const N: usize> PgnBufferedPositionBrancher<N> {
         initial_state: Position<N, { Color::White }>,
     ) -> PgnBufferedPositionBrancher<N> {
         PgnBufferedPositionBrancher {
-            current_and_previous: PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
-                current: PgnPositionContext::<N, { Color::White }, { Color::Black }> {
-                    node: Rc::clone(root_node),
-                    state_after_move: initial_state,
+            current_and_previous: PgnBufferedPositionContextDyn::White(
+                PgnBufferedPositionContext {
+                    current: PgnPositionContext::<N, { Color::White }, { Color::Black }> {
+                        node: Rc::clone(root_node),
+                        state_after_move: initial_state,
+                    },
+                    previous: None,
                 },
-                previous: None,
-            }),
+            ),
             stack: Vec::new(),
         }
     }

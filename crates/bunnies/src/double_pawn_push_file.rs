@@ -17,7 +17,7 @@ pub const trait ConstDoublePawnPushFile {
     const NONE: DoublePawnPushFile;
 
     /// After a pawn step, the EP file to store in the new context (`NONE` unless a double push).
-    fn from_pawn_step(dst_square: Square, src_square: Square) -> DoublePawnPushFile;
+    fn from_pawn_step(from: Square, to: Square) -> DoublePawnPushFile;
 
     /// `true` when `self` holds a file index `0..=7`.
     fn is_some(self) -> bool;
@@ -46,9 +46,9 @@ pub trait DoublePawnPushFileUtils: ConstDoublePawnPushFile {
 impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     const NONE: DoublePawnPushFile = -1;
 
-    fn from_pawn_step(dst_square: Square, src_square: Square) -> DoublePawnPushFile {
-        if is_double_pawn_step(dst_square, src_square) {
-            src_square.file() as DoublePawnPushFile
+    fn from_pawn_step(from: Square, to: Square) -> DoublePawnPushFile {
+        if is_double_pawn_step(from, to) {
+            from.file() as DoublePawnPushFile
         } else {
             Self::NONE
         }
@@ -113,21 +113,21 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
             return false;
         }
         let color_just_moved = side_to_move.other();
-        let pawns_bb = board.piece_mask::<{ Piece::Pawn }>();
-        let colored_pawns_bb = pawns_bb & board.color_mask_at(color_just_moved);
+        let pawns_mask = board.piece_mask::<{ Piece::Pawn }>();
+        let colored_pawns_mask = pawns_mask & board.color_mask_at(color_just_moved);
         debug_assert!(self.is_some());
         let file_mask = File::from_u8(self as u8).mask();
         let rank_mask = match color_just_moved {
             Color::White => Rank::Four.mask(),
             Color::Black => Rank::Five.mask(),
         };
-        colored_pawns_bb & file_mask & rank_mask != 0
+        colored_pawns_mask & file_mask & rank_mask != 0
     }
 }
 
-const fn is_double_pawn_step(dst_square: Square, src_square: Square) -> bool {
-    let dst_mask = dst_square.mask();
-    let src_mask = src_square.mask();
+const fn is_double_pawn_step(from: Square, to: Square) -> bool {
+    let from_mask = from.mask();
+    let to_mask = to.mask();
 
-    dst_mask & (src_mask << 16) != 0 || dst_mask & (src_mask >> 16) != 0
+    to_mask & (from_mask << 16) != 0 || to_mask & (from_mask >> 16) != 0
 }

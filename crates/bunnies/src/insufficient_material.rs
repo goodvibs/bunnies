@@ -29,11 +29,10 @@ impl Board {
 
             if use_uscf_rules && num_knights == 2 && num_bishops == 0 {
                 // king and two knights
-                let opposite_side_bb = self.color_mask_at(color.other());
-                let all_occupancy = self.piece_mask::<{ Piece::ALL_PIECES }>();
-                let opposite_side_is_lone_king =
-                    (opposite_side_bb & all_occupancy).count_ones() == 1;
-                return opposite_side_is_lone_king;
+                let opponent_mask = self.color_mask_at(color.other());
+                let all_occupancy_mask = self.piece_mask::<{ Piece::ALL_PIECES }>();
+                let opponent_is_lone_king = (opponent_mask & all_occupancy_mask).count_ones() == 1;
+                return opponent_is_lone_king;
             }
             if num_knights + num_bishops > 1 {
                 return false;

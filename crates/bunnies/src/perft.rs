@@ -1,36 +1,39 @@
 use crate::Color;
 use crate::{MoveList, Position};
 
-fn count_nodes<const N: usize, const STM: Color>(pos: &mut Position<N, STM>, depth: u8) -> u64 {
+fn count_nodes<const N: usize, const STM: Color>(
+    position: &mut Position<N, STM>,
+    depth: u8,
+) -> u64 {
     if depth == 0 {
         return 1;
     }
     let mut moves = MoveList::new();
-    pos.generate_legal_moves(&mut moves);
+    position.generate_legal_moves(&mut moves);
 
     if depth == 1 {
         return moves.len() as u64;
     }
 
     let mut total = 0u64;
-    for &mv in moves.as_slice() {
-        pos.make_move(mv);
+    for &move_ in moves.as_slice() {
+        position.make_move(move_);
         match STM {
             Color::White => {
                 // SAFETY: After `make_move_in_place`, board/context match `Position<N, { Color::Black }>`;
-                // same memory as `pos` until `unmake_move_in_place`.
+                // same memory as `position` until `unmake_move_in_place`.
                 let child = unsafe {
-                    &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::Black }>>()
+                    &mut *std::ptr::from_mut(position).cast::<Position<N, { Color::Black }>>()
                 };
                 total += count_nodes(child, depth - 1);
-                child.unmake_move(mv);
+                child.unmake_move(move_);
             }
             Color::Black => {
                 let child = unsafe {
-                    &mut *std::ptr::from_mut(pos).cast::<Position<N, { Color::White }>>()
+                    &mut *std::ptr::from_mut(position).cast::<Position<N, { Color::White }>>()
                 };
                 total += count_nodes(child, depth - 1);
-                child.unmake_move(mv);
+                child.unmake_move(move_);
             }
         }
     }

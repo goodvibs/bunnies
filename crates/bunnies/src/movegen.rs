@@ -15,16 +15,16 @@ use crate::{Bitboard, Color, DoublePawnPushFile, Flank};
 use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
 use crate::{Move, MoveFlag, MoveList, Position};
 
-/// Returns `to_bb` restricted to squares legal for `from` given current pins.
-/// For non-pinned pieces, returns `to_bb` unchanged. Branchless on the hot path.
+/// Returns `to_mask` restricted to squares legal for `from` given current pins.
+/// For non-pinned pieces, returns `to_mask` unchanged. Branchless on the hot path.
 #[inline]
-fn pin_restrict(from: Square, to_bb: Bitboard, king_sq: Square, pinned: Bitboard) -> Bitboard {
-    let pin_mask = if from.mask() & pinned != 0 {
-        Bitboard::edge_to_edge_ray(from, king_sq)
+fn pin_restrict(from: Square, to_mask: Bitboard, king: Square, pinned_mask: Bitboard) -> Bitboard {
+    let pin_mask = if from.mask() & pinned_mask != 0 {
+        Bitboard::edge_to_edge_ray(from, king)
     } else {
         !0
     };
-    to_bb & pin_mask
+    to_mask & pin_mask
 }
 
 fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4] {
@@ -42,32 +42,32 @@ fn en_passant_requires_full_attack_probe(
     checkers != 0 || king_sq.rank() == pawn_src.rank()
 }
 
-fn splat_promotions(sd: SquareDelta, to_bb: Bitboard, moves: &mut MoveList) {
-    for dst in to_bb.iter_set_bits_as_squares() {
-        let from = dst.relative(sd).expect("Invalid SquareDelta for to_bb");
-        moves.push_all(generate_pawn_promotions(from, dst));
+fn splat_promotions(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
+    for to in to_mask.iter_set_bits_as_squares() {
+        let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
+        moves.push_all(generate_pawn_promotions(from, to));
     }
 }
 
-fn splat_normal_pawn_moves(sd: SquareDelta, to_bb: Bitboard, moves: &mut MoveList) {
-    for dst in to_bb.iter_set_bits_as_squares() {
-        let from = dst.relative(sd).expect("Invalid SquareDelta for to_bb");
-        moves.push(Move::new_non_promotion(from, dst, MoveFlag::NormalMove));
+fn splat_normal_pawn_moves(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
+    for to in to_mask.iter_set_bits_as_squares() {
+        let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
+        moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
     }
 }
 
-fn splat_moves(from: Square, to_bb: Bitboard, moves: &mut MoveList) {
-    for dst in to_bb.iter_set_bits_as_squares() {
-        moves.push(Move::new_non_promotion(from, dst, MoveFlag::NormalMove));
+fn splat_moves(from: Square, to_mask: Bitboard, moves: &mut MoveList) {
+    for to in to_mask.iter_set_bits_as_squares() {
+        moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
     }
 }
 
-/// Splits `dsts` into promotions (on `promo_rank`) and the rest, emitting both via the
-/// per-delta splat helpers. `sd` is the source-from-destination delta for this attack direction.
+/// Splits `to_mask` into promotions (on `promo_rank`) and the rest, emitting both via the
+/// per-delta splat helpers. `sd` is the delta needed to recover `from` from each `to`.
 #[inline]
-fn emit_pawn_dsts(sd: SquareDelta, dsts: Bitboard, promo_rank: Bitboard, moves: &mut MoveList) {
-    let promotions = dsts & promo_rank;
-    splat_normal_pawn_moves(sd, dsts & !promotions, moves);
+fn emit_pawn_dsts(sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard, moves: &mut MoveList) {
+    let promotions = to_mask & promo_rank;
+    splat_normal_pawn_moves(sd, to_mask & !promotions, moves);
     splat_promotions(sd, promotions, moves);
 }
 
@@ -127,10 +127,10 @@ fn add_legal_en_passants<const STM: Color>(
 
     let capture_square = dpf.ep_capture_square(STM);
     let to = dpf.ep_dst_square(STM);
-    let to_bb = to.mask();
+    let to_mask = to.mask();
 
     for from in (dpf.ep_possible_src_mask(STM) & stm_pawns).iter_set_bits_as_squares() {
-        if pin_restrict(from, to_bb, king_sq, pinned) == 0 {
+        if pin_restrict(from, to_mask, king_sq, pinned) == 0 {
             continue;
         }
 
@@ -172,8 +172,8 @@ fn add_legal_knight_moves(
     moves: &mut MoveList,
 ) {
     for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
-        let to_bb = single_knight_attacks(src_square) & dst_mask;
-        splat_moves(src_square, to_bb, moves);
+        let to_mask = single_knight_attacks(src_square) & dst_mask;
+        splat_moves(src_square, to_mask, moves);
     }
 }
 
@@ -186,23 +186,23 @@ fn add_legal_sliding_moves<const P: Piece>(
     moves: &mut MoveList,
 ) {
     for from in stm_pieces_of_kind.iter_set_bits_as_squares() {
-        let to_bb = sliding_piece_attacks(from, occupancy, P) & dst_mask;
-        splat_moves(from, pin_restrict(from, to_bb, king_sq, pinned), moves);
+        let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
+        splat_moves(from, pin_restrict(from, to_mask, king_sq, pinned), moves);
     }
 }
 
-/// `king_dst_is_safe(dst, king_src_bb | dst.mask())` must be true iff the king may step to `dst`.
+/// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
 fn add_legal_king_moves(
     king_sq: Square,
     stm_occupancy: Bitboard,
-    king_bb: Bitboard,
+    king_mask: Bitboard,
     king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
     moves: &mut MoveList,
 ) {
     let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
 
     for dst_square in king_moves.iter_set_bits_as_squares() {
-        if king_dst_is_safe(dst_square, king_bb | dst_square.mask()) {
+        if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
             moves.push(Move::new_non_promotion(
                 king_sq,
                 dst_square,
@@ -236,13 +236,13 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let board = &self.board;
         let king_sq = self.king_square(STM);
         let stm_pieces = board.color_mask_at(STM);
-        let stm_king_bb = stm_pieces & board.piece_mask::<{ Piece::King }>();
+        let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
 
         // 1. King moves are always legal candidates, regardless of check status.
         add_legal_king_moves(
             king_sq,
             stm_pieces,
-            stm_king_bb,
+            stm_king_mask,
             |dst, occ| !board.is_square_attacked_after_move(dst, STM.other(), occ),
             moves,
         );
@@ -380,13 +380,13 @@ mod tests {
         let is_knight_move_white = |mv: Move, pos: &Position<1, { Color::White }>| {
             pos.board.piece_mask::<{ Piece::Knight }>()
                 & pos.board.color_mask_at(Color::White)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
         };
         let is_knight_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
             pos.board.piece_mask::<{ Piece::Knight }>()
                 & pos.board.color_mask_at(Color::Black)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
         };
 
@@ -422,7 +422,7 @@ mod tests {
                 | pos.board.piece_mask::<{ Piece::Rook }>()
                 | pos.board.piece_mask::<{ Piece::Queen }>())
                 & cur
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
         };
         let is_sliding_piece_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
@@ -431,7 +431,7 @@ mod tests {
                 | pos.board.piece_mask::<{ Piece::Rook }>()
                 | pos.board.piece_mask::<{ Piece::Queen }>())
                 & cur
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
         };
 
@@ -484,16 +484,16 @@ mod tests {
         let is_pawn_push_white = |mv: Move, pos: &Position<1, { Color::White }>| {
             pos.board.piece_mask::<{ Piece::Pawn }>()
                 & pos.board.color_mask_at(Color::White)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
-                && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
+                && (mv.from() as i8 - mv.to() as i8) % 8 == 0
         };
         let is_pawn_push_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
             pos.board.piece_mask::<{ Piece::Pawn }>()
                 & pos.board.color_mask_at(Color::Black)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
-                && (mv.source() as i8 - mv.destination() as i8) % 8 == 0
+                && (mv.from() as i8 - mv.to() as i8) % 8 == 0
         };
 
         expected_moves_test(
@@ -522,18 +522,18 @@ mod tests {
         let is_non_ep_pawn_capture_white = |mv: Move, pos: &Position<1, { Color::White }>| {
             pos.board.piece_mask::<{ Piece::Pawn }>()
                 & pos.board.color_mask_at(Color::White)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
                 && mv.flag() != MoveFlag::EnPassant
-                && (mv.source() as i8 - mv.destination() as i8) % 8 != 0
+                && (mv.from() as i8 - mv.to() as i8) % 8 != 0
         };
         let is_non_ep_pawn_capture_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
             pos.board.piece_mask::<{ Piece::Pawn }>()
                 & pos.board.color_mask_at(Color::Black)
-                & mv.source().mask()
+                & mv.from().mask()
                 != 0
                 && mv.flag() != MoveFlag::EnPassant
-                && (mv.source() as i8 - mv.destination() as i8) % 8 != 0
+                && (mv.from() as i8 - mv.to() as i8) % 8 != 0
         };
 
         expected_moves_test(
@@ -563,12 +563,10 @@ mod tests {
 
     #[test]
     fn test_en_passant_movegen() {
-        let is_en_passant_white = |mv: Move, _: &Position<1, { Color::White }>| {
-            mv.flag() == MoveFlag::EnPassant
-        };
-        let is_en_passant_black = |mv: Move, _: &Position<1, { Color::Black }>| {
-            mv.flag() == MoveFlag::EnPassant
-        };
+        let is_en_passant_white =
+            |mv: Move, _: &Position<1, { Color::White }>| mv.flag() == MoveFlag::EnPassant;
+        let is_en_passant_black =
+            |mv: Move, _: &Position<1, { Color::Black }>| mv.flag() == MoveFlag::EnPassant;
 
         expected_moves_test(
             "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
@@ -622,14 +620,14 @@ mod tests {
             mv.flag() == MoveFlag::NormalMove
                 && pos.board.piece_mask::<{ Piece::King }>()
                     & pos.board.color_mask_at(Color::White)
-                    & mv.source().mask()
+                    & mv.from().mask()
                     != 0
         };
         let is_king_move_black = |mv: Move, pos: &Position<1, { Color::Black }>| {
             mv.flag() == MoveFlag::NormalMove
                 && pos.board.piece_mask::<{ Piece::King }>()
                     & pos.board.color_mask_at(Color::Black)
-                    & mv.source().mask()
+                    & mv.from().mask()
                     != 0
         };
 
@@ -659,12 +657,10 @@ mod tests {
 
     #[test]
     fn test_white_castling_movegen() {
-        let is_castling_move_white = |mv: Move, _: &Position<1, { Color::White }>| {
-            mv.flag() == MoveFlag::Castling
-        };
-        let is_castling_move_black = |mv: Move, _: &Position<1, { Color::Black }>| {
-            mv.flag() == MoveFlag::Castling
-        };
+        let is_castling_move_white =
+            |mv: Move, _: &Position<1, { Color::White }>| mv.flag() == MoveFlag::Castling;
+        let is_castling_move_black =
+            |mv: Move, _: &Position<1, { Color::Black }>| mv.flag() == MoveFlag::Castling;
 
         expected_moves_test(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",

@@ -39,11 +39,7 @@ impl<const N: usize> TypedPosition<N> {
 
     /// Dispatches to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub fn with_ref<R, FW, FB>(
-        &self,
-        white: FW,
-        black: FB,
-    ) -> R
+    pub fn with_ref<R, FW, FB>(&self, white: FW, black: FB) -> R
     where
         FW: FnOnce(&Position<N, { Color::White }>) -> R,
         FB: FnOnce(&Position<N, { Color::Black }>) -> R,
@@ -56,11 +52,7 @@ impl<const N: usize> TypedPosition<N> {
 
     /// Mutable dispatch to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub fn with_mut<R, FW, FB>(
-        &mut self,
-        white: FW,
-        black: FB,
-    ) -> R
+    pub fn with_mut<R, FW, FB>(&mut self, white: FW, black: FB) -> R
     where
         FW: FnOnce(&mut Position<N, { Color::White }>) -> R,
         FB: FnOnce(&mut Position<N, { Color::Black }>) -> R,
@@ -73,11 +65,7 @@ impl<const N: usize> TypedPosition<N> {
 
     /// Consuming dispatch to the closure corresponding to the compile-time side to move.
     #[inline]
-    pub fn into_inner<R, FW, FB>(
-        self,
-        white: FW,
-        black: FB,
-    ) -> R
+    pub fn into_inner<R, FW, FB>(self, white: FW, black: FB) -> R
     where
         FW: FnOnce(Position<N, { Color::White }>) -> R,
         FB: FnOnce(Position<N, { Color::Black }>) -> R,

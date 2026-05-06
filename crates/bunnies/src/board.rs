@@ -221,40 +221,40 @@ impl Board {
         self.remove_piece_at(piece, square);
     }
 
-    /// Moves `piece_type` from `src_square` to `dst_square`.
+    /// Moves `piece_type` from `from` to `to`.
     /// Does not update color.
-    pub const fn move_piece(&mut self, piece_type: Piece, dst_square: Square, src_square: Square) {
-        let dst_mask = dst_square.mask();
-        let src_mask = src_square.mask();
-        let src_dst_mask = src_mask | dst_mask;
+    pub const fn move_piece(&mut self, piece_type: Piece, from: Square, to: Square) {
+        let from_mask = from.mask();
+        let to_mask = to.mask();
+        let from_to_mask = from_mask | to_mask;
 
-        self.piece_masks[piece_type as usize] ^= src_dst_mask;
-        self.piece_masks[Piece::ALL_PIECES as usize] ^= src_dst_mask;
+        self.piece_masks[piece_type as usize] ^= from_to_mask;
+        self.piece_masks[Piece::ALL_PIECES as usize] ^= from_to_mask;
 
-        self.pieces[src_square as usize] = Piece::Null;
-        self.pieces[dst_square as usize] = piece_type;
+        self.pieces[from as usize] = Piece::Null;
+        self.pieces[to as usize] = piece_type;
     }
 
-    /// Moves `color` from `src_square` to `dst_square`.
+    /// Moves `color` from `from` to `to`.
     /// Does not update color.
-    pub const fn move_color(&mut self, color: Color, dst_square: Square, src_square: Square) {
-        let dst_mask = dst_square.mask();
-        let src_mask = src_square.mask();
-        let src_dst_mask = src_mask | dst_mask;
+    pub const fn move_color(&mut self, color: Color, from: Square, to: Square) {
+        let from_mask = from.mask();
+        let to_mask = to.mask();
+        let from_to_mask = from_mask | to_mask;
 
-        self.color_masks[color as usize] ^= src_dst_mask;
+        self.color_masks[color as usize] ^= from_to_mask;
     }
 
-    /// Moves both `color` and `piece` from `src_square` to `dst_square`.
+    /// Moves both `color` and `piece` from `from` to `to`.
     pub const fn move_piece_and_color(
         &mut self,
         color: Color,
         piece: Piece,
-        dst_square: Square,
-        src_square: Square,
+        from: Square,
+        to: Square,
     ) {
-        self.move_color(color, dst_square, src_square);
-        self.move_piece(piece, dst_square, src_square);
+        self.move_color(color, from, to);
+        self.move_piece(piece, from, to);
     }
 
     /// Returns the piece type at `square` (from the mailbox; kept in sync with [`Self::piece_masks`]).
@@ -275,43 +275,43 @@ impl Board {
 
     /// Checks if the board is consistent (color masks, individual piece type masks, all occupancy).
     pub const fn is_consistent(&self) -> bool {
-        let white_bb = self.color_masks[Color::White as usize];
-        let black_bb = self.color_masks[Color::Black as usize];
-        if white_bb & black_bb != 0 {
+        let white_mask = self.color_masks[Color::White as usize];
+        let black_mask = self.color_masks[Color::Black as usize];
+        if white_mask & black_mask != 0 {
             return false;
         }
 
-        let all_occupancy_bb = self.piece_masks[Piece::ALL_PIECES as usize];
+        let all_occupancy_mask = self.piece_masks[Piece::ALL_PIECES as usize];
 
-        if (white_bb | black_bb) != all_occupancy_bb {
+        if (white_mask | black_mask) != all_occupancy_mask {
             return false;
         }
 
-        let mut all_occupancy_bb_reconstructed: Bitboard = 0;
+        let mut all_occupancy_mask_reconstructed: Bitboard = 0;
 
         // Same rationale as `piece_at`: `for` over arrays in `const fn` is not yet usable on this
         // toolchain (const `IntoIterator` for `[T; N]`).
         let mut i = 0;
         while i < Piece::PIECES.len() {
             let piece = Piece::PIECES[i];
-            let piece_bb = self.piece_masks[piece as usize];
+            let piece_mask = self.piece_masks[piece as usize];
 
-            if piece_bb & all_occupancy_bb != piece_bb {
+            if piece_mask & all_occupancy_mask != piece_mask {
                 return false;
             }
 
-            if (piece_bb & white_bb) | (piece_bb & black_bb) != piece_bb {
+            if (piece_mask & white_mask) | (piece_mask & black_mask) != piece_mask {
                 return false;
             }
 
-            if piece_bb & all_occupancy_bb_reconstructed != 0 {
+            if piece_mask & all_occupancy_mask_reconstructed != 0 {
                 return false;
             }
-            all_occupancy_bb_reconstructed |= piece_bb;
+            all_occupancy_mask_reconstructed |= piece_mask;
             i += 1;
         }
 
-        if all_occupancy_bb_reconstructed != all_occupancy_bb {
+        if all_occupancy_mask_reconstructed != all_occupancy_mask {
             return false;
         }
 
@@ -340,10 +340,10 @@ impl Board {
 
     /// Checks if the board has one king of each color.
     pub const fn has_valid_kings(&self) -> bool {
-        let white_bb = self.color_masks[Color::White as usize];
-        let kings_bb = self.piece_masks[Piece::King as usize];
+        let white_mask = self.color_masks[Color::White as usize];
+        let kings_mask = self.piece_masks[Piece::King as usize];
 
-        kings_bb.count_ones() == 2 && (white_bb & kings_bb).count_ones() == 1
+        kings_mask.count_ones() == 2 && (white_mask & kings_mask).count_ones() == 1
     }
 
     /// Rigorous check for the validity and consistency of the board.

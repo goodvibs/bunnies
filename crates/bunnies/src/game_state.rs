@@ -97,20 +97,20 @@ impl<P> GameState<P> {
 }
 
 fn classify_terminal<const N: usize, const STM: Color>(
-    pos: &Position<N, STM>,
+    position: &Position<N, STM>,
 ) -> Option<TerminalReason> {
-    if pos.context().halfmove_clock >= 100 {
+    if position.context().halfmove_clock >= 100 {
         return Some(TerminalReason::FiftyMoveRule);
     }
 
-    if pos.board.are_both_sides_insufficient_material(false) {
+    if position.board.are_both_sides_insufficient_material(false) {
         return Some(TerminalReason::InsufficientMaterial);
     }
 
     let mut replies = MoveList::new();
-    pos.generate_legal_moves(&mut replies);
+    position.generate_legal_moves(&mut replies);
     if replies.is_empty() {
-        if pos.is_current_side_in_check() {
+        if position.is_current_side_in_check() {
             Some(TerminalReason::Checkmate)
         } else {
             Some(TerminalReason::Stalemate)
@@ -127,15 +127,15 @@ impl<const N: usize, const STM: Color> Ongoing<Position<N, STM>> {
     }
 
     #[inline]
-    pub fn play_unchecked(self, mv: Move) -> Ongoing<Position<N, { STM.other() }>> {
-        let mut pos = self.0;
-        pos.make_move(mv);
-        Ongoing(pos.rebrand_stm::<{ STM.other() }>())
+    pub fn play_unchecked(self, move_: Move) -> Ongoing<Position<N, { STM.other() }>> {
+        let mut position = self.0;
+        position.make_move(move_);
+        Ongoing(position.rebrand_stm::<{ STM.other() }>())
     }
 
     #[inline]
-    pub fn play_and_classify(self, mv: Move) -> GameState<Position<N, { STM.other() }>> {
-        let next = self.play_unchecked(mv).into_position();
+    pub fn play_and_classify(self, move_: Move) -> GameState<Position<N, { STM.other() }>> {
+        let next = self.play_unchecked(move_).into_position();
         match classify_terminal(&next) {
             Some(reason) => GameState::from_terminal(next, reason),
             None => GameState::from_ongoing(next),

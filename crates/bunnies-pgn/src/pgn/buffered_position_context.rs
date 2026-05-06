@@ -24,10 +24,11 @@ impl<const N: usize> PgnBufferedPositionContext<N, { Color::White }, { Color::Bl
         new_move_data: PgnMoveData,
         new_state: Position<N, { Color::Black }>,
     ) -> PgnBufferedPositionContextDyn<N> {
-        let new_node = Rc::new(RefCell::new(MoveTreeNode::<N, { Color::Black }, { Color::White }>::new(
-            new_move_data,
-            None,
-        )));
+        let new_node = Rc::new(RefCell::new(MoveTreeNode::<
+            N,
+            { Color::Black },
+            { Color::White },
+        >::new(new_move_data, None)));
         self.current.node.borrow_mut().add_continuation(&new_node);
         let new_current = PgnPositionContext::<N, { Color::Black }, { Color::White }> {
             node: new_node,
@@ -46,10 +47,11 @@ impl<const N: usize> PgnBufferedPositionContext<N, { Color::Black }, { Color::Wh
         new_move_data: PgnMoveData,
         new_state: Position<N, { Color::White }>,
     ) -> PgnBufferedPositionContextDyn<N> {
-        let new_node = Rc::new(RefCell::new(MoveTreeNode::<N, { Color::White }, { Color::Black }>::new(
-            new_move_data,
-            None,
-        )));
+        let new_node = Rc::new(RefCell::new(MoveTreeNode::<
+            N,
+            { Color::White },
+            { Color::Black },
+        >::new(new_move_data, None)));
         self.current.node.borrow_mut().add_continuation(&new_node);
         let new_current = PgnPositionContext::<N, { Color::White }, { Color::Black }> {
             node: new_node,
@@ -71,8 +73,12 @@ pub(crate) enum PgnBufferedPositionContextDyn<const N: usize> {
 impl<const N: usize> PgnBufferedPositionContextDyn<N> {
     pub(crate) fn fullmove(&self) -> u16 {
         match self {
-            PgnBufferedPositionContextDyn::White(ctx) => ctx.current.state_after_move.get_fullmove(),
-            PgnBufferedPositionContextDyn::Black(ctx) => ctx.current.state_after_move.get_fullmove(),
+            PgnBufferedPositionContextDyn::White(ctx) => {
+                ctx.current.state_after_move.get_fullmove()
+            }
+            PgnBufferedPositionContextDyn::Black(ctx) => {
+                ctx.current.state_after_move.get_fullmove()
+            }
         }
     }
 
@@ -84,17 +90,17 @@ impl<const N: usize> PgnBufferedPositionContextDyn<N> {
     }
 
     pub(crate) fn append_move(self, new_move_data: PgnMoveData) -> Self {
-        let mv = new_move_data.mv;
+        let move_ = new_move_data.move_;
         match self {
             PgnBufferedPositionContextDyn::White(ctx) => {
                 let mut next = ctx.current.state_after_move.clone();
-                next.make_move(mv);
+                next.make_move(move_);
                 let next = next.rebrand_stm::<{ Color::Black }>();
                 ctx.append_new_move(new_move_data, next)
             }
             PgnBufferedPositionContextDyn::Black(ctx) => {
                 let mut next = ctx.current.state_after_move.clone();
-                next.make_move(mv);
+                next.make_move(move_);
                 let next = next.rebrand_stm::<{ Color::White }>();
                 ctx.append_new_move(new_move_data, next)
             }
@@ -103,34 +109,38 @@ impl<const N: usize> PgnBufferedPositionContextDyn<N> {
 
     pub(crate) fn previous_as_current(&self) -> Option<Self> {
         match self {
-            PgnBufferedPositionContextDyn::White(ctx) => ctx.previous.clone().map(|previous| match previous {
-                PgnPositionContextDyn::White(previous) => {
-                    PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
-                        current: previous,
-                        previous: None,
-                    })
-                }
-                PgnPositionContextDyn::Black(previous) => {
-                    PgnBufferedPositionContextDyn::Black(PgnBufferedPositionContext {
-                        current: previous,
-                        previous: None,
-                    })
-                }
-            }),
-            PgnBufferedPositionContextDyn::Black(ctx) => ctx.previous.clone().map(|previous| match previous {
-                PgnPositionContextDyn::White(previous) => {
-                    PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
-                        current: previous,
-                        previous: None,
-                    })
-                }
-                PgnPositionContextDyn::Black(previous) => {
-                    PgnBufferedPositionContextDyn::Black(PgnBufferedPositionContext {
-                        current: previous,
-                        previous: None,
-                    })
-                }
-            }),
+            PgnBufferedPositionContextDyn::White(ctx) => {
+                ctx.previous.clone().map(|previous| match previous {
+                    PgnPositionContextDyn::White(previous) => {
+                        PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
+                            current: previous,
+                            previous: None,
+                        })
+                    }
+                    PgnPositionContextDyn::Black(previous) => {
+                        PgnBufferedPositionContextDyn::Black(PgnBufferedPositionContext {
+                            current: previous,
+                            previous: None,
+                        })
+                    }
+                })
+            }
+            PgnBufferedPositionContextDyn::Black(ctx) => {
+                ctx.previous.clone().map(|previous| match previous {
+                    PgnPositionContextDyn::White(previous) => {
+                        PgnBufferedPositionContextDyn::White(PgnBufferedPositionContext {
+                            current: previous,
+                            previous: None,
+                        })
+                    }
+                    PgnPositionContextDyn::Black(previous) => {
+                        PgnBufferedPositionContextDyn::Black(PgnBufferedPositionContext {
+                            current: previous,
+                            previous: None,
+                        })
+                    }
+                })
+            }
         }
     }
 }

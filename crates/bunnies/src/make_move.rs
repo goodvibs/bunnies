@@ -16,111 +16,104 @@ use crate::Square;
 impl<const N: usize, const STM: Color> Position<N, STM> {
     /// Applies a move in place, updating board state for the opponent.
     ///
-    /// After this returns, the layout matches the destination type of [`Position::make_move`]
+    /// After this returns, the layout matches the resulting type of [`Position::make_move`]
     /// (`Position<N, { STM.other() }>`).
-    pub fn make_move(&mut self, mv: Move) {
+    pub fn make_move(&mut self, move_: Move) {
         debug_assert!(self.num_contexts < N);
 
-        let src_square = mv.source();
-        let dst_square = mv.destination();
-        let flag = mv.flag();
+        let from = move_.from();
+        let to = move_.to();
+        let flag = move_.flag();
 
         let mut new_context = PositionContext::blank();
         new_context.halfmove_clock = self.context().halfmove_clock + 1;
         new_context.castling_rights = self.context().castling_rights;
 
-        let piece_at_dst = self.board.piece_at(dst_square);
-        if piece_at_dst != Piece::Null {
+        let piece_at_to = self.board.piece_at(to);
+        if piece_at_to != Piece::Null {
             self.board
-                .remove_piece_and_color(STM.other(), piece_at_dst, dst_square);
-            new_context.captured_piece = piece_at_dst;
+                .remove_piece_and_color(STM.other(), piece_at_to, to);
+            new_context.captured_piece = piece_at_to;
             new_context.halfmove_clock = 0;
         }
 
-        let piece_at_src = self.board.piece_at(src_square);
-        if piece_at_src == Piece::Pawn {
+        let piece_at_from = self.board.piece_at(from);
+        if piece_at_from == Piece::Pawn {
             new_context.halfmove_clock = 0;
-            new_context.double_pawn_push_file =
-                DoublePawnPushFile::from_pawn_step(dst_square, src_square);
+            new_context.double_pawn_push_file = DoublePawnPushFile::from_pawn_step(from, to);
         }
 
         self.board
-            .move_piece_and_color(STM, piece_at_src, dst_square, src_square);
+            .move_piece_and_color(STM, piece_at_from, from, to);
 
         match flag {
             MoveFlag::Promotion => {
-                self.board.remove_piece_at(Piece::Pawn, dst_square);
-                self.board.put_piece_at(mv.promotion(), dst_square);
+                self.board.remove_piece_at(Piece::Pawn, to);
+                self.board.put_piece_at(move_.promotion(), to);
                 new_context.halfmove_clock = 0;
             }
             MoveFlag::EnPassant => {
-                let capture_square = Square::from_u8(
-                    (dst_square as u8).wrapping_add_signed(en_passant_capture_offset(STM)),
-                );
+                let capture_square =
+                    Square::from_u8((to as u8).wrapping_add_signed(en_passant_capture_offset(STM)));
                 self.board
                     .remove_piece_and_color(STM.other(), Piece::Pawn, capture_square);
                 new_context.captured_piece = Piece::Pawn;
                 new_context.halfmove_clock = 0;
             }
             MoveFlag::Castling => {
-                let flank = dst_square.file().flank();
+                let flank = to.file().flank();
                 let rook_from = castling_rook_from_square(flank, STM);
                 let rook_to = castling_rook_to_square(flank, STM);
-                self.board.move_color(STM, rook_to, rook_from);
-                self.board.move_piece(Piece::Rook, rook_to, rook_from);
+                self.board.move_color(STM, rook_from, rook_to);
+                self.board.move_piece(Piece::Rook, rook_from, rook_to);
                 new_context.halfmove_clock = 0;
             }
             _ => {}
         }
 
-        new_context.castling_rights = new_context
-            .castling_rights
-            .after_move(src_square)
-            .after_move(dst_square);
+        new_context.castling_rights = new_context.castling_rights.after_move(from).after_move(to);
 
         self.halfmove += 1;
         self.push_context(new_context);
         self.update_pins_and_checks_for_stm(STM.other());
     }
 
-    /// Undoes a move in place. After this, memory matches the destination type of [`Position::unmake_move`].
-    pub fn unmake_move(&mut self, mv: Move) {
-        let src_square = mv.source();
-        let dst_square = mv.destination();
-        let flag = mv.flag();
+    /// Undoes a move in place. After this, memory matches the resulting type of [`Position::unmake_move`].
+    pub fn unmake_move(&mut self, move_: Move) {
+        let from = move_.from();
+        let to = move_.to();
+        let flag = move_.flag();
         let side_just_moved = STM.other();
 
-        let piece_at_dst = self.board.piece_at(dst_square);
+        let piece_at_to = self.board.piece_at(to);
         self.board
-            .move_piece_and_color(side_just_moved, piece_at_dst, src_square, dst_square);
+            .move_piece_and_color(side_just_moved, piece_at_to, to, from);
 
         let captured_piece = self.context().captured_piece;
         if captured_piece != Piece::Null {
-            self.board
-                .put_piece_and_color(STM, captured_piece, dst_square);
+            self.board.put_piece_and_color(STM, captured_piece, to);
         }
 
         match flag {
             MoveFlag::NormalMove => {}
             MoveFlag::Promotion => {
-                let promoted = self.board.piece_at(src_square);
-                self.board.remove_piece_at(promoted, src_square);
-                self.board.put_piece_at(Piece::Pawn, src_square);
+                let promoted = self.board.piece_at(from);
+                self.board.remove_piece_at(promoted, from);
+                self.board.put_piece_at(Piece::Pawn, from);
             }
             MoveFlag::EnPassant => {
                 let capture_square = Square::from_u8(
-                    (dst_square as u8)
-                        .wrapping_add_signed(en_passant_capture_offset(side_just_moved)),
+                    (to as u8).wrapping_add_signed(en_passant_capture_offset(side_just_moved)),
                 );
                 self.board
-                    .move_piece_and_color(STM, Piece::Pawn, capture_square, dst_square);
+                    .move_piece_and_color(STM, Piece::Pawn, to, capture_square);
             }
             MoveFlag::Castling => {
-                let flank = dst_square.file().flank();
+                let flank = to.file().flank();
                 let rook_from = castling_rook_from_square(flank, side_just_moved);
                 let rook_to = castling_rook_to_square(flank, side_just_moved);
                 self.board
-                    .move_piece_and_color(side_just_moved, Piece::Rook, rook_from, rook_to);
+                    .move_piece_and_color(side_just_moved, Piece::Rook, rook_to, rook_from);
             }
         }
 

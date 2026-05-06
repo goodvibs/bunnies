@@ -1,14 +1,14 @@
+use crate::Board;
 use crate::MoveFlag;
 use crate::Piece;
 use crate::Square;
-use crate::Board;
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
-    /// format: {6 bit dest}{6 bit src}{2 bit promotion Piece value minus 2}{2 bit MoveFlag value}
+    /// format: {6 bit to}{6 bit from}{2 bit promotion Piece value minus 2}{2 bit MoveFlag value}
     pub value: u16,
 }
 
@@ -17,38 +17,38 @@ impl Move {
     pub const DEFAULT_PROMOTION_VALUE: Piece = Piece::Rook;
 
     /// Creates a new move.
-    pub const fn new(src: Square, dst: Square, promotion: Piece, flag: MoveFlag) -> Move {
+    pub const fn new(from: Square, to: Square, promotion: Piece, flag: MoveFlag) -> Move {
         debug_assert!(
             !matches!(promotion, Piece::King | Piece::Pawn),
             "Invalid promotion piece type"
         );
         Move {
-            value: ((dst as u16) << 10)
-                | ((src as u16) << 4)
+            value: ((to as u16) << 10)
+                | ((from as u16) << 4)
                 | ((promotion as u16 - 2) << 2)
                 | flag as u16,
         }
     }
 
     /// Creates a new move with the default promotion value.
-    pub const fn new_non_promotion(src: Square, dst: Square, flag: MoveFlag) -> Move {
-        Move::new(src, dst, Move::DEFAULT_PROMOTION_VALUE, flag)
+    pub const fn new_non_promotion(from: Square, to: Square, flag: MoveFlag) -> Move {
+        Move::new(from, to, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
-    pub const fn new_promotion(src: Square, dst: Square, promotion: Piece) -> Move {
-        Move::new(src, dst, promotion, MoveFlag::Promotion)
+    pub const fn new_promotion(from: Square, to: Square, promotion: Piece) -> Move {
+        Move::new(from, to, promotion, MoveFlag::Promotion)
     }
 
-    /// Gets the destination square of the move.
-    pub const fn destination(&self) -> Square {
-        let dst_int = (self.value >> 10) as u8;
-        Square::from_u8(dst_int)
+    /// Gets the target square of the move.
+    pub const fn to(&self) -> Square {
+        let to_int = (self.value >> 10) as u8;
+        Square::from_u8(to_int)
     }
 
-    /// Gets the source square of the move.
-    pub const fn source(&self) -> Square {
-        let src_int = ((self.value & 0b0000001111110000) >> 4) as u8;
-        Square::from_u8(src_int)
+    /// Gets the origin square of the move.
+    pub const fn from(&self) -> Square {
+        let from_int = ((self.value & 0b0000001111110000) >> 4) as u8;
+        Square::from_u8(from_int)
     }
 
     /// Gets the promotion piece type of the move.
@@ -65,7 +65,7 @@ impl Move {
 
     pub fn is_capture_on_board(&self, board: &Board) -> bool {
         match self.flag() {
-            MoveFlag::NormalMove | MoveFlag::Promotion => board.is_occupied_at(self.destination()),
+            MoveFlag::NormalMove | MoveFlag::Promotion => board.is_occupied_at(self.to()),
             MoveFlag::EnPassant => true,
             MoveFlag::Castling => false,
         }
@@ -79,8 +79,8 @@ impl Move {
         };
         format!(
             "{}{}{}",
-            self.source().algebraic(),
-            self.destination().algebraic(),
+            self.from().algebraic(),
+            self.to().algebraic(),
             promotion_str
         )
     }
@@ -106,17 +106,17 @@ mod tests {
 
     #[test]
     fn test_move() {
-        for dst_square in Square::ALL {
-            for src_square in Square::ALL {
+        for to in Square::ALL {
+            for from in Square::ALL {
                 for promotion_piece in Piece::PROMOTION_PIECES {
                     for flag_int in 0..4 {
                         let flag = unsafe { MoveFlag::from(flag_int) };
 
-                        let mv = Move::new(src_square, dst_square, promotion_piece, flag);
-                        assert_eq!(mv.destination(), dst_square);
-                        assert_eq!(mv.source(), src_square);
-                        assert_eq!(mv.promotion(), promotion_piece);
-                        assert_eq!(mv.flag(), flag);
+                        let move_ = Move::new(from, to, promotion_piece, flag);
+                        assert_eq!(move_.to(), to);
+                        assert_eq!(move_.from(), from);
+                        assert_eq!(move_.promotion(), promotion_piece);
+                        assert_eq!(move_.flag(), flag);
                     }
                 }
             }

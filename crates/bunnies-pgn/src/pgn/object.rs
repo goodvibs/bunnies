@@ -23,10 +23,11 @@ impl<const N: usize> PgnObject<N> {
     pub fn new() -> PgnObject<N> {
         PgnObject {
             tags: IndexMap::new(),
-            tree_root: Rc::new(RefCell::new(
-                MoveTreeNode::<N, { Color::White }, { Color::Black }>::new_root(
-                None,
-            ))),
+            tree_root: Rc::new(RefCell::new(MoveTreeNode::<
+                N,
+                { Color::White },
+                { Color::Black },
+            >::new_root(None))),
         }
     }
 

@@ -12,7 +12,7 @@
 pub use bunnies::*;
 
 pub mod position {
-    pub use bunnies::{Board, Position, INITIAL_FEN};
+    pub use bunnies::{Board, INITIAL_FEN, Position};
 }
 
 pub mod r#move {
