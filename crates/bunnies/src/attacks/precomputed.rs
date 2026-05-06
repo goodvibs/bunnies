@@ -26,20 +26,20 @@ const SINGLE_KNIGHT_ATTACKS_DATA: [Bitboard; 64] = {
 };
 
 /// Precomputed attacks table for kings.
-pub static SINGLE_KING_ATTACKS: SquaresToMasks =
+pub const SINGLE_KING_ATTACKS: SquaresToMasks =
     SquaresToMasks::from_array(SINGLE_KING_ATTACKS_DATA);
 
 /// Precomputed attacks table for knights.
-pub static SINGLE_KNIGHT_ATTACKS: SquaresToMasks =
+pub const SINGLE_KNIGHT_ATTACKS: SquaresToMasks =
     SquaresToMasks::from_array(SINGLE_KNIGHT_ATTACKS_DATA);
 
 /// Returns a precomputed bitboard with all squares attacked by a knight on `src_square`
-pub fn precomputed_single_king_attacks(src_square: Square) -> Bitboard {
+pub const fn precomputed_single_king_attacks(src_square: Square) -> Bitboard {
     SINGLE_KING_ATTACKS.get(src_square)
 }
 
 /// Returns a precomputed bitboard with all squares attacked by a knight on `src_square`
-pub fn precomputed_single_knight_attacks(src_square: Square) -> Bitboard {
+pub const fn precomputed_single_knight_attacks(src_square: Square) -> Bitboard {
     SINGLE_KNIGHT_ATTACKS.get(src_square)
 }
 

@@ -83,7 +83,8 @@ impl const SquareDeltaUtils for SquareDelta {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Eq, Debug)]
+#[derive_const(PartialEq)]
 /// Represents a square on the chess board.
 pub enum Square {
     A8 = 0,
@@ -453,7 +454,7 @@ const DIAGONALS_MASK_DATA: [Bitboard; 64] = {
     arr
 };
 
-static DIAGONALS_MASK_LOOKUP: SquaresToMasks = SquaresToMasks::from_array(DIAGONALS_MASK_DATA);
+const DIAGONALS_MASK_LOOKUP: SquaresToMasks = SquaresToMasks::from_array(DIAGONALS_MASK_DATA);
 
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

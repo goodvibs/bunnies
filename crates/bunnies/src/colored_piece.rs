@@ -2,7 +2,8 @@ use crate::Color;
 use crate::Piece;
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Eq, Debug)]
+#[derive_const(PartialEq)]
 /// Represents a colored (white or black) piece on the board.
 pub enum ColoredPiece {
     NoPiece = 0,

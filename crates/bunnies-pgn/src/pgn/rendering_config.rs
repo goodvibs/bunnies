@@ -1,5 +1,6 @@
 /// Contains a configuration for rendering PGN (Portable Game Notation) data.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq)]
+#[derive_const(PartialEq)]
 pub struct PgnRenderingConfig {
     pub include_annotations: bool,
     pub include_nags: bool,
@@ -8,17 +9,21 @@ pub struct PgnRenderingConfig {
 
 impl Default for PgnRenderingConfig {
     fn default() -> Self {
+        Self::all_markings()
+    }
+}
+
+impl PgnRenderingConfig {
+    pub const fn all_markings() -> PgnRenderingConfig {
         PgnRenderingConfig {
             include_annotations: true,
             include_nags: true,
             include_comments: true,
         }
     }
-}
 
-impl PgnRenderingConfig {
     /// Creates a new `PgnRenderingConfig` specifying no annotations, NAGs, or comments.
-    pub fn no_markings() -> PgnRenderingConfig {
+    pub const fn no_markings() -> PgnRenderingConfig {
         PgnRenderingConfig {
             include_annotations: false,
             include_nags: false,

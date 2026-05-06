@@ -3,7 +3,8 @@ use crate::square::same_line;
 use crate::utilities::SquaresTwoToOneMapping;
 
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, Eq, Debug)]
+#[derive_const(PartialEq)]
 pub struct UnifiedMoveDirection {
     pub value: u8,
 }
@@ -72,7 +73,8 @@ impl UnifiedMoveDirection {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, Eq, Debug)]
+#[derive_const(PartialEq)]
 /// Represents the direction of a Queen-like move (8 directions).
 pub enum QueenLikeMoveDirection {
     Up = 0,
@@ -169,7 +171,8 @@ impl QueenLikeMoveDirection {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, Eq, Debug)]
+#[derive_const(PartialEq)]
 /// Represents the direction of a Knight move (8 directions).
 pub enum KnightMoveDirection {
     TwoUpOneRight = 0,
@@ -280,7 +283,7 @@ static MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
     arr
 };
 
-static MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> =
+const MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> =
     SquaresTwoToOneMapping::from_array(MOVE_DIRECTION_DATA);
 
 #[cfg(test)]

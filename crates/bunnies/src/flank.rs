@@ -9,7 +9,8 @@ use crate::file::File;
 use crate::rank::Rank;
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Eq, Debug, Hash)]
+#[derive_const(PartialEq)]
 pub enum Flank {
     Kingside = 0,
     Queenside = 1,

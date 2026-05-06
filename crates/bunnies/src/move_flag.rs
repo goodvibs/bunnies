@@ -1,7 +1,8 @@
 /// Enum representing the different types of moves that can be made in a game of chess.
 /// Used in the Move struct.
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Eq, Debug)]
+#[derive_const(PartialEq)]
 pub enum MoveFlag {
     NormalMove = 0,
     Promotion = 1,

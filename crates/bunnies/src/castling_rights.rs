@@ -5,7 +5,8 @@ use crate::{Color, Flank, Square};
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Eq, Debug, Hash)]
+#[derive_const(PartialEq)]
 pub enum CastlingRights {
     B0000 = 0,
     B0001 = 1,

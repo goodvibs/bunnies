@@ -30,14 +30,14 @@ pub const fn multi_king_attacks(kings_mask: Bitboard) -> Bitboard {
         | (kings_mask >> 1 & !File::A.mask())
 }
 
-pub fn multi_pawn_attacks_left(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+pub const fn multi_pawn_attacks_left(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
     match by_color {
         Color::White => pawns_mask << 9 & !File::H.mask(),
         Color::Black => pawns_mask >> 9 & !File::A.mask(),
     }
 }
 
-pub fn multi_pawn_attacks_right(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+pub const fn multi_pawn_attacks_right(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
     match by_color {
         Color::White => pawns_mask << 7 & !File::A.mask(),
         Color::Black => pawns_mask >> 7 & !File::H.mask(),
@@ -45,7 +45,7 @@ pub fn multi_pawn_attacks_right(pawns_mask: Bitboard, by_color: Color) -> Bitboa
 }
 
 /// Returns a bitboard with all squares attacked by pawns indicated by the bits in `pawns_mask`
-pub fn multi_pawn_attacks(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+pub const fn multi_pawn_attacks(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
     match by_color {
         Color::White => (pawns_mask << 9 & !File::H.mask()) | (pawns_mask << 7 & !File::A.mask()),
         Color::Black => (pawns_mask >> 7 & !File::H.mask()) | (pawns_mask >> 9 & !File::A.mask()),
@@ -53,7 +53,7 @@ pub fn multi_pawn_attacks(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
 }
 
 /// Returns a bitboard with all squares that pawns indicated by the bits in `pawns_mask` can move to
-pub fn multi_pawn_moves(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
+pub const fn multi_pawn_moves(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
     match by_color {
         Color::White => pawns_mask << 8,
         Color::Black => pawns_mask >> 8,
@@ -62,7 +62,7 @@ pub fn multi_pawn_moves(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
 
 /// Returns a bitboard with all squares attacked by a rook on `src_square`
 /// with `occupied_mask` as the mask of occupied squares
-pub fn manual_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
+pub const fn manual_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
     let src_square_mask = src_square.mask();
     let mut result: Bitboard = 0;
 

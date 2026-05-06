@@ -264,7 +264,7 @@ mod state_tests {
         pos.generate_legal_moves(&mut ml);
         let mv2 = *ml.as_slice().first().expect("at least one legal move");
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let _ = pos.make_move(mv2);
+            pos.make_move(mv2);
         }));
         assert!(
             r.is_err(),

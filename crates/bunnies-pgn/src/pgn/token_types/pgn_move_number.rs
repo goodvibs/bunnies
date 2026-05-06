@@ -9,7 +9,8 @@ const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
 static COMPILED_MOVE_NUMBER_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(MOVE_NUMBER_REGEX).unwrap());
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
+#[derive_const(PartialEq)]
 pub struct PgnMoveNumber {
     pub fullmove_number: u16,
 }

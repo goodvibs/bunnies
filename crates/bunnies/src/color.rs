@@ -1,7 +1,8 @@
 use crate::{Rank, Square};
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, std::marker::ConstParamTy)]
+#[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
+#[derive_const(PartialEq)]
 /// Represents a side of the board (piece color and, on [`crate::position::Position`], **side to move**
 /// via the const-generic parameter `const STM: Color`, spelled `Color::White` / `Color::Black`).
 pub enum Color {

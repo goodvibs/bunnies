@@ -393,11 +393,11 @@ mod const_eval_smoke_tests {
     const INITIAL: Board = Board::initial();
     const E1_HAS_PIECE: bool = INITIAL.is_occupied_at(Square::E1);
     const PAWN_MASK: crate::Bitboard = INITIAL.piece_mask::<{ Piece::Pawn }>();
+    const _: () = assert!(E1_HAS_PIECE);
 
     #[test]
     fn initial_board_const_matches_runtime() {
         assert_eq!(INITIAL, Board::initial());
-        assert!(E1_HAS_PIECE);
         assert_eq!(INITIAL.piece_at(Square::E1), Piece::King);
         assert_eq!(PAWN_MASK, INITIAL.piece_mask::<{ Piece::Pawn }>());
     }
