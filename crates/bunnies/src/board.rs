@@ -86,32 +86,39 @@ impl Board {
         }
     }
 
+    #[inline]
     pub const fn piece_mask<const P: Piece>(&self) -> Bitboard {
         self.piece_masks[P as usize]
     }
 
     /// When the piece type is only known at runtime (e.g. loop variable), use this instead of [`Self::piece_mask`].
+    #[inline]
     pub const fn piece_mask_at(&self, piece_type: Piece) -> Bitboard {
         self.piece_masks[piece_type as usize]
     }
 
+    #[inline]
     pub const fn color_mask<const C: Color>(&self) -> Bitboard {
         self.color_masks[C as usize]
     }
 
     /// When the color is only known at runtime, use this instead of [`Self::color_mask`].
+    #[inline]
     pub const fn color_mask_at(&self, color: Color) -> Bitboard {
         self.color_masks[color as usize]
     }
 
+    #[inline]
     pub const fn pieces(&self) -> Bitboard {
         self.piece_mask::<{ Piece::ALL_PIECES }>()
     }
 
+    #[inline]
     pub const fn diagonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Bishop }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
+    #[inline]
     pub const fn orthogonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Rook }>() | self.piece_mask::<{ Piece::Queen }>()
     }
@@ -169,6 +176,7 @@ impl Board {
         self.is_square_attacked_after_move(square, by_color, 0)
     }
 
+    #[inline]
     pub fn is_square_attacked_after_move(
         &self,
         square: Square,
@@ -182,12 +190,14 @@ impl Board {
     }
 
     /// Populates a square with `color`, but no piece type.
+    #[inline]
     pub const fn put_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] |= mask;
     }
 
     /// Populates a square with `piece_type`, but no color.
+    #[inline]
     pub const fn put_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] |= mask;
@@ -196,18 +206,21 @@ impl Board {
     }
 
     /// Populates a square with both `color` and `piece`.
+    #[inline]
     pub const fn put_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.put_color_at(color, square);
         self.put_piece_at(piece, square);
     }
 
     /// Removes `color` from a square, but not piece type.
+    #[inline]
     pub const fn remove_color_at(&mut self, color: Color, square: Square) {
         let mask = square.mask();
         self.color_masks[color as usize] &= !mask;
     }
 
     /// Removes `piece_type` from a square, but not color.
+    #[inline]
     pub const fn remove_piece_at(&mut self, piece_type: Piece, square: Square) {
         let mask = square.mask();
         self.piece_masks[piece_type as usize] &= !mask;
@@ -216,6 +229,7 @@ impl Board {
     }
 
     /// Removes both `color` and `piece` from a square.
+    #[inline]
     pub const fn remove_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.remove_color_at(color, square);
         self.remove_piece_at(piece, square);
@@ -223,6 +237,7 @@ impl Board {
 
     /// Moves `piece_type` from `from` to `to`.
     /// Does not update color.
+    #[inline]
     pub const fn move_piece(&mut self, piece_type: Piece, from: Square, to: Square) {
         let from_mask = from.mask();
         let to_mask = to.mask();
@@ -237,6 +252,7 @@ impl Board {
 
     /// Moves `color` from `from` to `to`.
     /// Does not update color.
+    #[inline]
     pub const fn move_color(&mut self, color: Color, from: Square, to: Square) {
         let from_mask = from.mask();
         let to_mask = to.mask();
@@ -246,6 +262,7 @@ impl Board {
     }
 
     /// Moves both `color` and `piece` from `from` to `to`.
+    #[inline]
     pub const fn move_piece_and_color(
         &mut self,
         color: Color,
@@ -263,11 +280,13 @@ impl Board {
         self.pieces[square as usize]
     }
 
+    #[inline]
     pub const fn is_occupied_at(&self, square: Square) -> bool {
         (self.pieces[square as usize] as u8) != (Piece::Null as u8)
     }
 
     /// Returns the color at `square`.
+    #[inline]
     pub const fn color_at(&self, square: Square) -> Color {
         let mask = square.mask();
         Color::from_is_black(self.color_masks[Color::Black as usize] & mask != 0)
