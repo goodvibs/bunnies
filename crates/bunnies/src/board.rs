@@ -379,7 +379,7 @@ impl Board {
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.unicode_charboard().to_string())
+        write!(f, "{}", self.unicode_charboard().to_string())
     }
 }
 

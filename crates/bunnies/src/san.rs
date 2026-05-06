@@ -49,11 +49,7 @@ impl Move {
 
             format!(
                 "{}{}{}{}{}",
-                piece_str,
-                disambiguation_str,
-                capture_str,
-                to.to_string(),
-                promotion_str
+                piece_str, disambiguation_str, capture_str, to, promotion_str
             )
         };
 

@@ -50,6 +50,7 @@ pub use fen::*;
 pub use file::File;
 pub use flank::*;
 pub use game_state::*;
+#[allow(unused_imports)]
 pub use insufficient_material::*;
 pub use r#move::Move;
 pub use move_flag::MoveFlag;
@@ -59,5 +60,6 @@ pub use position::Position;
 pub use rank::Rank;
 pub use square::*;
 pub use typed_position::TypedPosition;
+#[allow(unused_imports)]
 pub use validation::*;
 pub use zobrist::*;

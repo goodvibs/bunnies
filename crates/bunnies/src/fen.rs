@@ -70,9 +70,9 @@ fn parse_en_passant_target(
                 fen_en_passant_target.to_string(),
             ));
         }
-        let file = fen_en_passant_target.chars().nth(0).unwrap();
+        let file = fen_en_passant_target.chars().next().unwrap();
         let rank = fen_en_passant_target.chars().nth(1).unwrap();
-        if file < 'a' || file > 'h' || rank < '1' || rank > '8' {
+        if !('a'..='h').contains(&file) || !('1'..='8').contains(&rank) {
             return Err(FenParseError::InvalidEnPassantTarget(
                 fen_en_passant_target.to_string(),
             ));

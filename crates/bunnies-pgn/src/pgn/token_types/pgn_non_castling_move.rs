@@ -51,22 +51,24 @@ impl PgnMove for PgnNonCastlingMove {
             _ => Piece::Null,
         };
 
-        if self.to != to {
+        if self.to != to
+            || self.promoted_to != promotion
+            || self.piece_moved != board.piece_at(from)
+            || self.is_capture != move_.is_capture_on_board(board)
+        {
             return false;
-        } else if self.promoted_to != promotion {
+        }
+
+        if let Some(file) = self.disambiguation_file
+            && from.file() as u8 != file as u8 - b'a'
+        {
             return false;
-        } else if self.piece_moved != board.piece_at(from) {
+        }
+
+        if let Some(rank) = self.disambiguation_rank
+            && from.rank() as u8 != rank as u8 - b'1'
+        {
             return false;
-        } else if self.is_capture != move_.is_capture_on_board(board) {
-            return false;
-        } else if let Some(file) = self.disambiguation_file {
-            if from.file() as u8 != file as u8 - 'a' as u8 {
-                return false;
-            }
-        } else if let Some(rank) = self.disambiguation_rank {
-            if from.rank() as u8 != rank as u8 - '1' as u8 {
-                return false;
-            }
         }
 
         true
@@ -74,44 +76,6 @@ impl PgnMove for PgnNonCastlingMove {
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo {
         &self.common_move_info
-    }
-
-    fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo {
-        &mut self.common_move_info
-    }
-
-    fn render(&self, include_annotation: bool, include_nag: bool) -> String {
-        let piece = if self.piece_moved == Piece::Pawn {
-            ""
-        } else {
-            &*self.piece_moved.uppercase_ascii().to_string()
-        };
-
-        let disambiguation = match (self.disambiguation_file, self.disambiguation_rank) {
-            (Some(file), Some(rank)) => format!("{}{}", file, rank),
-            (Some(file), None) => file.to_string(),
-            (None, Some(rank)) => rank.to_string(),
-            (None, None) => "".to_string(),
-        };
-
-        let capture = if self.is_capture { "x" } else { "" };
-
-        let destination = self.to.to_string();
-
-        let promotion = if self.promoted_to != Piece::Null {
-            format!("={}", self.promoted_to.uppercase_ascii())
-        } else {
-            "".to_string()
-        };
-
-        let ending = self
-            .common_move_info
-            .render(include_annotation, include_nag);
-
-        format!(
-            "{}{}{}{}{}{}",
-            piece, disambiguation, capture, destination, promotion, ending
-        )
     }
 }
 
@@ -129,8 +93,8 @@ impl ParsablePgnToken for PgnNonCastlingMove {
 
             let to_file_char = captures.get(5).unwrap().as_str().chars().next().unwrap();
             let to_rank_char = captures.get(6).unwrap().as_str().chars().next().unwrap();
-            let to_file = to_file_char as u8 - 'a' as u8;
-            let to_rank = to_rank_char as u8 - '1' as u8;
+            let to_file = to_file_char as u8 - b'a';
+            let to_rank = to_rank_char as u8 - b'1';
             let to = Square::from_rank_and_file(Rank::from_u8(to_rank), File::from_u8(to_file));
 
             let promoted_to = match captures.get(7) {

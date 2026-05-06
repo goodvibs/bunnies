@@ -1,10 +1,11 @@
 //! Chess files a–h. Line masks derived from a single file-a bitboard, shifted by file index (chmog-style).
 
 use crate::{Bitboard, Flank};
+use std::hash::{Hash, Hasher};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
 #[repr(u8)]
-#[derive(Clone, Copy, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Eq, Debug)]
 pub enum File {
     A = 0,
     B = 1,
@@ -52,5 +53,11 @@ impl File {
 impl const PartialEq for File {
     fn eq(&self, other: &Self) -> bool {
         *self as u8 == *other as u8
+    }
+}
+
+impl Hash for File {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (*self as u8).hash(state);
     }
 }

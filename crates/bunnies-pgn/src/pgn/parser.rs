@@ -31,7 +31,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         let pgn_object = PgnObject::new();
         let current_node = &pgn_object.tree_root;
         let buffered_position_manager = PgnBufferedPositionBrancher::new(
-            &current_node,
+            current_node,
             Position::<N, { Color::White }>::initial(),
         );
         PgnParser {
@@ -207,7 +207,7 @@ impl<'a, const N: usize> PgnParser<'a, N> {
                     let move_data = PgnMoveData {
                         move_: matched_move,
                         annotation: pgn_move.get_common_move_info().annotation.clone(),
-                        nag: pgn_move.get_common_move_info().nag.clone(),
+                        nag: pgn_move.get_common_move_info().nag,
                     };
                     let new_context = self
                         .buffered_position_manager

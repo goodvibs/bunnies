@@ -11,6 +11,9 @@ pub enum MoveFlag {
 
 impl MoveFlag {
     /// Converts a u8 value to a MoveFlag.
+    ///
+    /// # Safety
+    /// `value` must be in the range `0..4`.
     pub const unsafe fn from(value: u8) -> MoveFlag {
         debug_assert!(value < 4, "Invalid MoveFlag value");
         unsafe { std::mem::transmute::<u8, MoveFlag>(value) }

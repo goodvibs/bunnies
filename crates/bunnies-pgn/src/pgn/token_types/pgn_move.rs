@@ -7,10 +7,6 @@ pub trait PgnMove: Debug {
     fn matches_move(&self, move_: Move, from_board: &Board) -> bool;
 
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
-
-    fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo;
-
-    fn render(&self, include_annotation: bool, include_nag: bool) -> String;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -62,10 +58,7 @@ impl PgnCommonMoveInfo {
             None => (false, false),
         };
 
-        let annotation = match annotation {
-            Some(m) => Some(m.as_str().to_string()),
-            None => None,
-        };
+        let annotation = annotation.map(|m| m.as_str().to_string());
 
         let nag = match nag {
             Some(m) => m.as_str().parse().ok(),

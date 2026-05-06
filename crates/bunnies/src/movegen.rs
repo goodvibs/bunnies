@@ -79,10 +79,10 @@ fn add_legal_pawn_captures<const STM: Color>(
     pinned: Bitboard,
     moves: &mut MoveList,
 ) {
-    let up_left = SquareDelta::UP_LEFT.from_perspective(STM);
-    let up_right = SquareDelta::UP_RIGHT.from_perspective(STM);
-    let down_right = up_left * -1;
-    let down_left = up_right * -1;
+    let up_left = SquareDelta::UP_LEFT.for_perspective(STM);
+    let up_right = SquareDelta::UP_RIGHT.for_perspective(STM);
+    let down_right = -up_left;
+    let down_left = -up_right;
     let promo_rank = Rank::Eight.from_perspective(STM).mask();
 
     // Free pawns: batch attack generation, no pin reasoning required.
@@ -117,7 +117,7 @@ fn add_legal_en_passants<const STM: Color>(
     ep_is_legal: impl Fn(Square, Square, Square) -> bool,
     moves: &mut MoveList,
 ) {
-    if !dpf.is_some() {
+    if !dpf.has_file() {
         return;
     }
 
@@ -156,7 +156,7 @@ fn add_legal_pawn_pushes<const STM: Color>(
 
     let promo_rank = Rank::Eight.from_perspective(STM).mask();
     let push_again_mask = Rank::Three.from_perspective(STM).mask();
-    let down = SquareDelta::DOWN.from_perspective(STM);
+    let down = SquareDelta::DOWN.for_perspective(STM);
 
     let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
     emit_pawn_dsts(down, single_push_dsts & dst_mask, promo_rank, moves);

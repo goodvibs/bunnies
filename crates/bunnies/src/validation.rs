@@ -104,6 +104,6 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     pub fn has_valid_double_pawn_push(&self) -> bool {
         self.context()
             .double_pawn_push_file
-            .is_valid_ep_target(self.halfmove, STM, &self.board)
+            .ep_target_is_valid(self.halfmove, STM, &self.board)
     }
 }

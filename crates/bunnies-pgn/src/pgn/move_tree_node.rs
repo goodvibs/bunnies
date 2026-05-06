@@ -44,21 +44,13 @@ impl<const N: usize, const STM: Color, const OPP: Color> MoveTreeNode<N, STM, OP
     }
 
     pub(crate) fn get_main_continuation(&self) -> Option<Rc<RefCell<MoveTreeNode<N, OPP, STM>>>> {
-        self.continuations.first().map(|c| Rc::clone(c))
-    }
-
-    pub(crate) fn has_multiple_continuations(&self) -> bool {
-        self.continuations.len() > 1
+        self.continuations.first().map(Rc::clone)
     }
 
     pub(crate) fn get_alternative_continuations(
         &self,
     ) -> Vec<Rc<RefCell<MoveTreeNode<N, OPP, STM>>>> {
-        self.continuations
-            .iter()
-            .skip(1)
-            .map(|c| Rc::clone(c))
-            .collect()
+        self.continuations.iter().skip(1).map(Rc::clone).collect()
     }
 
     fn render_white(

@@ -28,6 +28,9 @@ impl UnifiedMoveDirection {
         }
     }
 
+    /// # Safety
+    /// The low nibble of `self.value` must encode either a valid queen-like direction (`0..=7`)
+    /// or the queen-like null sentinel (`0b1111`).
     pub const unsafe fn as_queen_like(&self) -> Option<QueenLikeMoveDirection> {
         let value = self.value & Self::NULL_QUEEN_LIKE;
         if value == Self::NULL_QUEEN_LIKE {
@@ -37,11 +40,16 @@ impl UnifiedMoveDirection {
         }
     }
 
+    /// # Safety
+    /// The low nibble of `self.value` must encode a valid queen-like direction (`0..=7`).
     pub const unsafe fn as_queen_like_unchecked(&self) -> QueenLikeMoveDirection {
         let value = self.value & Self::NULL_QUEEN_LIKE;
         unsafe { QueenLikeMoveDirection::from(value) }
     }
 
+    /// # Safety
+    /// The high nibble of `self.value` must encode either a valid knight-like direction (`0..=7`)
+    /// or the knight-like null sentinel (`0b1111`).
     pub const unsafe fn as_knight_like(&self) -> Option<KnightMoveDirection> {
         let value = self.value & Self::NULL_KNIGHT_LIKE;
         if value == Self::NULL_KNIGHT_LIKE {
@@ -51,6 +59,8 @@ impl UnifiedMoveDirection {
         }
     }
 
+    /// # Safety
+    /// The high nibble of `self.value` must encode a valid knight-like direction (`0..=7`).
     pub const unsafe fn as_knight_like_unchecked(&self) -> KnightMoveDirection {
         let value = self.value & Self::NULL_KNIGHT_LIKE;
         unsafe { KnightMoveDirection::from(value >> 4) }
@@ -103,6 +113,8 @@ impl QueenLikeMoveDirection {
         }
     }
 
+    /// # Safety
+    /// `src_square` and `dst_square` must be on the same line (rank/file/diagonal).
     pub unsafe fn lookup_unchecked(
         src_square: Square,
         dst_square: Square,
@@ -203,6 +215,8 @@ impl KnightMoveDirection {
         }
     }
 
+    /// # Safety
+    /// `src_square` and `dst_square` must form a legal knight displacement.
     pub unsafe fn lookup_unchecked(src_square: Square, dst_square: Square) -> KnightMoveDirection {
         unsafe {
             MOVE_DIRECTION_LOOKUP
@@ -254,7 +268,7 @@ const fn unified_move_direction_at(src_square: Square, dst_square: Square) -> Un
     }
 }
 
-const MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
+static MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
     let mut arr = [UnifiedMoveDirection::NULL; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {

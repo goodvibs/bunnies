@@ -60,7 +60,7 @@ pub const trait SquareDeltaUtils: private::Sealed {
     const UP_RIGHT: SquareDelta;
     const DOWN_RIGHT: SquareDelta;
 
-    fn from_perspective(self, color: Color) -> SquareDelta;
+    fn for_perspective(self, color: Color) -> SquareDelta;
 }
 
 impl const SquareDeltaUtils for SquareDelta {
@@ -74,7 +74,7 @@ impl const SquareDeltaUtils for SquareDelta {
     const UP_RIGHT: SquareDelta = SquareDelta::UP + SquareDelta::RIGHT;
     const DOWN_RIGHT: SquareDelta = SquareDelta::DOWN + SquareDelta::RIGHT;
 
-    fn from_perspective(self, color: Color) -> SquareDelta {
+    fn for_perspective(self, color: Color) -> SquareDelta {
         self * match color {
             Color::White => 1,
             Color::Black => -1,

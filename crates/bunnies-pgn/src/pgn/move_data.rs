@@ -9,6 +9,7 @@ pub(crate) struct PgnMoveData {
 }
 
 impl PgnMoveData {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn render(
         &self,
         moved_piece: Piece,
@@ -27,16 +28,12 @@ impl PgnMoveData {
             is_capture,
         );
 
-        if include_annotations {
-            if let Some(annotation) = &self.annotation {
-                result.push_str(annotation);
-            }
+        if include_annotations && let Some(annotation) = &self.annotation {
+            result.push_str(annotation);
         }
 
-        if include_nags {
-            if let Some(nag) = self.nag {
-                result.push_str(&format!(" ${}", nag));
-            }
+        if include_nags && let Some(nag) = self.nag {
+            result.push_str(&format!(" ${}", nag));
         }
 
         result

@@ -1,11 +1,12 @@
 //! Chess ranks 1–8. Line masks: one byte strip per rank, matching [`crate::Square::rank`] (0 = first rank).
 
 use crate::{Bitboard, Color};
+use std::hash::{Hash, Hasher};
 
 /// Algebraic rank: [`Rank::One`] = rank 1 (White’s back rank in the start position), … [`Rank::Eight`] = rank 8.
 /// Discriminant matches [`crate::Square::rank`] (`0`…`7`).
 #[repr(u8)]
-#[derive(Clone, Copy, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Eq, Debug)]
 pub enum Rank {
     One = 0,
     Two = 1,
@@ -57,5 +58,11 @@ impl Rank {
 impl const PartialEq for Rank {
     fn eq(&self, other: &Self) -> bool {
         *self as u8 == *other as u8
+    }
+}
+
+impl Hash for Rank {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (*self as u8).hash(state);
     }
 }

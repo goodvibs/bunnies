@@ -20,7 +20,7 @@ pub const trait ConstDoublePawnPushFile {
     fn from_pawn_step(from: Square, to: Square) -> DoublePawnPushFile;
 
     /// `true` when `self` holds a file index `0..=7`.
-    fn is_some(self) -> bool;
+    fn has_file(self) -> bool;
 
     fn from_file(file: Option<File>) -> DoublePawnPushFile;
 
@@ -40,7 +40,7 @@ pub const trait ConstDoublePawnPushFile {
 /// [`ConstDoublePawnPushFile`] plus validation that needs a [`Board`] read.
 pub trait DoublePawnPushFileUtils: ConstDoublePawnPushFile {
     /// Whether this value is consistent with pawn placement (used by FEN / position validation).
-    fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool;
+    fn ep_target_is_valid(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool;
 }
 
 impl const ConstDoublePawnPushFile for DoublePawnPushFile {
@@ -54,7 +54,7 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
         }
     }
 
-    fn is_some(self) -> bool {
+    fn has_file(self) -> bool {
         self >= 0 && self < 8
     }
 
@@ -66,7 +66,7 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn file(self) -> Option<File> {
-        if self.is_some() {
+        if self.has_file() {
             Some(File::from_u8(self as u8))
         } else {
             None
@@ -74,7 +74,7 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_possible_src_mask(self, stm: Color) -> Bitboard {
-        debug_assert!(self.is_some());
+        debug_assert!(self.has_file());
         let f = File::from_u8(self as u8);
         let double_pawn_push_dst = match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f).mask(),
@@ -86,7 +86,7 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_dst_square(self, stm: Color) -> Square {
-        debug_assert!(self.is_some());
+        debug_assert!(self.has_file());
         let f = File::from_u8(self as u8);
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Six, f),
@@ -95,7 +95,7 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
     }
 
     fn ep_capture_square(self, stm: Color) -> Square {
-        debug_assert!(self.is_some());
+        debug_assert!(self.has_file());
         let f = File::from_u8(self as u8);
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f),
@@ -105,8 +105,8 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
 }
 
 impl DoublePawnPushFileUtils for DoublePawnPushFile {
-    fn is_valid_ep_target(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool {
-        if !self.is_some() {
+    fn ep_target_is_valid(self, halfmove: u16, side_to_move: Color, board: &Board) -> bool {
+        if !self.has_file() {
             return true;
         }
         if halfmove < 1 {
@@ -115,7 +115,7 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
         let color_just_moved = side_to_move.other();
         let pawns_mask = board.piece_mask::<{ Piece::Pawn }>();
         let colored_pawns_mask = pawns_mask & board.color_mask_at(color_just_moved);
-        debug_assert!(self.is_some());
+        debug_assert!(self.has_file());
         let file_mask = File::from_u8(self as u8).mask();
         let rank_mask = match color_just_moved {
             Color::White => Rank::Four.mask(),

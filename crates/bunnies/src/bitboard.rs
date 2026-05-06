@@ -110,7 +110,7 @@ const fn calc_edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard {
     }
 }
 
-const MASK_BETWEEN_DATA: [Bitboard; 64 * 64] = {
+static MASK_BETWEEN_DATA: [Bitboard; 64 * 64] = {
     let mut arr = [0u64; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {
@@ -122,7 +122,7 @@ const MASK_BETWEEN_DATA: [Bitboard; 64 * 64] = {
     arr
 };
 
-const EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
+static EDGE_TO_EDGE_RAY_DATA: [Bitboard; 64 * 64] = {
     let mut arr = [0u64; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {

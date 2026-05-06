@@ -44,23 +44,6 @@ impl PgnMove for PgnCastlingMove {
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo {
         &self.common_move_info
     }
-
-    fn get_common_move_info_mut(&mut self) -> &mut PgnCommonMoveInfo {
-        &mut self.common_move_info
-    }
-
-    fn render(&self, include_annotation: bool, include_nag: bool) -> String {
-        let castling = match self.flank {
-            Flank::Kingside => "O-O",
-            Flank::Queenside => "O-O-O",
-        };
-
-        let ending = self
-            .common_move_info
-            .render(include_annotation, include_nag);
-
-        format!("{}{}", castling, ending)
-    }
 }
 
 impl ParsablePgnToken for PgnCastlingMove {
