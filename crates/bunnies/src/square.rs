@@ -199,7 +199,7 @@ impl Square {
     }
 
     /// Returns the combined diagonals mask for the square (both `/` and `\` diagonals through this square).
-    pub fn diagonals_mask(&self) -> Bitboard {
+    pub const fn diagonals_mask(&self) -> Bitboard {
         DIAGONALS_MASK_LOOKUP.get(*self)
     }
 

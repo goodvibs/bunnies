@@ -16,8 +16,7 @@ impl Board {
             return false;
         }
 
-        for color_int in Color::White as u8..Color::Black as u8 + 1 {
-            let color = Color::from_is_black(color_int != 0);
+        for color in Color::ALL {
             let bishops = self.piece_mask::<{ Piece::Bishop }>() & self.color_mask_at(color);
             let num_bishops = bishops.count_ones();
             if num_bishops > 1 {

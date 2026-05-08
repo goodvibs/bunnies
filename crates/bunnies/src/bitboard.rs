@@ -20,7 +20,7 @@ pub const trait ConstBitboardGeometry {
     fn edge_to_edge_ray(sq1: Square, sq2: Square) -> Bitboard;
 }
 
-pub trait BitboardUtils: ConstBitboardGeometry {
+pub const trait BitboardUtils: ConstBitboardGeometry {
     /// Returns an iterator that generates the set bits of the bitboard.
     fn iter_set_bits_as_masks(self) -> MaskBitsIterator;
 
@@ -41,7 +41,7 @@ impl const ConstBitboardGeometry for Bitboard {
     }
 }
 
-impl BitboardUtils for Bitboard {
+impl const BitboardUtils for Bitboard {
     fn iter_set_bits_as_masks(self) -> MaskBitsIterator {
         self.into()
     }

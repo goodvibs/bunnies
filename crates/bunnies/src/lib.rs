@@ -1,5 +1,7 @@
 #![feature(const_for)]
 #![feature(const_trait_impl)]
+#![feature(const_convert)]
+#![feature(const_iter)]
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]

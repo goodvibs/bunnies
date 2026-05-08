@@ -103,37 +103,37 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Square of the king for `side`. Legal positions have exactly one such king.
     #[inline]
-    pub(crate) fn king_square(&self, side: Color) -> Square {
+    pub(crate) const fn king_square(&self, side: Color) -> Square {
         Square::from_bitboard(
             self.board.piece_mask::<{ Piece::King }>() & self.board.color_mask_at(side),
         )
         .expect("king present for side")
     }
 
-    pub fn context(&self) -> &PositionContext {
+    pub const fn context(&self) -> &PositionContext {
         debug_assert!(self.num_contexts > 0);
         &self.contexts[self.num_contexts - 1]
     }
 
-    pub fn mut_context(&mut self) -> &mut PositionContext {
+    pub const fn mut_context(&mut self) -> &mut PositionContext {
         debug_assert!(self.num_contexts > 0);
         &mut self.contexts[self.num_contexts - 1]
     }
 
-    pub fn push_context(&mut self, context: PositionContext) {
+    pub const fn push_context(&mut self, context: PositionContext) {
         debug_assert!(self.num_contexts < N);
         self.contexts[self.num_contexts] = context;
         self.num_contexts += 1;
     }
 
-    pub fn pop_context(&mut self) -> PositionContext {
+    pub const fn pop_context(&mut self) -> PositionContext {
         debug_assert!(self.num_contexts > 1);
         let popped = self.contexts[self.num_contexts - 1];
         self.num_contexts -= 1;
         popped
     }
 
-    pub(crate) fn decrement_context_stack_for_unmake(&mut self) {
+    pub(crate) const fn decrement_context_stack_for_unmake(&mut self) {
         debug_assert!(self.num_contexts > 1);
         self.num_contexts -= 1;
     }
@@ -143,12 +143,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.halfmove / 2 + 1
     }
 
-    pub fn update_pins_and_checks(&mut self) {
+    pub const fn update_pins_and_checks(&mut self) {
         self.update_pins_and_checks_for_stm(STM);
     }
 
     /// Recomputes [`PositionContext::pinned`] / [`PositionContext::checkers`] for `stm` (must match the board).
-    pub(crate) fn update_pins_and_checks_for_stm(&mut self, side_to_move: Color) {
+    pub(crate) const fn update_pins_and_checks_for_stm(&mut self, side_to_move: Color) {
         let opponent = side_to_move.other();
 
         let current_side_king_mask =
@@ -204,7 +204,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         context.checkers = checkers;
     }
 
-    pub fn is_current_side_in_check(&self) -> bool {
+    pub const fn is_current_side_in_check(&self) -> bool {
         self.context().checkers != 0
     }
 
@@ -213,7 +213,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             .are_both_sides_insufficient_material(use_uscf_rules)
     }
 
-    pub fn is_fifty_move_rule_reached(&self) -> bool {
+    pub const fn is_fifty_move_rule_reached(&self) -> bool {
         self.context().halfmove_clock >= 100
     }
 }
