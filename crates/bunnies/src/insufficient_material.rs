@@ -7,7 +7,7 @@ impl Board {
     /// A king and bishop
     /// A king and knight
     /// A king and two knights, only if the other side is a lone king
-    pub fn are_both_sides_insufficient_material(&self, use_uscf_rules: bool) -> bool {
+    pub fn are_both_sides_insufficient_material<const USCF: bool>(&self) -> bool {
         if self.piece_mask::<{ Piece::Pawn }>()
             | self.piece_mask::<{ Piece::Rook }>()
             | self.piece_mask::<{ Piece::Queen }>()
@@ -26,7 +26,7 @@ impl Board {
             let knights = self.piece_mask::<{ Piece::Knight }>() & self.color_mask_at(color);
             let num_knights = knights.count_ones();
 
-            if use_uscf_rules && num_knights == 2 && num_bishops == 0 {
+            if USCF && num_knights == 2 && num_bishops == 0 {
                 // king and two knights
                 let opponent_mask = self.color_mask_at(color.other());
                 let all_occupancy_mask = self.piece_mask::<{ Piece::ALL_PIECES }>();

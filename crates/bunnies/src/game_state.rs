@@ -103,7 +103,10 @@ fn classify_terminal<const N: usize, const STM: Color>(
         return Some(TerminalReason::FiftyMoveRule);
     }
 
-    if position.board.are_both_sides_insufficient_material(false) {
+    if position
+        .board
+        .are_both_sides_insufficient_material::<false>()
+    {
         return Some(TerminalReason::InsufficientMaterial);
     }
 

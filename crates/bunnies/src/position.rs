@@ -208,9 +208,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         self.context().checkers != 0
     }
 
-    pub fn is_insufficient_material(&self, use_uscf_rules: bool) -> bool {
+    pub fn is_insufficient_material<const USCF: bool>(&self) -> bool {
         self.board
-            .are_both_sides_insufficient_material(use_uscf_rules)
+            .are_both_sides_insufficient_material::<{ USCF }>()
     }
 
     pub const fn is_fifty_move_rule_reached(&self) -> bool {
