@@ -6,7 +6,6 @@ use crate::{Bitboard, BitboardUtils, Square};
 /// Struct responsible for initializing the MagicAttacksLookup
 pub(crate) struct MagicAttacksInitializer {
     rng: Prng,
-    min_bits_threshold: u32,
     attacks: Box<[Bitboard]>,
     current_offset: u32,
 }
@@ -15,7 +14,6 @@ impl MagicAttacksInitializer {
     pub(crate) fn new(seed: u64) -> Self {
         Self {
             rng: Prng::new(seed),
-            min_bits_threshold: 6,
             attacks: Box::new([]),
             current_offset: 0,
         }
@@ -24,8 +22,8 @@ impl MagicAttacksInitializer {
     /// Initialize the magic attacks lookup object for a sliding piece
     pub(crate) fn init_for_piece(
         &mut self,
-        relevant_mask_lookup: &SquaresToMasks,
-        calc_attack_mask: &impl Fn(Square, Bitboard) -> Bitboard,
+        relevant_mask_lookup: SquaresToMasks,
+        calc_attack_mask: impl Fn(Square, Bitboard) -> Bitboard,
         table_size: usize,
     ) -> MagicAttacksLookup {
         self.attacks = vec![0; table_size].into_boxed_slice();
