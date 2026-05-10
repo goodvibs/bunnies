@@ -11,10 +11,10 @@ pub(crate) struct MagicAttacksInitializer {
 }
 
 impl MagicAttacksInitializer {
-    pub(crate) fn new(seed: u64) -> Self {
+    pub(crate) fn new(seed: u64, table_size: usize) -> Self {
         Self {
             rng: Prng::new(seed),
-            attacks: Box::new([]),
+            attacks: vec![0; table_size].into_boxed_slice(),
             current_offset: 0,
         }
     }
@@ -24,14 +24,11 @@ impl MagicAttacksInitializer {
         &mut self,
         relevant_mask_lookup: SquaresToMasks,
         calc_attack_mask: impl Fn(Square, Bitboard) -> Bitboard,
-        table_size: usize,
     ) -> MagicAttacksLookup {
-        self.attacks = vec![0; table_size].into_boxed_slice();
-
         let mut magic_info_for_squares = [MagicInfo::default(); 64];
 
-        for (i, square) in Square::ALL.into_iter().enumerate() {
-            magic_info_for_squares[i] = self.generate_magic_info(
+        for square in Square::ALL {
+            magic_info_for_squares[square as usize] = self.generate_magic_info(
                 relevant_mask_lookup.get(square),
                 |occupied_mask: Bitboard| calc_attack_mask(square, occupied_mask),
             );
