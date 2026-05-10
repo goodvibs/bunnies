@@ -2,6 +2,8 @@
 #![feature(const_trait_impl)]
 #![feature(const_convert)]
 #![feature(const_iter)]
+#![feature(const_default)]
+#![feature(const_precise_live_drops)]
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]

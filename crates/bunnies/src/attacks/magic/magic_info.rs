@@ -1,7 +1,8 @@
 use crate::Bitboard;
 
 /// Struct to store all magic-related information for a square
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone)]
+#[derive_const(Default)]
 pub struct MagicInfo {
     pub relevant_mask: Bitboard,
     pub magic_number: Bitboard,
