@@ -10,7 +10,6 @@ keywords = ["chess", "fast", "move", "gen", "engine"]
 categories = ["games", "mathematics"]
 
 [dependencies]
-fastrand = "2.4.1"
 
 [dev-dependencies]
 criterion = "0.5.1"

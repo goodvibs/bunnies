@@ -1,30 +1,24 @@
 use crate::attacks::magic::lookup::MagicAttacksLookup;
 use crate::attacks::magic::magic_info::MagicInfo;
-use crate::attacks::magic::random::gen_random_magic_number;
-use crate::utilities::SquaresToMasks;
+use crate::utilities::{Prng, SquaresToMasks};
 use crate::{Bitboard, BitboardUtils, Square};
 
 /// Struct responsible for initializing the MagicAttacksLookup
 pub(crate) struct MagicAttacksInitializer {
-    rng: fastrand::Rng,
+    rng: Prng,
     min_bits_threshold: u32,
     attacks: Box<[Bitboard]>,
     current_offset: u32,
 }
 
 impl MagicAttacksInitializer {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(seed: u64) -> Self {
         Self {
-            rng: fastrand::Rng::new(),
+            rng: Prng::new(seed),
             min_bits_threshold: 6,
             attacks: Box::new([]),
             current_offset: 0,
         }
-    }
-
-    pub(crate) fn with_seed(mut self, seed: u64) -> Self {
-        self.rng = fastrand::Rng::with_seed(seed);
-        self
     }
 
     /// Initialize the magic attacks lookup object for a sliding piece
@@ -70,14 +64,7 @@ impl MagicAttacksInitializer {
         let mut magic_number: Bitboard;
 
         loop {
-            magic_number = gen_random_magic_number(&mut self.rng);
-
-            // Quick rejection test based on bit count heuristic
-            if (relevant_mask.wrapping_mul(magic_number) & 0xFF_00_00_00_00_00_00_00).count_ones()
-                < self.min_bits_threshold
-            {
-                continue;
-            }
+            magic_number = self.rng.generate_sparse();
 
             attack_table = vec![0 as Bitboard; 1 << num_relevant_bits];
             let mut collision = false;

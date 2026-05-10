@@ -4,10 +4,11 @@
 mod display;
 mod mask_iterators;
 mod move_direction;
-
+mod random;
 mod squares_mapping;
 
 pub use display::*;
 pub use mask_iterators::*;
 pub use move_direction::*;
+pub use random::*;
 pub use squares_mapping::*;

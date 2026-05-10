@@ -19,13 +19,11 @@ const BISHOP_ATTACK_TABLE_SIZE: usize =
 
 pub static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock::new(|| {
     MagicAttacksLookup::load_or_generate(magic_table_path("rook_magic_attacks_lookup.bin"), || {
-        MagicAttacksInitializer::new()
-            .with_seed(3141592653)
-            .init_for_piece(
-                &ROOK_RELEVANT_MASKS,
-                &manual_single_rook_attacks,
-                ROOK_ATTACK_TABLE_SIZE,
-            )
+        MagicAttacksInitializer::new(3141592653).init_for_piece(
+            &ROOK_RELEVANT_MASKS,
+            &manual_single_rook_attacks,
+            ROOK_ATTACK_TABLE_SIZE,
+        )
     })
     .expect("rook magic table load or generate")
 });
@@ -34,7 +32,7 @@ pub static BISHOP_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup> = LazyLock:
     MagicAttacksLookup::load_or_generate(
         magic_table_path("bishop_magic_attacks_lookup.bin"),
         || {
-            MagicAttacksInitializer::new().with_seed(0).init_for_piece(
+            MagicAttacksInitializer::new(0).init_for_piece(
                 &BISHOP_RELEVANT_MASKS,
                 &manual_single_bishop_attacks,
                 BISHOP_ATTACK_TABLE_SIZE,

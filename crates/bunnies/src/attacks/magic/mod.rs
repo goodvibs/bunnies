@@ -7,7 +7,6 @@ use crate::attacks::magic::lookup::{BISHOP_MAGIC_ATTACKS_LOOKUP, ROOK_MAGIC_ATTA
 mod initializer;
 mod lookup;
 mod magic_info;
-mod random;
 mod relevant_mask;
 
 pub use relevant_mask::*;
