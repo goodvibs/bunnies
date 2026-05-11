@@ -25,17 +25,17 @@ const fn zobrist_table() -> [[Bitboard; 12]; 64] {
 const ZOBRIST_TABLE: [[Bitboard; 12]; 64] = zobrist_table();
 
 /// Gets the Zobrist hash for a piece on a square.
-pub const fn get_piece_zobrist_hash(square: Square, piece_type: Piece) -> Bitboard {
-    ZOBRIST_TABLE[square as usize][piece_type as usize - 1]
+pub const fn get_piece_zobrist_hash(square: Square, piece: Piece) -> Bitboard {
+    ZOBRIST_TABLE[square as usize][piece as usize - 1]
 }
 
 /// Piece-placement Zobrist hash (no side-to-move or castling/ep).
 pub fn calc_zobrist_hash(board: &Board) -> Bitboard {
     let mut hash: Bitboard = 0;
-    for piece_type in Piece::PIECES {
-        let pieces_mask = board.piece_mask_at(piece_type);
+    for piece in Piece::PIECES {
+        let pieces_mask = board.piece_mask_at(piece);
         for square in pieces_mask.iter_set_bits_as_squares() {
-            hash ^= get_piece_zobrist_hash(square, piece_type);
+            hash ^= get_piece_zobrist_hash(square, piece);
         }
     }
     hash

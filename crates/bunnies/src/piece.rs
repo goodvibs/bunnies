@@ -1,3 +1,5 @@
+use crate::utilities::Array;
+
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
 #[derive_const(PartialEq)]
@@ -21,12 +23,9 @@ impl Piece {
     /// Returns the Piece from the given number.
     /// # Safety
     /// The number must be less than Piece::LIMIT.
-    pub const unsafe fn from(piece_type_number: u8) -> Piece {
-        debug_assert!(
-            piece_type_number < Piece::LIMIT,
-            "Piece type number out of bounds"
-        );
-        unsafe { std::mem::transmute::<u8, Piece>(piece_type_number) }
+    pub const unsafe fn from(piece_int: u8) -> Piece {
+        debug_assert!(piece_int < Piece::LIMIT, "Piece type number out of bounds");
+        unsafe { std::mem::transmute::<u8, Piece>(piece_int) }
     }
 
     pub const fn is_sliding_piece(&self) -> bool {
@@ -112,7 +111,7 @@ impl Piece {
     }
 
     /// An array of all Pieces (7 in total).
-    pub const ALL: [Piece; 7] = [
+    pub const ALL: Array<Piece, 7> = Array([
         Piece::Null,
         Piece::Pawn,
         Piece::Knight,
@@ -120,30 +119,30 @@ impl Piece {
         Piece::Rook,
         Piece::Queen,
         Piece::King,
-    ];
+    ]);
 
     /// An array of all Pieces representing actual pieces (6 in total).
-    pub const PIECES: [Piece; 6] = [
+    pub const PIECES: Array<Piece, 6> = Array([
         Piece::Pawn,
         Piece::Knight,
         Piece::Bishop,
         Piece::Rook,
         Piece::Queen,
         Piece::King,
-    ];
+    ]);
 
     /// An array of all Pieces representing non-king pieces (5 in total).
-    pub const NON_KING_PIECES: [Piece; 5] = [
+    pub const NON_KING_PIECES: Array<Piece, 5> = Array([
         Piece::Pawn,
         Piece::Knight,
         Piece::Bishop,
         Piece::Rook,
         Piece::Queen,
-    ];
+    ]);
 
     /// An array of all Pieces representing promotion pieces (4 in total).
-    pub const PROMOTION_PIECES: [Piece; 4] =
-        [Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen];
+    pub const PROMOTION_PIECES: Array<Piece, 4> =
+        Array([Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen]);
 
-    pub const SLIDING_PIECES: [Piece; 3] = [Piece::Bishop, Piece::Rook, Piece::Queen];
+    pub const SLIDING_PIECES: Array<Piece, 3> = Array([Piece::Bishop, Piece::Rook, Piece::Queen]);
 }

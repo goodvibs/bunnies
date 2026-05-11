@@ -1,5 +1,6 @@
 use crate::Square;
 use crate::square::same_line;
+use crate::utilities::Array;
 use crate::utilities::SquaresTwoToOneMapping;
 
 #[repr(transparent)]
@@ -89,7 +90,7 @@ pub enum QueenLikeMoveDirection {
 
 impl QueenLikeMoveDirection {
     /// An array of all QueenLikeMoveDirections (8 directions).
-    pub const ALL: [QueenLikeMoveDirection; 8] = [
+    pub const ALL: Array<QueenLikeMoveDirection, 8> = Array([
         QueenLikeMoveDirection::Up,
         QueenLikeMoveDirection::Down,
         QueenLikeMoveDirection::UpRight,
@@ -98,7 +99,7 @@ impl QueenLikeMoveDirection {
         QueenLikeMoveDirection::Left,
         QueenLikeMoveDirection::DownRight,
         QueenLikeMoveDirection::UpLeft,
-    ];
+    ]);
 
     /// Returns the QueenLikeMoveDirection corresponding to the given value.
     /// # Safety
@@ -187,7 +188,7 @@ pub enum KnightMoveDirection {
 
 impl KnightMoveDirection {
     /// An array of all KnightMoveDirections (8 directions).
-    pub const ALL: [KnightMoveDirection; 8] = [
+    pub const ALL: Array<KnightMoveDirection, 8> = Array([
         KnightMoveDirection::TwoUpOneRight,
         KnightMoveDirection::TwoDownOneLeft,
         KnightMoveDirection::TwoRightOneUp,
@@ -196,7 +197,7 @@ impl KnightMoveDirection {
         KnightMoveDirection::TwoLeftOneUp,
         KnightMoveDirection::TwoDownOneRight,
         KnightMoveDirection::TwoUpOneLeft,
-    ];
+    ]);
 
     /// Returns the KnightMoveDirection opposite to the current direction.
     pub const fn opposite(&self) -> KnightMoveDirection {

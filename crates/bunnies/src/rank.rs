@@ -1,5 +1,6 @@
 //! Chess ranks 1–8. Line masks: one byte strip per rank, matching [`crate::Square::rank`] (0 = first rank).
 
+use crate::utilities::Array;
 use crate::{Bitboard, Color};
 use std::hash::{Hash, Hasher};
 
@@ -19,7 +20,7 @@ pub enum Rank {
 }
 
 impl Rank {
-    pub const ALL: [Rank; 8] = [
+    pub const ALL: Array<Rank, 8> = Array([
         Rank::One,
         Rank::Two,
         Rank::Three,
@@ -28,7 +29,7 @@ impl Rank {
         Rank::Six,
         Rank::Seven,
         Rank::Eight,
-    ];
+    ]);
 
     #[inline]
     pub const fn mask(self) -> Bitboard {

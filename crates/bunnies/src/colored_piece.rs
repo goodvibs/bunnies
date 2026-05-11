@@ -28,11 +28,10 @@ impl ColoredPiece {
     pub const COLOR_DIFFERENCE: u8 = 8;
 
     /// Returns a new ColoredPiece.
-    pub const fn new(color: Color, piece_type: Piece) -> ColoredPiece {
-        let piece_int = piece_type as u8;
-        let is_piece = piece_int != Piece::Null as u8;
+    pub const fn new(color: Color, piece: Piece) -> ColoredPiece {
+        let is_piece = piece as u8 != Piece::Null as u8;
         let color_int_shifted = (is_piece as u8 & color as u8) << 3;
-        unsafe { std::mem::transmute::<u8, ColoredPiece>(color_int_shifted | piece_int) }
+        unsafe { std::mem::transmute::<u8, ColoredPiece>(color_int_shifted | piece as u8) }
     }
 
     /// Returns the color of the piece.

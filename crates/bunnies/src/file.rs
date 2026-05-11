@@ -1,5 +1,6 @@
 //! Chess files a–h. Line masks derived from a single file-a bitboard, shifted by file index (chmog-style).
 
+use crate::utilities::Array;
 use crate::{Bitboard, Flank};
 use std::hash::{Hash, Hasher};
 
@@ -18,7 +19,7 @@ pub enum File {
 }
 
 impl File {
-    pub const ALL: [File; 8] = [
+    pub const ALL: Array<File, 8> = Array([
         File::A,
         File::B,
         File::C,
@@ -27,7 +28,7 @@ impl File {
         File::F,
         File::G,
         File::H,
-    ];
+    ]);
 
     /// MSB column in bunnies’ bitboard layout (same as former `FILE_A`).
     const FILE_A: Bitboard = 0x8080_8080_8080_8080;

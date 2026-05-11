@@ -7,7 +7,7 @@ impl Board {
     /// A king and bishop
     /// A king and knight
     /// A king and two knights, only if the other side is a lone king
-    pub fn are_both_sides_insufficient_material<const USCF: bool>(&self) -> bool {
+    pub const fn are_both_sides_insufficient_material<const USCF: bool>(&self) -> bool {
         if self.piece_mask::<{ Piece::Pawn }>()
             | self.piece_mask::<{ Piece::Rook }>()
             | self.piece_mask::<{ Piece::Queen }>()

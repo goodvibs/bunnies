@@ -4,7 +4,7 @@ use crate::Piece;
 use crate::Rank;
 use crate::Square;
 use crate::attacks::*;
-use crate::utilities::{Charboard, CharboardDisplay};
+use crate::utilities::{Array, Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
 use crate::{BitboardUtils, ColoredPiece, ConstBitboardGeometry};
 use std::fmt::Display;
@@ -30,14 +30,11 @@ impl Board {
         while sq < 64 {
             let square = Square::from_u8(sq);
             let mask = square.mask();
-            let mut i = 0;
-            while i < Piece::PIECES.len() {
-                let piece_type = Piece::PIECES[i];
-                if piece_masks[piece_type as usize] & mask != 0 {
-                    out[sq as usize] = piece_type;
+            for piece in Piece::PIECES {
+                if piece_masks[piece as usize] & mask != 0 {
+                    out[sq as usize] = piece;
                     break;
                 }
-                i += 1;
             }
             sq += 1;
         }
@@ -61,7 +58,7 @@ impl Board {
         const STARTING_WHITE: Bitboard = WP | WN | WB | WR | WQ | WK;
         const STARTING_BLACK: Bitboard = BP | BN | BB | BR | BQ | BK;
         const STARTING_ALL: Bitboard = STARTING_WHITE | STARTING_BLACK;
-        const PM: [Bitboard; Piece::LIMIT as usize] = [
+        const PM: Array<Bitboard, { Piece::LIMIT as usize }> = Array([
             STARTING_ALL,
             WP | BP,
             WN | BN,
@@ -69,11 +66,11 @@ impl Board {
             WR | BR,
             WQ | BQ,
             WK | BK,
-        ];
+        ]);
         Board {
-            piece_masks: PM,
+            piece_masks: PM.0,
             color_masks: [STARTING_WHITE, STARTING_BLACK],
-            pieces: Self::mailbox_from_piece_masks(&PM),
+            pieces: Self::mailbox_from_piece_masks(&PM.0),
         }
     }
 
@@ -93,8 +90,8 @@ impl Board {
 
     /// When the piece type is only known at runtime (e.g. loop variable), use this instead of [`Self::piece_mask`].
     #[inline]
-    pub const fn piece_mask_at(&self, piece_type: Piece) -> Bitboard {
-        self.piece_masks[piece_type as usize]
+    pub const fn piece_mask_at(&self, piece: Piece) -> Bitboard {
+        self.piece_masks[piece as usize]
     }
 
     #[inline]
@@ -196,13 +193,13 @@ impl Board {
         self.color_masks[color as usize] |= mask;
     }
 
-    /// Populates a square with `piece_type`, but no color.
+    /// Populates a square with `piece`, but no color.
     #[inline]
-    pub const fn put_piece_at(&mut self, piece_type: Piece, square: Square) {
+    pub const fn put_piece_at(&mut self, piece: Piece, square: Square) {
         let mask = square.mask();
-        self.piece_masks[piece_type as usize] |= mask;
+        self.piece_masks[piece as usize] |= mask;
         self.piece_masks[Piece::ALL_PIECES as usize] |= mask;
-        self.pieces[square as usize] = piece_type;
+        self.pieces[square as usize] = piece;
     }
 
     /// Populates a square with both `color` and `piece`.
@@ -219,11 +216,11 @@ impl Board {
         self.color_masks[color as usize] &= !mask;
     }
 
-    /// Removes `piece_type` from a square, but not color.
+    /// Removes `piece` from a square, but not color.
     #[inline]
-    pub const fn remove_piece_at(&mut self, piece_type: Piece, square: Square) {
+    pub const fn remove_piece_at(&mut self, piece: Piece, square: Square) {
         let mask = square.mask();
-        self.piece_masks[piece_type as usize] &= !mask;
+        self.piece_masks[piece as usize] &= !mask;
         self.piece_masks[Piece::ALL_PIECES as usize] &= !mask;
         self.pieces[square as usize] = Piece::Null;
     }
@@ -235,19 +232,19 @@ impl Board {
         self.remove_piece_at(piece, square);
     }
 
-    /// Moves `piece_type` from `from` to `to`.
+    /// Moves `piece` from `from` to `to`.
     /// Does not update color.
     #[inline]
-    pub const fn move_piece(&mut self, piece_type: Piece, from: Square, to: Square) {
+    pub const fn move_piece(&mut self, piece: Piece, from: Square, to: Square) {
         let from_mask = from.mask();
         let to_mask = to.mask();
         let from_to_mask = from_mask | to_mask;
 
-        self.piece_masks[piece_type as usize] ^= from_to_mask;
+        self.piece_masks[piece as usize] ^= from_to_mask;
         self.piece_masks[Piece::ALL_PIECES as usize] ^= from_to_mask;
 
         self.pieces[from as usize] = Piece::Null;
-        self.pieces[to as usize] = piece_type;
+        self.pieces[to as usize] = piece;
     }
 
     /// Moves `color` from `from` to `to`.
@@ -308,11 +305,7 @@ impl Board {
 
         let mut all_occupancy_mask_reconstructed: Bitboard = 0;
 
-        // Same rationale as `piece_at`: `for` over arrays in `const fn` is not yet usable on this
-        // toolchain (const `IntoIterator` for `[T; N]`).
-        let mut i = 0;
-        while i < Piece::PIECES.len() {
-            let piece = Piece::PIECES[i];
+        for piece in Piece::PIECES {
             let piece_mask = self.piece_masks[piece as usize];
 
             if piece_mask & all_occupancy_mask != piece_mask {
@@ -327,7 +320,6 @@ impl Board {
                 return false;
             }
             all_occupancy_mask_reconstructed |= piece_mask;
-            i += 1;
         }
 
         if all_occupancy_mask_reconstructed != all_occupancy_mask {
@@ -339,14 +331,11 @@ impl Board {
             let square = Square::from_u8(sq);
             let mask = square.mask();
             let mut from_masks = Piece::Null;
-            let mut i = 0;
-            while i < Piece::PIECES.len() {
-                let piece_type = Piece::PIECES[i];
-                if self.piece_masks[piece_type as usize] & mask != 0 {
-                    from_masks = piece_type;
+            for piece in Piece::PIECES {
+                if self.piece_masks[piece as usize] & mask != 0 {
+                    from_masks = piece;
                     break;
                 }
-                i += 1;
             }
             if (from_masks as u8) != (self.pieces[sq as usize] as u8) {
                 return false;
@@ -375,7 +364,7 @@ impl Board {
         println!("{}", self);
     }
 
-    pub fn ascii_charboard(&self) -> Charboard {
+    pub const fn ascii_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for square in Square::ALL {
             let piece = self.piece_at(square);
@@ -385,7 +374,7 @@ impl Board {
         cb
     }
 
-    pub fn unicode_charboard(&self) -> Charboard {
+    pub const fn unicode_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
         for square in Square::ALL {
             let piece = self.piece_at(square);

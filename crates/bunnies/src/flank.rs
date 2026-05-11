@@ -7,6 +7,7 @@ use crate::Color;
 use crate::Square;
 use crate::file::File;
 use crate::rank::Rank;
+use crate::utilities::Array;
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, Hash)]
@@ -17,7 +18,7 @@ pub enum Flank {
 }
 
 impl Flank {
-    pub const ALL: [Flank; 2] = [Flank::Kingside, Flank::Queenside];
+    pub const ALL: Array<Flank, 2> = Array([Flank::Kingside, Flank::Queenside]);
 
     pub const fn from_bool(is_queenside: bool) -> Self {
         unsafe { mem::transmute(is_queenside) }

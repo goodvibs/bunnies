@@ -3,9 +3,10 @@ use crate::File;
 use crate::Rank;
 use crate::Square;
 use crate::square::{DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL};
+use crate::utilities::Array;
 use crate::utilities::SquaresToMasks;
 
-const ROOK_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
+const ROOK_RELEVANT_MASKS_DATA: Array<Bitboard, 64> = Array({
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
@@ -13,9 +14,9 @@ const ROOK_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
         i += 1;
     }
     arr
-};
+});
 
-const BISHOP_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
+const BISHOP_RELEVANT_MASKS_DATA: Array<Bitboard, 64> = Array({
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
@@ -23,34 +24,31 @@ const BISHOP_RELEVANT_MASKS_DATA: [Bitboard; 64] = {
         i += 1;
     }
     arr
-};
+});
 
 /// Precomputed masks for rook relevant squares
 pub static ROOK_RELEVANT_MASKS: SquaresToMasks =
-    SquaresToMasks::from_array(ROOK_RELEVANT_MASKS_DATA);
+    SquaresToMasks::from_array(ROOK_RELEVANT_MASKS_DATA.0);
 
 /// Precomputed masks for bishop relevant squares
 pub static BISHOP_RELEVANT_MASKS: SquaresToMasks =
-    SquaresToMasks::from_array(BISHOP_RELEVANT_MASKS_DATA);
+    SquaresToMasks::from_array(BISHOP_RELEVANT_MASKS_DATA.0);
 
 /// Calculate the relevant mask for a rook on a given square
 pub const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
     let file_mask = square.file().mask();
     let rank_mask = square.rank().mask();
     let mut res = (file_mask | rank_mask) & !square.mask();
-    const EDGE_MASKS: [Bitboard; 4] = [
+    const EDGE_MASKS: Array<Bitboard, 4> = Array([
         File::A.mask(),
         File::H.mask(),
         Rank::One.mask(),
         Rank::Eight.mask(),
-    ];
-    let mut j = 0;
-    while j < 4 {
-        let edge_mask = EDGE_MASKS[j];
+    ]);
+    for edge_mask in EDGE_MASKS {
         if file_mask != edge_mask && rank_mask != edge_mask {
             res &= !edge_mask;
         }
-        j += 1;
     }
     res
 }
@@ -59,21 +57,15 @@ pub const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
 pub const fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
     let square_mask = square.mask();
     let mut res: Bitboard = 0;
-    let mut i = 0;
-    while i < 15 {
-        let diagonal = DIAGONALS_BR_TO_TL[i];
+    for diagonal in DIAGONALS_BR_TO_TL {
         if diagonal & square_mask != 0 {
             res |= diagonal;
         }
-        i += 1;
     }
-    i = 0;
-    while i < 15 {
-        let diagonal = DIAGONALS_BL_TO_TR[i];
+    for diagonal in DIAGONALS_BL_TO_TR {
         if diagonal & square_mask != 0 {
             res |= diagonal;
         }
-        i += 1;
     }
     res & !square_mask & !(File::A.mask() | File::H.mask() | Rank::One.mask() | Rank::Eight.mask())
 }

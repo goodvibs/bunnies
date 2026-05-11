@@ -1,5 +1,6 @@
 //! KQkq castling rights as a single byte-sized enum (discriminants `0`…`15` = lower four bits).
 
+use crate::utilities::Array;
 use crate::{Color, Flank, Square};
 
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
@@ -73,7 +74,7 @@ impl Default for CastlingRights {
 /// `make_move` ANDs the previous rights with both `MASK[from]` and `MASK[to]`, which collectively
 /// handle every right-clearing case: a king leaving its home, a rook leaving its starting corner,
 /// and a rook being captured on its starting corner. All other squares pass through unchanged.
-const CASTLING_RIGHTS_MASK: [CastlingRights; 64] = {
+const CASTLING_RIGHTS_MASK: Array<CastlingRights, 64> = Array({
     let mut mask = [CastlingRights::from_bits(0b1111u8); 64];
     mask[Square::E1 as usize] = CastlingRights::from_bits(!0b1100u8 & 0b1111);
     mask[Square::E8 as usize] = CastlingRights::from_bits(!0b0011u8 & 0b1111);
@@ -82,7 +83,7 @@ const CASTLING_RIGHTS_MASK: [CastlingRights; 64] = {
     mask[Square::A8 as usize] = CastlingRights::from_bits(!0b0001u8 & 0b1111);
     mask[Square::H8 as usize] = CastlingRights::from_bits(!0b0010u8 & 0b1111);
     mask
-};
+});
 
 #[cfg(test)]
 mod tests {

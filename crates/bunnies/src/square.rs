@@ -6,7 +6,7 @@ use crate::utilities::{Array, QueenLikeMoveDirection, SquaresToMasks};
 use crate::{Bitboard, Color};
 
 // Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
-pub(crate) const DIAGONALS_BR_TO_TL: [Bitboard; 15] = [
+pub(crate) const DIAGONALS_BR_TO_TL: Array<Bitboard, 15> = Array([
     0x0000000000000001,
     0x0000000000000102,
     0x0000000000010204,
@@ -22,9 +22,9 @@ pub(crate) const DIAGONALS_BR_TO_TL: [Bitboard; 15] = [
     0x2040800000000000,
     0x4080000000000000,
     0x8000000000000000,
-];
+]);
 
-pub(crate) const DIAGONALS_BL_TO_TR: [Bitboard; 15] = [
+pub(crate) const DIAGONALS_BL_TO_TR: Array<Bitboard, 15> = Array([
     0x0000000000000080,
     0x0000000000008040,
     0x0000000000804020,
@@ -40,7 +40,7 @@ pub(crate) const DIAGONALS_BL_TO_TR: [Bitboard; 15] = [
     0x0402010000000000,
     0x0201000000000000,
     0x0100000000000000,
-];
+]);
 
 pub type SquareDelta = i8;
 
@@ -402,35 +402,31 @@ impl Square {
         Square::H1,
     ]);
 
-    pub const ALL_ALGEBRAIC: [&'static str; 64] = [
+    pub const ALL_ALGEBRAIC: Array<&'static str, 64> = Array([
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
         "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",
         "g5", "h5", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a3", "b3", "c3", "d3", "e3",
         "f3", "g3", "h3", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", "a1", "b1", "c1", "d1",
         "e1", "f1", "g1", "h1",
-    ];
+    ]);
 }
 
 const fn ascending_diagonal_mask_impl(square: Square) -> Bitboard {
     let mask = square.mask();
-    let mut i = 0;
-    while i < 15 {
-        if DIAGONALS_BR_TO_TL[i] & mask != 0 {
-            return DIAGONALS_BR_TO_TL[i];
+    for diagonal in DIAGONALS_BR_TO_TL {
+        if diagonal & mask != 0 {
+            return diagonal;
         }
-        i += 1;
     }
     0
 }
 
 const fn descending_diagonal_mask_impl(square: Square) -> Bitboard {
     let mask = square.mask();
-    let mut i = 0;
-    while i < 15 {
-        if DIAGONALS_BL_TO_TR[i] & mask != 0 {
-            return DIAGONALS_BL_TO_TR[i];
+    for diagonal in DIAGONALS_BL_TO_TR {
+        if diagonal & mask != 0 {
+            return diagonal;
         }
-        i += 1;
     }
     0
 }
@@ -444,7 +440,7 @@ pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
     (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
 }
 
-const DIAGONALS_MASK_DATA: [Bitboard; 64] = {
+const DIAGONALS_MASK_DATA: Array<Bitboard, 64> = Array({
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
@@ -452,9 +448,9 @@ const DIAGONALS_MASK_DATA: [Bitboard; 64] = {
         i += 1;
     }
     arr
-};
+});
 
-const DIAGONALS_MASK_LOOKUP: SquaresToMasks = SquaresToMasks::from_array(DIAGONALS_MASK_DATA);
+const DIAGONALS_MASK_LOOKUP: SquaresToMasks = SquaresToMasks::from_array(DIAGONALS_MASK_DATA.0);
 
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

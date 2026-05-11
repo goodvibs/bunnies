@@ -1,3 +1,4 @@
+use crate::utilities::Array;
 use crate::{Rank, Square};
 
 #[repr(u8)]
@@ -40,7 +41,7 @@ impl Color {
     }
 
     /// An array of all Colors (2 colors).
-    pub const ALL: [Color; 2] = [Color::White, Color::Black];
+    pub const ALL: Array<Color, 2> = Array([Color::White, Color::Black]);
 }
 
 #[cfg(test)]
