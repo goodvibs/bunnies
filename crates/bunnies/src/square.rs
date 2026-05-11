@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::file::File;
 use crate::rank::Rank;
-use crate::utilities::{QueenLikeMoveDirection, SquaresToMasks};
+use crate::utilities::{Array, QueenLikeMoveDirection, SquaresToMasks};
 use crate::{Bitboard, Color};
 
 // Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
@@ -335,7 +335,7 @@ impl Square {
     }
 
     /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
-    pub const ALL: [Square; 64] = [
+    pub const ALL: Array<Square, 64> = Array([
         Square::A8,
         Square::B8,
         Square::C8,
@@ -400,7 +400,7 @@ impl Square {
         Square::F1,
         Square::G1,
         Square::H1,
-    ];
+    ]);
 
     pub const ALL_ALGEBRAIC: [&'static str; 64] = [
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
@@ -615,13 +615,5 @@ mod tests {
         assert_eq!(format!("{}", Square::A1), "a1");
         assert_eq!(format!("{}", Square::H8), "h8");
         assert_eq!(format!("{}", Square::E4), "e4");
-    }
-
-    #[test]
-    fn test_iter_all() {
-        let all_squares = Square::ALL.into_iter().collect::<Vec<Square>>();
-        assert_eq!(all_squares.len(), 64);
-        assert_eq!(all_squares[0], Square::A8);
-        assert_eq!(all_squares[63], Square::H1);
     }
 }

@@ -377,20 +377,21 @@ impl Board {
 
     pub fn ascii_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
-        for (i, square) in Square::ALL.into_iter().enumerate() {
+        for square in Square::ALL {
             let piece = self.piece_at(square);
             let color = self.color_at(square);
-            cb[i / 8][i % 8] = ColoredPiece::new(color, piece).ascii();
+            cb[square as usize / 8][square as usize % 8] = ColoredPiece::new(color, piece).ascii();
         }
         cb
     }
 
     pub fn unicode_charboard(&self) -> Charboard {
         let mut cb: Charboard = [[' '; 8]; 8];
-        for (i, square) in Square::ALL.into_iter().enumerate() {
+        for square in Square::ALL {
             let piece = self.piece_at(square);
             let color = self.color_at(square);
-            cb[i / 8][i % 8] = ColoredPiece::new(color, piece).unicode();
+            cb[square as usize / 8][square as usize % 8] =
+                ColoredPiece::new(color, piece).unicode();
         }
         cb
     }
