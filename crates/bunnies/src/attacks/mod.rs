@@ -85,3 +85,6 @@ pub fn sliding_piece_attacks(
         _ => panic!("Not a sliding piece!"),
     }
 }
+
+// Re-export for backward compatibility
+pub use magic::sliding_piece_relevant_mask;

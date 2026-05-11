@@ -4,6 +4,7 @@
 #![feature(const_iter)]
 #![feature(const_default)]
 #![feature(const_precise_live_drops)]
+#![feature(const_closures)]
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]

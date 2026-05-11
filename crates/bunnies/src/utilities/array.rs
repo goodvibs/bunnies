@@ -23,12 +23,42 @@ impl<T: Copy, const N: usize> const Iterator for ConstIterator<T, N> {
 
 impl<T: Copy, const N: usize> const IntoIterator for Array<T, N> {
     type Item = T;
-
-    type IntoIter = ConstIterator<T, N>;
+    type IntoIter = ConstIterator<Self::Item, N>;
 
     fn into_iter(self) -> Self::IntoIter {
         Self::IntoIter {
             values: self.0,
+            current: 0,
+        }
+    }
+}
+
+pub struct ConstRefIterator<'a, T, const N: usize> {
+    values: &'a [T; N],
+    current: usize,
+}
+
+impl<'a, T, const N: usize> const Iterator for ConstRefIterator<'a, T, N> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= N {
+            None
+        } else {
+            let next = &self.values[self.current];
+            self.current += 1;
+            Some(next)
+        }
+    }
+}
+
+impl<'a, T, const N: usize> const IntoIterator for &'a Array<T, N> {
+    type Item = &'a T;
+    type IntoIter = ConstRefIterator<'a, T, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ConstRefIterator {
+            values: &self.0,
             current: 0,
         }
     }

@@ -2,8 +2,7 @@
 
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::{
-    Bitboard, BitboardUtils, Board, CastlingRights, Color, ConstBitboardGeometry, Piece,
-    PositionContext, Square,
+    Bitboard, BitboardUtils, Board, CastlingRights, Color, Piece, PositionContext, Square,
 };
 use std::fmt;
 

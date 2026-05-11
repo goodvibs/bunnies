@@ -12,7 +12,7 @@ use crate::attacks::{
     sliding_piece_attacks,
 };
 use crate::{Bitboard, Color, DoublePawnPushFile, Flank};
-use crate::{BitboardUtils, ConstBitboardGeometry, ConstDoublePawnPushFile, Piece};
+use crate::{BitboardUtils, ConstDoublePawnPushFile, Piece};
 use crate::{Move, MoveFlag, MoveList, Position};
 
 /// Returns `to_mask` restricted to squares legal for `from` given current pins.

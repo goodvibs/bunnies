@@ -6,7 +6,7 @@ use crate::Square;
 use crate::attacks::*;
 use crate::utilities::{Array, Charboard, CharboardDisplay};
 use crate::{Bitboard, Color};
-use crate::{BitboardUtils, ColoredPiece, ConstBitboardGeometry};
+use crate::{BitboardUtils, ColoredPiece};
 use std::fmt::Display;
 
 /// A struct representing the positions of all pieces on the board, for both colors.

@@ -18,9 +18,5 @@ criterion = "0.5.1"
 name = "perft"
 
 [[bench]]
-name = "attacks"
-harness = false
-
-[[bench]]
 name = "perft"
 harness = false

@@ -83,7 +83,7 @@ impl const SquareDeltaUtils for SquareDelta {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Eq, Debug)]
+#[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
 #[derive_const(PartialEq)]
 /// Represents a square on the chess board.
 pub enum Square {

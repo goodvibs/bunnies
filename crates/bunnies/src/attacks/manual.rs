@@ -3,8 +3,47 @@
 use crate::Bitboard;
 use crate::Color;
 use crate::File;
+use crate::Piece;
 use crate::Square;
 use std::cmp;
+
+#[inline]
+const fn walk_ray_limited(
+    mut pos: Bitboard,
+    occupied_mask: Bitboard,
+    shift: u8,
+    shift_left: bool,
+    max_steps: u32,
+) -> Bitboard {
+    let mut attacks: Bitboard = 0;
+    let mut i = 0;
+    while i < max_steps {
+        pos = if shift_left {
+            pos << shift
+        } else {
+            pos >> shift
+        };
+        if pos == 0 {
+            break;
+        }
+        attacks |= pos;
+        if occupied_mask & pos != 0 {
+            break;
+        }
+        i += 1;
+    }
+    attacks
+}
+
+#[inline]
+const fn square_edge_distances(square: Square) -> (u32, u32, u32, u32) {
+    let idx = square as u32;
+    let n_distance = idx / 8;
+    let s_distance = 7 - n_distance;
+    let w_distance = idx % 8;
+    let e_distance = 7 - w_distance;
+    (n_distance, s_distance, w_distance, e_distance)
+}
 
 /// Returns a bitboard with all squares attacked by knights indicated by the bits in `knights_mask`
 pub const fn multi_knight_attacks(knights_mask: Bitboard) -> Bitboard {
@@ -46,10 +85,7 @@ pub const fn multi_pawn_attacks_right(pawns_mask: Bitboard, by_color: Color) -> 
 
 /// Returns a bitboard with all squares attacked by pawns indicated by the bits in `pawns_mask`
 pub const fn multi_pawn_attacks(pawns_mask: Bitboard, by_color: Color) -> Bitboard {
-    match by_color {
-        Color::White => (pawns_mask << 9 & !File::H.mask()) | (pawns_mask << 7 & !File::A.mask()),
-        Color::Black => (pawns_mask >> 7 & !File::H.mask()) | (pawns_mask >> 9 & !File::A.mask()),
-    }
+    multi_pawn_attacks_left(pawns_mask, by_color) | multi_pawn_attacks_right(pawns_mask, by_color)
 }
 
 /// Returns a bitboard with all squares that pawns indicated by the bits in `pawns_mask` can move to
@@ -64,86 +100,56 @@ pub const fn multi_pawn_moves(pawns_mask: Bitboard, by_color: Color) -> Bitboard
 /// with `occupied_mask` as the mask of occupied squares
 pub const fn manual_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
     let src_square_mask = src_square.mask();
-    let mut result: Bitboard = 0;
-
-    let mut mask = src_square_mask << 1;
-    while mask != 0 && mask & File::H.mask() == 0 {
-        result |= mask;
-        if occupied_mask & mask != 0 {
-            break;
-        }
-        mask <<= 1;
-    }
-
-    let mut mask = src_square_mask << 8;
-    while mask != 0 {
-        result |= mask;
-        if occupied_mask & mask != 0 {
-            break;
-        }
-        mask <<= 8;
-    }
-
-    let mut mask = src_square_mask >> 1;
-    while mask != 0 && mask & File::A.mask() == 0 {
-        result |= mask;
-        if occupied_mask & mask != 0 {
-            break;
-        }
-        mask >>= 1;
-    }
-
-    let mut mask = src_square_mask >> 8;
-    while mask != 0 {
-        result |= mask;
-        if occupied_mask & mask != 0 {
-            break;
-        }
-        mask >>= 8;
-    }
-
-    result
+    let (n_distance, s_distance, w_distance, e_distance) = square_edge_distances(src_square);
+    walk_ray_limited(src_square_mask, occupied_mask, 1, true, w_distance)
+        | walk_ray_limited(src_square_mask, occupied_mask, 8, true, n_distance)
+        | walk_ray_limited(src_square_mask, occupied_mask, 1, false, e_distance)
+        | walk_ray_limited(src_square_mask, occupied_mask, 8, false, s_distance)
 }
 
 /// Returns a bitboard with all squares attacked by a bishop on `src_square`
 /// with `occupied_mask` as the mask of occupied squares
-pub fn manual_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    let mut attacks: Bitboard = 0;
-    let leading_zeros = src_square as u32;
-    let n_distance: u32 = leading_zeros / 8;
-    let s_distance: u32 = 7 - n_distance;
-    let w_distance: u32 = leading_zeros % 8;
-    let e_distance: u32 = 7 - w_distance;
+pub const fn manual_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
+    let (n_distance, s_distance, w_distance, e_distance) = square_edge_distances(src_square);
     let src_mask = src_square.mask();
-    let (mut pos_nw, mut pos_ne, mut pos_sw, mut pos_se): (Bitboard, Bitboard, Bitboard, Bitboard) =
-        (src_mask, src_mask, src_mask, src_mask);
-    for _ in 0..cmp::min(n_distance, w_distance) {
-        pos_nw <<= 9;
-        attacks |= pos_nw;
-        if occupied_mask & pos_nw != 0 {
-            break;
+    walk_ray_limited(
+        src_mask,
+        occupied_mask,
+        9,
+        true,
+        cmp::min(n_distance, w_distance),
+    ) | walk_ray_limited(
+        src_mask,
+        occupied_mask,
+        7,
+        true,
+        cmp::min(n_distance, e_distance),
+    ) | walk_ray_limited(
+        src_mask,
+        occupied_mask,
+        7,
+        false,
+        cmp::min(s_distance, w_distance),
+    ) | walk_ray_limited(
+        src_mask,
+        occupied_mask,
+        9,
+        false,
+        cmp::min(s_distance, e_distance),
+    )
+}
+
+pub const fn manual_sliding_piece_attacks<const P: Piece>(
+    from: Square,
+    occupied_mask: Bitboard,
+) -> Bitboard {
+    match P {
+        Piece::Bishop => manual_single_bishop_attacks(from, occupied_mask),
+        Piece::Rook => manual_single_rook_attacks(from, occupied_mask),
+        Piece::Queen => {
+            manual_single_bishop_attacks(from, occupied_mask)
+                | manual_single_rook_attacks(from, occupied_mask)
         }
+        _ => panic!("P is not a sliding piece"),
     }
-    for _ in 0..cmp::min(n_distance, e_distance) {
-        pos_ne <<= 7;
-        attacks |= pos_ne;
-        if occupied_mask & pos_ne != 0 {
-            break;
-        }
-    }
-    for _ in 0..cmp::min(s_distance, w_distance) {
-        pos_sw >>= 7;
-        attacks |= pos_sw;
-        if occupied_mask & pos_sw != 0 {
-            break;
-        }
-    }
-    for _ in 0..cmp::min(s_distance, e_distance) {
-        pos_se >>= 9;
-        attacks |= pos_se;
-        if occupied_mask & pos_se != 0 {
-            break;
-        }
-    }
-    attacks
 }
