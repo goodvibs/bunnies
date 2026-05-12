@@ -134,7 +134,7 @@ impl MagicInfo {
 
     /// Serialize MagicInfo to bytes (21 bytes total).
     /// Stores offset instead of pointer for portability.
-    fn to_bytes(&self, table_base: NonNull<Bitboard>) -> [u8; 21] {
+    fn as_bytes(&self, table_base: NonNull<Bitboard>) -> [u8; 21] {
         let mut bytes = [0u8; 21];
         bytes[0..8].copy_from_slice(&self.relevant_mask.to_le_bytes());
         bytes[8..16].copy_from_slice(&self.magic_number.to_le_bytes());
@@ -238,12 +238,12 @@ impl MagicAttacks {
 
         // Write rook magic info (64 entries)
         for magic_info in &self.rook_magic_info_lookup {
-            file.write_all(&magic_info.to_bytes(table_base))?;
+            file.write_all(&magic_info.as_bytes(table_base))?;
         }
 
         // Write bishop magic info (64 entries)
         for magic_info in &self.bishop_magic_info_lookup {
-            file.write_all(&magic_info.to_bytes(table_base))?;
+            file.write_all(&magic_info.as_bytes(table_base))?;
         }
 
         // Write the combined attack table
