@@ -316,7 +316,7 @@ impl MagicAttacks {
 
         // Initialize rooks (offset starts at 0)
         let mut rook_initializer =
-            PieceMagicInitializer::new(&mut attacks, 0, Prng::new(3141592653));
+            PieceMagicInitializer::new(&mut attacks, 0, Prng::new(3141592653589793238));
 
         let mut rook_magic_info = Array([MagicInfo::default(); 64]);
         for square in Square::ALL {
@@ -325,8 +325,11 @@ impl MagicAttacks {
         }
 
         // Initialize bishops (offset starts where rooks ended)
-        let mut bishop_initializer =
-            PieceMagicInitializer::new(&mut attacks, BISHOP_TABLE_OFFSET, Prng::new(0));
+        let mut bishop_initializer = PieceMagicInitializer::new(
+            &mut attacks,
+            BISHOP_TABLE_OFFSET,
+            Prng::new(2718281828459045),
+        );
 
         let mut bishop_magic_info = Array([MagicInfo::default(); 64]);
         for square in Square::ALL {
