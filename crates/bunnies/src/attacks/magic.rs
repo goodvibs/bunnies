@@ -15,6 +15,7 @@ use std::io;
 use std::io::Read;
 use std::io::Write;
 use std::path::PathBuf;
+use std::ptr::NonNull;
 use std::sync::LazyLock;
 
 static ROOK_RELEVANT_MASKS: Array<Bitboard, 64> = Array({
@@ -85,93 +86,136 @@ const fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
     res & !square_mask & !(File::A.mask() | File::H.mask() | Rank::One.mask() | Rank::Eight.mask())
 }
 
-/// Struct to store all magic-related information for a square
+/// Magic info for a single square, using a pointer to its attack subset.
+/// This eliminates the need to pass the attacks table during lookup.
 #[derive(Copy, Clone)]
-#[derive_const(Default)]
 pub(crate) struct MagicInfo {
     pub relevant_mask: Bitboard,
     pub magic_number: Bitboard,
     pub right_shift_amount: u8,
-    pub offset: u32,
+    /// Pointer to the start of this square's attacks in the combined table.
+    /// The actual attack is accessed at `attacks.as_ptr().add(calc_key(occupied_mask))`.
+    /// NonNull is used instead of raw pointer because it is Send + Sync.
+    pub attacks: NonNull<Bitboard>,
 }
 
-impl MagicInfo {
-    fn calc_key(&self, occupied_mask: Bitboard) -> usize {
-        let blockers = occupied_mask & self.relevant_mask;
-        let mut hash = blockers.wrapping_mul(self.magic_number);
-        hash >>= self.right_shift_amount;
-        hash as usize + self.offset as usize
-    }
-
-    /// Serialize MagicInfo to bytes (21 bytes total)
-    fn to_bytes(&self) -> [u8; 21] {
-        let mut bytes = [0u8; 21];
-        bytes[0..8].copy_from_slice(&self.relevant_mask.to_le_bytes());
-        bytes[8..16].copy_from_slice(&self.magic_number.to_le_bytes());
-        bytes[16] = self.right_shift_amount;
-        bytes[17..21].copy_from_slice(&self.offset.to_le_bytes());
-        bytes
-    }
-
-    /// Deserialize MagicInfo from bytes
-    fn from_bytes(bytes: &[u8; 21]) -> Self {
+impl Default for MagicInfo {
+    fn default() -> Self {
         Self {
-            relevant_mask: u64::from_le_bytes(bytes[0..8].try_into().unwrap()),
-            magic_number: u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
-            right_shift_amount: bytes[16],
-            offset: u32::from_le_bytes(bytes[17..21].try_into().unwrap()),
+            relevant_mask: 0,
+            magic_number: 0,
+            right_shift_amount: 0,
+            // SAFETY: This is a placeholder value; the actual pointer is set during generation.
+            // We use NonNull::dangling() which is a valid but non-dereferenceable pointer.
+            attacks: NonNull::dangling(),
         }
     }
 }
 
-/// The size of the attack table for rooks
+impl MagicInfo {
+    /// Calculate the hash key (index) into the attacks table.
+    /// Returns the offset from `self.attacks` where the attack bitboard is stored.
+    fn calc_key(&self, occupied_mask: Bitboard) -> usize {
+        let blockers = occupied_mask & self.relevant_mask;
+        let hash = blockers.wrapping_mul(self.magic_number);
+        (hash >> self.right_shift_amount) as usize
+    }
+
+    /// Get the attack mask for this square with a given occupied mask.
+    /// Uses pointer arithmetic for direct access.
+    #[inline]
+    pub unsafe fn get_attacks(&self, occupied_mask: Bitboard) -> Bitboard {
+        let key = self.calc_key(occupied_mask);
+        // SAFETY: The attacks pointer was initialized during generation to point
+        // within the boxed attacks table. The calc_key result is always within
+        // bounds for that square's subset (verified during generation).
+        unsafe { *self.attacks.as_ptr().add(key) }
+    }
+
+    /// Serialize MagicInfo to bytes (21 bytes total).
+    /// Stores offset instead of pointer for portability.
+    fn to_bytes(&self, table_base: NonNull<Bitboard>) -> [u8; 21] {
+        let mut bytes = [0u8; 21];
+        bytes[0..8].copy_from_slice(&self.relevant_mask.to_le_bytes());
+        bytes[8..16].copy_from_slice(&self.magic_number.to_le_bytes());
+        bytes[16] = self.right_shift_amount;
+
+        // Store offset from table base instead of raw pointer
+        let offset = unsafe { self.attacks.as_ptr().offset_from(table_base.as_ptr()) as u32 };
+        bytes[17..21].copy_from_slice(&offset.to_le_bytes());
+
+        bytes
+    }
+
+    /// Deserialize MagicInfo from bytes, converting offset to pointer.
+    fn from_bytes(bytes: &[u8; 21], table_base: NonNull<Bitboard>) -> Self {
+        let offset = u32::from_le_bytes(bytes[17..21].try_into().unwrap()) as isize;
+
+        Self {
+            relevant_mask: u64::from_le_bytes(bytes[0..8].try_into().unwrap()),
+            magic_number: u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+            right_shift_amount: bytes[16],
+            attacks: unsafe { NonNull::new_unchecked(table_base.as_ptr().offset(offset)) },
+        }
+    }
+}
+
+/// Size of the attack table for rooks.
 const ROOK_ATTACK_TABLE_SIZE: usize =
     36 * 2usize.pow(10) + 28 * 2usize.pow(11) + 4 * 2usize.pow(12);
-/// The size of the attack table for bishops
+
+/// Size of the attack table for bishops.
 const BISHOP_ATTACK_TABLE_SIZE: usize =
     4 * 2usize.pow(6) + 44 * 2usize.pow(5) + 12 * 2usize.pow(7) + 4 * 2usize.pow(9);
 
-pub(crate) static ROOK_MAGIC_ATTACKS_LOOKUP: LazyLock<MagicAttacksLookup<ROOK_ATTACK_TABLE_SIZE>> =
-    LazyLock::new(|| {
-        MagicAttacksLookup::load_or_generate(
-            magic_table_path("rook_magic_attacks_lookup.bin"),
-            || MagicInitializer::<ROOK_ATTACK_TABLE_SIZE, { Piece::Rook }>::generate(3141592653),
-        )
-        .expect("rook magic table load or generate")
-    });
+/// Combined size for both rooks and bishops in a single table.
+/// Rooks occupy the first portion, bishops follow immediately after.
+const COMBINED_TABLE_SIZE: usize = ROOK_ATTACK_TABLE_SIZE + BISHOP_ATTACK_TABLE_SIZE;
 
-pub(crate) static BISHOP_MAGIC_ATTACKS_LOOKUP: LazyLock<
-    MagicAttacksLookup<BISHOP_ATTACK_TABLE_SIZE>,
-> = LazyLock::new(|| {
-    MagicAttacksLookup::load_or_generate(
-        magic_table_path("bishop_magic_attacks_lookup.bin"),
-        || MagicInitializer::<BISHOP_ATTACK_TABLE_SIZE, { Piece::Bishop }>::generate(0),
-    )
-    .expect("bishop magic table load or generate")
-});
+/// The bishop magic info starts at this offset in the combined table.
+const BISHOP_TABLE_OFFSET: usize = ROOK_ATTACK_TABLE_SIZE;
 
-/// Object that stores all magic-related information for a sliding piece and provides a method to get the attack mask for a given square and occupied mask
-pub(crate) struct MagicAttacksLookup<const TS: usize> {
-    pub attacks: Box<[Bitboard; TS]>,
-    pub magic_info_for_squares: Array<MagicInfo, 64>,
+/// Unified magic attacks lookup for both rooks and bishops.
+/// Uses a single combined attacks table to reduce cache pressure and simplify the design.
+pub(crate) struct MagicAttacks {
+    /// Magic info for all rook squares (indexed by square)
+    pub rook_magic_info_lookup: Array<MagicInfo, 64>,
+    /// Magic info for all bishop squares (indexed by square)
+    pub bishop_magic_info_lookup: Array<MagicInfo, 64>,
+    /// Combined attacks table for both pieces.
+    /// Rooks: [0..ROOK_ATTACK_TABLE_SIZE)
+    /// Bishops: [ROOK_ATTACK_TABLE_SIZE..COMBINED_TABLE_SIZE)
+    attacks: Box<[Bitboard; COMBINED_TABLE_SIZE]>,
 }
 
-impl<const TS: usize> MagicAttacksLookup<TS> {
-    /// Get the magic info for a square
-    fn get_magic_info_for_square(&self, square: Square) -> MagicInfo {
-        self.magic_info_for_squares[square as usize]
+// SAFETY: MagicAttacks contains NonNull pointers that point into its own boxed array.
+// The pointers are initialized during construction and never change.
+// The boxed array is never moved or reallocated, so the pointers remain valid.
+unsafe impl Send for MagicAttacks {}
+unsafe impl Sync for MagicAttacks {}
+
+impl MagicAttacks {
+    /// Get the attack mask for a rook on a given square with a given occupied mask.
+    #[inline]
+    pub fn single_rook_attacks(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
+        let magic_info = self.rook_magic_info_lookup[square as usize];
+        // SAFETY: The attacks pointer was initialized to point within our boxed table,
+        // and the calc_key result is always within bounds for that square's subset.
+        unsafe { magic_info.get_attacks(occupied_mask) }
     }
 
-    /// Get the attack mask for a square with a given occupied mask
-    pub fn get(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
-        let magic_info = self.get_magic_info_for_square(square);
-        let key = magic_info.calc_key(occupied_mask);
-        self.attacks[key]
+    /// Get the attack mask for a bishop on a given square with a given occupied mask.
+    #[inline]
+    pub fn single_bishop_attacks(&self, square: Square, occupied_mask: Bitboard) -> Bitboard {
+        let magic_info = self.bishop_magic_info_lookup[square as usize];
+        // SAFETY: Same as above.
+        unsafe { magic_info.get_attacks(occupied_mask) }
     }
 
+    /// Load from file or generate if not present.
     pub fn load_or_generate(
         filename: PathBuf,
-        generate: impl Fn() -> MagicAttacksLookup<TS>,
+        generate: impl FnOnce() -> Self,
     ) -> io::Result<Self> {
         match Self::load_from_file(&filename) {
             Ok(lookup) => Ok(lookup),
@@ -183,18 +227,26 @@ impl<const TS: usize> MagicAttacksLookup<TS> {
         }
     }
 
+    /// Save to file in a portable format (offsets, not pointers).
     pub fn save_to_file(&self, filename: &PathBuf) -> io::Result<()> {
         let mut file = fs::File::create(filename)?;
+        let table_base = NonNull::new(self.attacks.as_ptr() as *mut Bitboard).unwrap();
 
-        // Write the number of squares
-        file.write_all(&[64])?;
+        // Write header: number of squares (64) and table size info for validation
+        file.write_all(&[64u8])?;
+        file.write_all(&(COMBINED_TABLE_SIZE as u64).to_le_bytes())?;
 
-        // Write magic info for each square
-        for magic_info in &self.magic_info_for_squares {
-            file.write_all(&magic_info.to_bytes())?;
+        // Write rook magic info (64 entries)
+        for magic_info in &self.rook_magic_info_lookup {
+            file.write_all(&magic_info.to_bytes(table_base))?;
         }
 
-        // Write the attack table
+        // Write bishop magic info (64 entries)
+        for magic_info in &self.bishop_magic_info_lookup {
+            file.write_all(&magic_info.to_bytes(table_base))?;
+        }
+
+        // Write the combined attack table
         for attack in self.attacks.iter() {
             file.write_all(&attack.to_le_bytes())?;
         }
@@ -202,39 +254,102 @@ impl<const TS: usize> MagicAttacksLookup<TS> {
         Ok(())
     }
 
+    /// Load from file, converting stored offsets back to pointers.
     pub fn load_from_file(filename: &PathBuf) -> io::Result<Self> {
         let mut file = fs::File::open(filename)?;
-        let mut buffer = [0u8; 1];
 
-        // Read number of squares (should be 64)
-        file.read_exact(&mut buffer)?;
-        if buffer[0] != 64 {
+        // Read and validate header
+        let mut header = [0u8; 9];
+        file.read_exact(&mut header)?;
+        if header[0] != 64 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "magic lookup file: expected 64 in header",
             ));
         }
+        let stored_table_size = u64::from_le_bytes(header[1..9].try_into().unwrap()) as usize;
+        if stored_table_size != COMBINED_TABLE_SIZE {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "magic lookup file: table size mismatch (expected {}, got {})",
+                    COMBINED_TABLE_SIZE, stored_table_size
+                ),
+            ));
+        }
 
-        // Read magic info for each square
-        let mut magic_info_for_squares = Array([MagicInfo::default(); 64]);
+        // Allocate the attacks table first (we need its base address for pointer reconstruction)
+        let mut attacks = Box::new([0u64; COMBINED_TABLE_SIZE]);
+        let table_base = NonNull::new(attacks.as_mut_ptr()).unwrap();
+
+        // Read magic info, converting offsets to pointers
+        let mut rook_magic_info = Array([MagicInfo::default(); 64]);
         for square in Square::ALL {
             let mut magic_info_bytes = [0u8; 21];
             file.read_exact(&mut magic_info_bytes)?;
-            magic_info_for_squares[square as usize] = MagicInfo::from_bytes(&magic_info_bytes);
+            rook_magic_info[square as usize] = MagicInfo::from_bytes(&magic_info_bytes, table_base);
         }
 
-        // Read the attack table into a heap-allocated array
-        let mut attacks = Box::new([0u64; TS]);
+        let mut bishop_magic_info = Array([MagicInfo::default(); 64]);
+        for square in Square::ALL {
+            let mut magic_info_bytes = [0u8; 21];
+            file.read_exact(&mut magic_info_bytes)?;
+            bishop_magic_info[square as usize] =
+                MagicInfo::from_bytes(&magic_info_bytes, table_base);
+        }
+
+        // Read the attack table
         for attack in attacks.iter_mut() {
             *attack = read_u64(&mut file)?;
         }
 
-        Ok(MagicAttacksLookup {
+        Ok(MagicAttacks {
+            rook_magic_info_lookup: rook_magic_info,
+            bishop_magic_info_lookup: bishop_magic_info,
             attacks,
-            magic_info_for_squares,
         })
     }
+
+    /// Generate both rook and bishop magic tables in a single pass.
+    pub fn generate() -> Self {
+        let mut attacks = Box::new([0u64; COMBINED_TABLE_SIZE]);
+
+        // Initialize rooks (offset starts at 0)
+        let mut rook_initializer =
+            PieceMagicInitializer::new(&mut attacks, 0, Prng::new(3141592653));
+
+        let mut rook_magic_info = Array([MagicInfo::default(); 64]);
+        for square in Square::ALL {
+            rook_magic_info[square as usize] =
+                rook_initializer.generate_square_magic::<{ Piece::Rook }>(square);
+        }
+
+        // Initialize bishops (offset starts where rooks ended)
+        let mut bishop_initializer =
+            PieceMagicInitializer::new(&mut attacks, BISHOP_TABLE_OFFSET, Prng::new(0));
+
+        let mut bishop_magic_info = Array([MagicInfo::default(); 64]);
+        for square in Square::ALL {
+            bishop_magic_info[square as usize] =
+                bishop_initializer.generate_square_magic::<{ Piece::Bishop }>(square);
+        }
+
+        MagicAttacks {
+            rook_magic_info_lookup: rook_magic_info,
+            bishop_magic_info_lookup: bishop_magic_info,
+            attacks,
+        }
+    }
 }
+
+/// Single lazy-initialized combined magic attacks table.
+pub(crate) static MAGIC_ATTACKS: LazyLock<MagicAttacks> = LazyLock::new(|| {
+    MagicAttacks::load_or_generate(
+        magic_table_path("magic_attacks_lookup.bin"),
+        MagicAttacks::generate,
+    )
+    .expect("magic table load or generate")
+});
 
 fn magic_table_path(file_name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -249,66 +364,69 @@ fn read_u64(file: &mut fs::File) -> io::Result<u64> {
     Ok(u64::from_le_bytes(bytes))
 }
 
-/// Struct responsible for initializing the MagicAttacksLookup
-pub(crate) struct MagicInitializer<const TS: usize, const P: Piece> {
+/// DRY magic initializer that handles both pieces using the combined table.
+/// Uses a cursor-based approach to sequentially fill the attacks table.
+struct PieceMagicInitializer<'a> {
+    /// Base pointer to the attacks table (for calculating stored pointers and writing)
+    table_base: NonNull<Bitboard>,
+    /// Phantom data to hold the lifetime from the mutable borrow of attacks table
+    _marker: std::marker::PhantomData<&'a mut [Bitboard; COMBINED_TABLE_SIZE]>,
+    /// Current write cursor (offset from table_base)
+    current_offset: usize,
+    /// Random number generator for finding magic numbers
     rng: Prng,
-    attacks: Box<[Bitboard; TS]>,
-    current_offset: u32,
 }
 
-impl<const TS: usize, const P: Piece> MagicInitializer<TS, P> {
-    /// Generate the magic attacks lookup table for a sliding piece
-    pub(crate) fn generate(seed: u64) -> MagicAttacksLookup<TS> {
-        let mut initializer = Self {
-            rng: Prng::new(seed),
-            attacks: Box::new([0; TS]),
-            current_offset: 0,
-        };
-
-        let mut magic_info_for_squares = Array([MagicInfo::default(); 64]);
-
-        for square in Square::ALL {
-            magic_info_for_squares[square as usize] = initializer.generate_magic_info(square);
-        }
-
-        MagicAttacksLookup {
-            attacks: initializer.attacks,
-            magic_info_for_squares,
+impl<'a> PieceMagicInitializer<'a> {
+    fn new(
+        attacks: &'a mut [Bitboard; COMBINED_TABLE_SIZE],
+        start_offset: usize,
+        rng: Prng,
+    ) -> Self {
+        Self {
+            table_base: NonNull::new(attacks.as_mut_ptr()).unwrap(),
+            _marker: std::marker::PhantomData,
+            current_offset: start_offset,
+            rng,
         }
     }
 
-    /// Initialize magic number and attack table for a single square
-    fn generate_magic_info(&mut self, from: Square) -> MagicInfo {
-        let relevant_mask = sliding_piece_relevant_mask::<{ P }>(from);
+    /// Generate magic info for a single square.
+    fn generate_square_magic<const P: Piece>(&mut self, square: Square) -> MagicInfo {
+        let relevant_mask = sliding_piece_relevant_mask::<{ P }>(square);
         let num_relevant_bits = relevant_mask.count_ones() as u8;
         let right_shift_amount = 64 - num_relevant_bits;
         let num_blocker_combinations = 1 << num_relevant_bits;
 
-        let mappings = self.build_mappings(from, relevant_mask, num_blocker_combinations);
+        let mappings =
+            self.build_mappings::<{ P }>(square, relevant_mask, num_blocker_combinations);
         let (magic_number, attacks_lookup) =
             self.find_valid_magic_number(right_shift_amount, &mappings);
 
-        let magic_info = MagicInfo {
-            relevant_mask,
-            magic_number,
-            right_shift_amount,
-            offset: self.current_offset,
-        };
+        // Calculate the pointer to this square's attack subset
+        let attacks_ptr = unsafe { self.table_base.add(self.current_offset) };
 
+        // Copy the attacks lookup into the combined table
         unsafe {
             core::ptr::copy_nonoverlapping(
                 attacks_lookup.as_ptr(),
-                self.attacks.as_mut_ptr().add(self.current_offset as usize),
+                self.table_base.as_ptr().add(self.current_offset),
                 num_blocker_combinations,
             );
         }
 
-        self.current_offset += num_blocker_combinations as u32;
-        magic_info
+        self.current_offset += num_blocker_combinations;
+
+        MagicInfo {
+            relevant_mask,
+            magic_number,
+            right_shift_amount,
+            attacks: attacks_ptr,
+        }
     }
 
     /// Build mapping from occupancy patterns to attack masks
-    fn build_mappings(
+    fn build_mappings<const P: Piece>(
         &self,
         from: Square,
         relevant_mask: Bitboard,
@@ -365,12 +483,12 @@ impl<const TS: usize, const P: Piece> MagicInitializer<TS, P> {
 
 /// Calculate the attack mask for a rook on a given square with a given occupied mask
 pub fn magic_single_rook_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    ROOK_MAGIC_ATTACKS_LOOKUP.get(src_square, occupied_mask)
+    MAGIC_ATTACKS.single_rook_attacks(src_square, occupied_mask)
 }
 
 /// Calculate the attack mask for a bishop on a given square with a given occupied mask
 pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) -> Bitboard {
-    BISHOP_MAGIC_ATTACKS_LOOKUP.get(src_square, occupied_mask)
+    MAGIC_ATTACKS.single_bishop_attacks(src_square, occupied_mask)
 }
 
 #[cfg(test)]
