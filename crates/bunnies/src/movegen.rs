@@ -83,48 +83,135 @@ const fn split_promotions(to_mask: Bitboard, promo_rank: Bitboard) -> (Bitboard,
     (to_mask & !promotions, promotions)
 }
 
+const trait LegalMoveSink {
+    fn normal(&mut self, from: Square, to: Square);
+    fn promotions(&mut self, from: Square, to: Square);
+    fn en_passant(&mut self, from: Square, to: Square);
+    fn castling(&mut self, from: Square, to: Square);
+    fn normal_mask(&mut self, from: Square, to_mask: Bitboard);
+    fn promotions_mask(&mut self, from: Square, to_mask: Bitboard);
+    fn pawn_dsts_from_sd(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard);
+}
+
+struct MoveListSink<'a> {
+    moves: &'a mut MoveList,
+}
+
+impl<'a> MoveListSink<'a> {
+    fn new(moves: &'a mut MoveList) -> Self {
+        Self { moves }
+    }
+}
+
+impl LegalMoveSink for MoveListSink<'_> {
+    fn normal(&mut self, from: Square, to: Square) {
+        self.moves
+            .push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
+    }
+
+    fn promotions(&mut self, from: Square, to: Square) {
+        self.moves.push_all(generate_pawn_promotions(from, to));
+    }
+
+    fn en_passant(&mut self, from: Square, to: Square) {
+        self.moves
+            .push(Move::new_non_promotion(from, to, MoveFlag::EnPassant));
+    }
+
+    fn castling(&mut self, from: Square, to: Square) {
+        self.moves
+            .push(Move::new_non_promotion(from, to, MoveFlag::Castling));
+    }
+
+    fn normal_mask(&mut self, from: Square, to_mask: Bitboard) {
+        for to in to_mask.iter_set_bits_as_squares() {
+            self.normal(from, to);
+        }
+    }
+
+    fn promotions_mask(&mut self, from: Square, to_mask: Bitboard) {
+        for to in to_mask.iter_set_bits_as_squares() {
+            self.promotions(from, to);
+        }
+    }
+
+    fn pawn_dsts_from_sd(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
+        let (normal, promotions) = split_promotions(to_mask, promo_rank);
+        for to in normal.iter_set_bits_as_squares() {
+            let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
+            self.normal(from, to);
+        }
+        for to in promotions.iter_set_bits_as_squares() {
+            let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
+            self.promotions(from, to);
+        }
+    }
+}
+
+#[derive_const(Default)]
+struct MoveCountSink {
+    count: u32,
+}
+
+impl MoveCountSink {
+    fn total(self) -> u32 {
+        self.count
+    }
+}
+
+impl const LegalMoveSink for MoveCountSink {
+    fn normal(&mut self, _from: Square, _to: Square) {
+        self.count += 1;
+    }
+
+    fn promotions(&mut self, _from: Square, _to: Square) {
+        self.count += 4;
+    }
+
+    fn en_passant(&mut self, _from: Square, _to: Square) {
+        self.count += 1;
+    }
+
+    fn castling(&mut self, _from: Square, _to: Square) {
+        self.count += 1;
+    }
+
+    fn normal_mask(&mut self, _from: Square, to_mask: Bitboard) {
+        self.count += to_mask.count_ones();
+    }
+
+    fn promotions_mask(&mut self, _from: Square, to_mask: Bitboard) {
+        self.count += to_mask.count_ones() * 4;
+    }
+
+    fn pawn_dsts_from_sd(&mut self, _sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
+        let (normal, promotions) = split_promotions(to_mask, promo_rank);
+        self.count += normal.count_ones() + promotions.count_ones() * 4;
+    }
+}
+
+fn emit_moves<S: LegalMoveSink>(from: Square, to_mask: Bitboard, sink: &mut S) {
+    sink.normal_mask(from, to_mask);
+}
+
+/// Splits `to_mask` into promotions (on `promo_rank`) and the rest, emitting both via sink.
 #[inline]
-const fn count_pawn_dsts(to_mask: Bitboard, promo_rank: Bitboard) -> u32 {
-    let (normal, promotions) = split_promotions(to_mask, promo_rank);
-    normal.count_ones() + promotions.count_ones() * 4
+fn emit_pawn_dsts<S: LegalMoveSink>(
+    sd: SquareDelta,
+    to_mask: Bitboard,
+    promo_rank: Bitboard,
+    sink: &mut S,
+) {
+    sink.pawn_dsts_from_sd(sd, to_mask, promo_rank);
 }
 
-fn splat_promotions(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
-    for to in to_mask.iter_set_bits_as_squares() {
-        let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
-        moves.push_all(generate_pawn_promotions(from, to));
-    }
-}
-
-const fn splat_normal_pawn_moves(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
-    for to in to_mask.iter_set_bits_as_squares() {
-        let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
-        moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
-    }
-}
-
-const fn splat_moves(from: Square, to_mask: Bitboard, moves: &mut MoveList) {
-    for to in to_mask.iter_set_bits_as_squares() {
-        moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
-    }
-}
-
-/// Splits `to_mask` into promotions (on `promo_rank`) and the rest, emitting both via the
-/// per-delta splat helpers. `sd` is the delta needed to recover `from` from each `to`.
-#[inline]
-fn emit_pawn_dsts(sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard, moves: &mut MoveList) {
-    let (normal, promotions) = split_promotions(to_mask, promo_rank);
-    splat_normal_pawn_moves(sd, normal, moves);
-    splat_promotions(sd, promotions, moves);
-}
-
-fn add_non_ep_pawn_captures<const STM: Color>(
+fn emit_non_ep_pawn_captures<const STM: Color, S: LegalMoveSink>(
     stm_pawns: Bitboard,
     opposite_pieces: Bitboard,
     king_sq: Square,
     dst_mask: Bitboard,
     pinned: Bitboard,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
     let up_left = SquareDelta::UP_LEFT.for_perspective(STM);
     let up_right = SquareDelta::UP_RIGHT.for_perspective(STM);
@@ -136,8 +223,8 @@ fn add_non_ep_pawn_captures<const STM: Color>(
     let free = stm_pawns & !pinned;
     let left = multi_pawn_attacks_left(free, STM) & opposite_pieces & dst_mask;
     let right = multi_pawn_attacks_right(free, STM) & opposite_pieces & dst_mask;
-    emit_pawn_dsts(down_right, left, promo_rank, moves);
-    emit_pawn_dsts(down_left, right, promo_rank, moves);
+    emit_pawn_dsts(down_right, left, promo_rank, sink);
+    emit_pawn_dsts(down_left, right, promo_rank, sink);
 
     // Pinned pawns (rare): per-source emission so the pin restriction is just an AND.
     for from in (stm_pawns & pinned).iter_set_bits_as_squares() {
@@ -145,30 +232,22 @@ fn add_non_ep_pawn_captures<const STM: Color>(
             & opposite_pieces
             & dst_mask
             & Bitboard::edge_to_edge_ray(from, king_sq);
-        let promotions = attacks & promo_rank;
-        for dst in (attacks & !promotions).iter_set_bits_as_squares() {
-            moves.push(Move::new_non_promotion(from, dst, MoveFlag::NormalMove));
-        }
-        for dst in promotions.iter_set_bits_as_squares() {
-            moves.push_all(generate_pawn_promotions(from, dst));
-        }
+        let (normal, promotions) = split_promotions(attacks, promo_rank);
+        emit_moves(from, normal, sink);
+        sink.promotions_mask(from, promotions);
     }
 }
 
-fn add_en_passants<const STM: Color>(
+fn emit_en_passants<const STM: Color, S: LegalMoveSink>(
     dpf: DoublePawnPushFile,
     checkers: Bitboard,
     stm_pawns: Bitboard,
     king_sq: Square,
     pinned: Bitboard,
     ep_is_legal: impl Fn(Square, Square, Square) -> bool,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
-    if !dpf.has_file() {
-        return;
-    }
-
-    if checkers.count_ones() > 1 {
+    if !dpf.has_file() || checkers.count_ones() > 1 {
         return;
     }
 
@@ -185,53 +264,17 @@ fn add_en_passants<const STM: Color>(
         if needs_probe && !ep_is_legal(from, to, capture_square) {
             continue;
         }
-        moves.push(Move::new_non_promotion(from, to, MoveFlag::EnPassant));
+        sink.en_passant(from, to);
     }
 }
 
-fn count_en_passants<const STM: Color>(
-    dpf: DoublePawnPushFile,
-    checkers: Bitboard,
-    stm_pawns: Bitboard,
-    king_sq: Square,
-    pinned: Bitboard,
-    ep_is_legal: impl Fn(Square, Square, Square) -> bool,
-) -> u32 {
-    if !dpf.has_file() {
-        return 0;
-    }
-
-    if checkers.count_ones() > 1 {
-        return 0;
-    }
-
-    let capture_square = dpf.ep_capture_square(STM);
-    let to = dpf.ep_dst_square(STM);
-    let to_mask = to.mask();
-    let mut count = 0;
-
-    for from in (dpf.ep_possible_src_mask(STM) & stm_pawns).iter_set_bits_as_squares() {
-        if pin_restrict(from, to_mask, king_sq, pinned) == 0 {
-            continue;
-        }
-
-        let needs_probe = en_passant_requires_full_attack_probe(checkers, king_sq, from);
-        if needs_probe && !ep_is_legal(from, to, capture_square) {
-            continue;
-        }
-        count += 1;
-    }
-
-    count
-}
-
-fn add_pawn_pushes<const STM: Color>(
+fn emit_pawn_pushes<const STM: Color, S: LegalMoveSink>(
     occupied: Bitboard,
     pawns_stm: Bitboard,
     king_sq: Square,
     dst_mask: Bitboard,
     pinned: Bitboard,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
     // Pinned pawns can only push if pinned along the king's file (vertical pin).
     let king_file_mask = king_sq.file().mask();
@@ -242,179 +285,69 @@ fn add_pawn_pushes<const STM: Color>(
     let down = SquareDelta::DOWN.for_perspective(STM);
 
     let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
-    emit_pawn_dsts(down, single_push_dsts & dst_mask, promo_rank, moves);
+    emit_pawn_dsts(down, single_push_dsts & dst_mask, promo_rank, sink);
 
     let double_push_dsts =
         multi_pawn_moves(single_push_dsts & push_again_mask, STM) & !occupied & dst_mask;
-    splat_normal_pawn_moves(down * 2, double_push_dsts, moves);
+    sink.pawn_dsts_from_sd(down * 2, double_push_dsts, 0);
 }
 
-fn count_pawn_pushes<const STM: Color>(
-    occupied: Bitboard,
-    pawns_stm: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-) -> u32 {
-    // Pinned pawns can only push if pinned along the king's file (vertical pin).
-    let king_file_mask = king_sq.file().mask();
-    let movable_pawns = pawns_stm & !(pinned & !king_file_mask);
-
-    let promo_rank = Rank::Eight.from_perspective(STM).mask();
-    let push_again_mask = Rank::Three.from_perspective(STM).mask();
-    let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
-    let single_push_count = count_pawn_dsts(single_push_dsts & dst_mask, promo_rank);
-    let double_push_count =
-        (multi_pawn_moves(single_push_dsts & push_again_mask, STM) & !occupied & dst_mask)
-            .count_ones();
-
-    single_push_count + double_push_count
-}
-
-fn count_non_ep_pawn_captures<const STM: Color>(
-    stm_pawns: Bitboard,
-    opposite_pieces: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-) -> u32 {
-    let promo_rank = Rank::Eight.from_perspective(STM).mask();
-    let mut count = 0;
-
-    // Free pawns: batch attack generation, no pin reasoning required.
-    let free = stm_pawns & !pinned;
-    let left = multi_pawn_attacks_left(free, STM) & opposite_pieces & dst_mask;
-    let right = multi_pawn_attacks_right(free, STM) & opposite_pieces & dst_mask;
-    count += count_pawn_dsts(left, promo_rank);
-    count += count_pawn_dsts(right, promo_rank);
-
-    // Pinned pawns (rare): per-source emission so the pin restriction is just an AND.
-    for from in (stm_pawns & pinned).iter_set_bits_as_squares() {
-        let attacks = multi_pawn_attacks(from.mask(), STM)
-            & opposite_pieces
-            & dst_mask
-            & Bitboard::edge_to_edge_ray(from, king_sq);
-        count += count_pawn_dsts(attacks, promo_rank);
-    }
-
-    count
-}
-
-const fn add_knight_moves(
+fn emit_knight_moves<S: LegalMoveSink>(
     stm_knights_not_pinned: Bitboard,
     dst_mask: Bitboard,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
     for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
         let to_mask = single_knight_attacks(src_square) & dst_mask;
-        splat_moves(src_square, to_mask, moves);
+        emit_moves(src_square, to_mask, sink);
     }
 }
 
-const fn count_knight_moves(stm_knights_not_pinned: Bitboard, dst_mask: Bitboard) -> u32 {
-    let mut count = 0;
-    for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
-        let to_mask = single_knight_attacks(src_square) & dst_mask;
-        count += to_mask.count_ones();
-    }
-    count
-}
-
-fn add_sliding_moves<const P: Piece>(
+fn emit_sliding_moves<const P: Piece, S: LegalMoveSink>(
     occupancy: Bitboard,
     stm_pieces_of_kind: Bitboard,
     king_sq: Square,
     dst_mask: Bitboard,
     pinned: Bitboard,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
     for from in stm_pieces_of_kind.iter_set_bits_as_squares() {
         let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
-        splat_moves(from, pin_restrict(from, to_mask, king_sq, pinned), moves);
+        emit_moves(from, pin_restrict(from, to_mask, king_sq, pinned), sink);
     }
-}
-
-fn count_sliding_moves<const P: Piece>(
-    occupancy: Bitboard,
-    stm_pieces_of_kind: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-) -> u32 {
-    let mut count = 0;
-    for from in stm_pieces_of_kind.iter_set_bits_as_squares() {
-        let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
-        count += pin_restrict(from, to_mask, king_sq, pinned).count_ones();
-    }
-    count
 }
 
 /// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
-fn add_king_moves(
+fn emit_king_moves<S: LegalMoveSink>(
     king_sq: Square,
     stm_occupancy: Bitboard,
     king_mask: Bitboard,
     king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
-    moves: &mut MoveList,
+    sink: &mut S,
 ) {
     let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
 
     for dst_square in king_moves.iter_set_bits_as_squares() {
         if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
-            moves.push(Move::new_non_promotion(
-                king_sq,
-                dst_square,
-                MoveFlag::NormalMove,
-            ));
+            sink.normal(king_sq, dst_square);
         }
     }
 }
 
-fn count_king_moves(
-    king_sq: Square,
-    stm_occupancy: Bitboard,
-    king_mask: Bitboard,
-    king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
-) -> u32 {
-    let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
-    let mut count = 0;
-
-    for dst_square in king_moves.iter_set_bits_as_squares() {
-        if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
-            count += 1;
-        }
-    }
-
-    count
-}
-
-fn add_castling_moves<const STM: Color>(may_castle: impl Fn(Flank) -> bool, moves: &mut MoveList) {
+fn emit_castling_moves<const STM: Color, S: LegalMoveSink>(
+    may_castle: impl Fn(Flank) -> bool,
+    sink: &mut S,
+) {
     let king_src_square = STM.king_initial_square();
-
     for flank in Flank::ALL {
         if may_castle(flank) {
-            moves.push(Move::new_non_promotion(
-                king_src_square,
-                flank.king_castled_square(STM),
-                MoveFlag::Castling,
-            ));
+            sink.castling(king_src_square, flank.king_castled_square(STM));
         }
     }
-}
-
-fn count_castling_moves(may_castle: impl Fn(Flank) -> bool) -> u32 {
-    let mut count = 0;
-    for flank in Flank::ALL {
-        if may_castle(flank) {
-            count += 1;
-        }
-    }
-    count
 }
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
-    /// Fills `moves` with all legal moves (does not clear `moves`; clear or use a fresh list if needed).
-    pub fn generate_moves(&self, moves: &mut MoveList) {
+    fn visit_legal_moves<S: LegalMoveSink>(&self, sink: &mut S) {
         let ctx = self.context();
         let board = &self.board;
         let king_sq = self.king_square(STM);
@@ -422,12 +355,12 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
 
         // 1. King moves are always legal candidates, regardless of check status.
-        add_king_moves(
+        emit_king_moves(
             king_sq,
             stm_pieces,
             stm_king_mask,
             |dst, occ| !board.is_square_attacked_after_move(dst, STM.other(), occ),
-            moves,
+            sink,
         );
 
         // 2. Double check: only the king can move.
@@ -448,9 +381,9 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         let opposite = board.color_mask_at(STM.other());
         let occupied = board.pieces();
 
-        add_non_ep_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned, moves);
+        emit_non_ep_pawn_captures::<STM, _>(pawns, opposite, king_sq, dst_mask, ctx.pinned, sink);
 
-        add_en_passants::<STM>(
+        emit_en_passants::<STM, _>(
             ctx.double_pawn_push_file,
             ctx.checkers,
             pawns,
@@ -463,123 +396,55 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
                     src.mask() | dst.mask() | capture_square.mask(),
                 )
             },
-            moves,
+            sink,
         );
 
-        add_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned, moves);
+        emit_pawn_pushes::<STM, _>(occupied, pawns, king_sq, dst_mask, ctx.pinned, sink);
 
         let knights = stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned;
-        add_knight_moves(knights, dst_mask, moves);
+        emit_knight_moves(knights, dst_mask, sink);
 
-        add_sliding_moves::<{ Piece::Bishop }>(
+        emit_sliding_moves::<{ Piece::Bishop }, _>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Bishop }>(),
             king_sq,
             dst_mask,
             ctx.pinned,
-            moves,
+            sink,
         );
-        add_sliding_moves::<{ Piece::Rook }>(
+        emit_sliding_moves::<{ Piece::Rook }, _>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Rook }>(),
             king_sq,
             dst_mask,
             ctx.pinned,
-            moves,
+            sink,
         );
-        add_sliding_moves::<{ Piece::Queen }>(
+        emit_sliding_moves::<{ Piece::Queen }, _>(
             occupied,
             stm_pieces & board.piece_mask::<{ Piece::Queen }>(),
             king_sq,
             dst_mask,
             ctx.pinned,
-            moves,
+            sink,
         );
 
         if allow_castling {
-            add_castling_moves::<STM>(|flank| self.can_legally_castle(flank), moves);
+            emit_castling_moves::<STM, _>(|flank| self.can_legally_castle(flank), sink);
         }
+    }
+
+    /// Fills `moves` with all legal moves (does not clear `moves`; clear or use a fresh list if needed).
+    pub fn generate_moves(&self, moves: &mut MoveList) {
+        let mut sink = MoveListSink::new(moves);
+        self.visit_legal_moves(&mut sink);
     }
 
     /// Counts all legal moves without materializing [`Move`] values.
     pub fn count_legal_moves(&self) -> u32 {
-        let ctx = self.context();
-        let board = &self.board;
-        let king_sq = self.king_square(STM);
-        let stm_pieces = board.color_mask_at(STM);
-        let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
-        let mut count = 0;
-
-        // 1. King moves are always legal candidates, regardless of check status.
-        count += count_king_moves(king_sq, stm_pieces, stm_king_mask, |dst, occ| {
-            !board.is_square_attacked_after_move(dst, STM.other(), occ)
-        });
-
-        // 2. Double check: only the king can move.
-        if ctx.checkers.count_ones() > 1 {
-            return count;
-        }
-
-        // 3. Single / no check: compute destination mask + castling eligibility.
-        let (dst_mask, allow_castling) =
-            resolve_dst_mask_and_castling(ctx.checkers, stm_pieces, king_sq, |checker_sq| {
-                board.piece_at(checker_sq).is_sliding_piece()
-            });
-
-        // 4. Count pawns, knights, sliders, castling.
-        let pawns = stm_pieces & board.piece_mask::<{ Piece::Pawn }>();
-        let opposite = board.color_mask_at(STM.other());
-        let occupied = board.pieces();
-
-        count += count_non_ep_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned);
-
-        count += count_en_passants::<STM>(
-            ctx.double_pawn_push_file,
-            ctx.checkers,
-            pawns,
-            king_sq,
-            ctx.pinned,
-            |src, dst, capture_square| {
-                !board.is_square_attacked_after_move(
-                    king_sq,
-                    STM.other(),
-                    src.mask() | dst.mask() | capture_square.mask(),
-                )
-            },
-        );
-
-        count += count_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned);
-
-        let knights = stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned;
-        count += count_knight_moves(knights, dst_mask);
-
-        count += count_sliding_moves::<{ Piece::Bishop }>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Bishop }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-        );
-        count += count_sliding_moves::<{ Piece::Rook }>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Rook }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-        );
-        count += count_sliding_moves::<{ Piece::Queen }>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Queen }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-        );
-
-        if allow_castling {
-            count += count_castling_moves(|flank| self.can_legally_castle(flank));
-        }
-
-        count
+        let mut sink = MoveCountSink::default();
+        self.visit_legal_moves(&mut sink);
+        sink.total()
     }
 }
 
@@ -652,6 +517,22 @@ mod tests {
             }
             _ => panic!("invalid side-to-move in FEN"),
         }
+    }
+
+    #[test]
+    fn test_generate_moves_appends_without_clearing() {
+        let pos = Position::<1, { Color::White }>::from_fen(
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        )
+        .unwrap();
+
+        let mut legal = MoveList::new();
+        pos.generate_moves(&mut legal);
+        let first_len = legal.len();
+        assert!(first_len > 0);
+
+        pos.generate_moves(&mut legal);
+        assert_eq!(legal.len(), first_len * 2);
     }
 
     #[test]
