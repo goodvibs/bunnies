@@ -9,7 +9,7 @@ pub struct MoveList<const MAX_MOVES: usize = 256> {
     len: usize,
 }
 
-impl Default for MoveList {
+impl const Default for MoveList {
     fn default() -> Self {
         Self::new()
     }
@@ -24,7 +24,7 @@ impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     }
 
     #[inline]
-    pub fn clear(&mut self) {
+    pub const fn clear(&mut self) {
         self.len = 0;
     }
 
@@ -39,35 +39,31 @@ impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     }
 
     #[inline]
-    pub fn push(&mut self, m: Move) {
-        debug_assert!(self.len < MAX_MOVES, "MoveList overflow: max {}", MAX_MOVES);
+    pub const fn push(&mut self, m: Move) {
+        debug_assert!(self.len < MAX_MOVES);
         self.moves[self.len] = m;
         self.len += 1;
     }
 
     #[inline]
-    pub fn push_all<const N: usize>(&mut self, moves: [Move; N]) {
-        debug_assert!(
-            self.len + N <= MAX_MOVES,
-            "MoveList overflow: max {}",
-            MAX_MOVES
-        );
+    pub const fn push_all<const N: usize>(&mut self, moves: [Move; N]) {
+        debug_assert!(self.len + N <= MAX_MOVES);
         self.moves[self.len..self.len + N].copy_from_slice(&moves);
         self.len += N;
     }
 
     #[inline]
-    pub fn as_slice(&self) -> &[Move] {
+    pub const fn as_slice(&self) -> &[Move] {
         &self.moves[..self.len]
     }
 
     #[inline]
-    pub fn iter(&self) -> core::slice::Iter<'_, Move> {
+    pub const fn iter(&self) -> core::slice::Iter<'_, Move> {
         self.as_slice().iter()
     }
 }
 
-impl<'a> IntoIterator for &'a MoveList {
+impl<'a> const IntoIterator for &'a MoveList {
     type Item = &'a Move;
     type IntoIter = core::slice::Iter<'a, Move>;
 

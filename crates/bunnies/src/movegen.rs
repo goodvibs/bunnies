@@ -49,14 +49,14 @@ fn splat_promotions(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
     }
 }
 
-fn splat_normal_pawn_moves(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
+const fn splat_normal_pawn_moves(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
     for to in to_mask.iter_set_bits_as_squares() {
         let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
         moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
     }
 }
 
-fn splat_moves(from: Square, to_mask: Bitboard, moves: &mut MoveList) {
+const fn splat_moves(from: Square, to_mask: Bitboard, moves: &mut MoveList) {
     for to in to_mask.iter_set_bits_as_squares() {
         moves.push(Move::new_non_promotion(from, to, MoveFlag::NormalMove));
     }
@@ -166,7 +166,11 @@ fn add_pawn_pushes<const STM: Color>(
     splat_normal_pawn_moves(down * 2, double_push_dsts, moves);
 }
 
-fn add_knight_moves(stm_knights_not_pinned: Bitboard, dst_mask: Bitboard, moves: &mut MoveList) {
+const fn add_knight_moves(
+    stm_knights_not_pinned: Bitboard,
+    dst_mask: Bitboard,
+    moves: &mut MoveList,
+) {
     for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
         let to_mask = single_knight_attacks(src_square) & dst_mask;
         splat_moves(src_square, to_mask, moves);
