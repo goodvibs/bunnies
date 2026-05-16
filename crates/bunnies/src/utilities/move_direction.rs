@@ -1,7 +1,6 @@
 use crate::Square;
 use crate::square::same_line;
 use crate::utilities::Array;
-use crate::utilities::SquaresTwoToOneMapping;
 
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, Debug)]
@@ -109,11 +108,7 @@ impl QueenLikeMoveDirection {
     }
 
     pub fn lookup(src_square: Square, dst_square: Square) -> Option<QueenLikeMoveDirection> {
-        unsafe {
-            MOVE_DIRECTION_LOOKUP
-                .get(src_square, dst_square)
-                .as_queen_like()
-        }
+        unsafe { MOVE_DIRECTION_LOOKUP[src_square as usize][dst_square as usize].as_queen_like() }
     }
 
     /// # Safety
@@ -123,8 +118,7 @@ impl QueenLikeMoveDirection {
         dst_square: Square,
     ) -> QueenLikeMoveDirection {
         unsafe {
-            MOVE_DIRECTION_LOOKUP
-                .get(src_square, dst_square)
+            MOVE_DIRECTION_LOOKUP[src_square as usize][dst_square as usize]
                 .as_queen_like_unchecked()
         }
     }
@@ -212,19 +206,14 @@ impl KnightMoveDirection {
     }
 
     pub fn lookup(src_square: Square, dst_square: Square) -> Option<KnightMoveDirection> {
-        unsafe {
-            MOVE_DIRECTION_LOOKUP
-                .get(src_square, dst_square)
-                .as_knight_like()
-        }
+        unsafe { MOVE_DIRECTION_LOOKUP[src_square as usize][dst_square as usize].as_knight_like() }
     }
 
     /// # Safety
     /// `src_square` and `dst_square` must form a legal knight displacement.
     pub unsafe fn lookup_unchecked(src_square: Square, dst_square: Square) -> KnightMoveDirection {
         unsafe {
-            MOVE_DIRECTION_LOOKUP
-                .get(src_square, dst_square)
+            MOVE_DIRECTION_LOOKUP[src_square as usize][dst_square as usize]
                 .as_knight_like_unchecked()
         }
     }
@@ -272,7 +261,7 @@ const fn unified_move_direction_at(src_square: Square, dst_square: Square) -> Un
     }
 }
 
-static MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
+static MOVE_DIRECTION_LOOKUP: Array<Array<UnifiedMoveDirection, 64>, 64> = {
     let mut arr = [UnifiedMoveDirection::NULL; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {
@@ -281,11 +270,8 @@ static MOVE_DIRECTION_DATA: [UnifiedMoveDirection; 64 * 64] = {
         arr[i] = unified_move_direction_at(src_square, dst_square);
         i += 1;
     }
-    arr
+    unsafe { std::mem::transmute(arr) }
 };
-
-const MOVE_DIRECTION_LOOKUP: SquaresTwoToOneMapping<UnifiedMoveDirection> =
-    SquaresTwoToOneMapping::from_array(MOVE_DIRECTION_DATA);
 
 #[cfg(test)]
 mod tests {

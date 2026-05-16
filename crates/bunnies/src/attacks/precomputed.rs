@@ -4,10 +4,9 @@ use crate::Bitboard;
 use crate::Square;
 use crate::attacks::manual;
 use crate::utilities::Array;
-use crate::utilities::SquaresToMasks;
 
-const SINGLE_KING_ATTACKS_DATA: Array<Bitboard, 64> = Array({
-    let mut arr = [0u64; 64];
+const SINGLE_KING_ATTACKS: Array<Bitboard, 64> = Array({
+    let mut arr = [0 as Bitboard; 64];
     let mut i = 0u8;
     while i < 64 {
         arr[i as usize] = manual::multi_king_attacks(Square::from_u8(i).mask());
@@ -16,8 +15,8 @@ const SINGLE_KING_ATTACKS_DATA: Array<Bitboard, 64> = Array({
     arr
 });
 
-const SINGLE_KNIGHT_ATTACKS_DATA: Array<Bitboard, 64> = Array({
-    let mut arr = [0u64; 64];
+const SINGLE_KNIGHT_ATTACKS: Array<Bitboard, 64> = Array({
+    let mut arr = [0 as Bitboard; 64];
     let mut i = 0u8;
     while i < 64 {
         arr[i as usize] = manual::multi_knight_attacks(Square::from_u8(i).mask());
@@ -26,22 +25,14 @@ const SINGLE_KNIGHT_ATTACKS_DATA: Array<Bitboard, 64> = Array({
     arr
 });
 
-/// Precomputed attacks table for kings.
-pub const SINGLE_KING_ATTACKS: SquaresToMasks =
-    SquaresToMasks::from_array(SINGLE_KING_ATTACKS_DATA.0);
-
-/// Precomputed attacks table for knights.
-pub const SINGLE_KNIGHT_ATTACKS: SquaresToMasks =
-    SquaresToMasks::from_array(SINGLE_KNIGHT_ATTACKS_DATA.0);
-
 /// Returns a precomputed bitboard with all squares attacked by a knight on `src_square`
 pub const fn precomputed_single_king_attacks(src_square: Square) -> Bitboard {
-    SINGLE_KING_ATTACKS.get(src_square)
+    SINGLE_KING_ATTACKS[src_square as usize]
 }
 
 /// Returns a precomputed bitboard with all squares attacked by a knight on `src_square`
 pub const fn precomputed_single_knight_attacks(src_square: Square) -> Bitboard {
-    SINGLE_KNIGHT_ATTACKS.get(src_square)
+    SINGLE_KNIGHT_ATTACKS[src_square as usize]
 }
 
 #[cfg(test)]

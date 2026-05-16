@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::file::File;
 use crate::rank::Rank;
-use crate::utilities::{Array, QueenLikeMoveDirection, SquaresToMasks};
+use crate::utilities::{Array, QueenLikeMoveDirection};
 use crate::{Bitboard, Color};
 
 // Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
@@ -181,41 +181,41 @@ impl Square {
     }
 
     /// Returns the bitboard mask for the square.
-    pub const fn mask(&self) -> Bitboard {
-        1 << (63 - *self as u8)
+    pub const fn mask(self) -> Bitboard {
+        1 << (63 - self as u8)
     }
 
-    pub const fn file(&self) -> File {
-        File::from_u8(*self as u8 % 8)
+    pub const fn file(self) -> File {
+        File::from_u8(self as u8 % 8)
     }
 
-    pub const fn rank(&self) -> Rank {
-        Rank::from_u8(7 - *self as u8 / 8)
+    pub const fn rank(self) -> Rank {
+        Rank::from_u8(7 - self as u8 / 8)
     }
 
     /// Returns the combined file and rank mask for the square.
-    pub const fn orthogonals_mask(&self) -> Bitboard {
+    pub const fn orthogonals_mask(self) -> Bitboard {
         self.file().mask() | self.rank().mask()
     }
 
     /// Returns the combined diagonals mask for the square (both `/` and `\` diagonals through this square).
-    pub const fn diagonals_mask(&self) -> Bitboard {
-        DIAGONALS_MASK_LOOKUP.get(*self)
+    pub const fn diagonals_mask(self) -> Bitboard {
+        DIAGONALS_MASK_LOOKUP[self as usize]
     }
 
     /// Returns the combined orthogonals and diagonals mask for the square.
-    pub fn orthogonals_and_diagonals_mask(&self) -> Bitboard {
+    pub fn orthogonals_and_diagonals_mask(self) -> Bitboard {
         self.orthogonals_mask() | self.diagonals_mask()
     }
 
     /// True if `other` lies on either diagonal through this square (including `other == self`).
-    pub const fn is_diagonal_to(&self, other: Square) -> bool {
-        diagonals_union_impl(*self) & other.mask() != 0
+    pub const fn is_diagonal_to(self, other: Square) -> bool {
+        diagonals_union_impl(self) & other.mask() != 0
     }
 
     /// Returns whether the square is on the same rank, file, or diagonal as another square (including `other == self`).
-    pub const fn is_on_same_line_as(&self, other: Square) -> bool {
-        same_line(*self, other)
+    pub const fn is_on_same_line_as(self, other: Square) -> bool {
+        same_line(self, other)
     }
 
     /// Offset from this square by `delta` in rank-major index space, or `None` if the sum is outside `0..64`.
@@ -230,7 +230,7 @@ impl Square {
     }
 
     /// Returns the square above the current square, if it exists.
-    pub const fn up(&self) -> Option<Square> {
+    pub const fn up(self) -> Option<Square> {
         if self.rank() == Rank::Eight {
             None
         } else {
@@ -239,7 +239,7 @@ impl Square {
     }
 
     /// Returns the square below the current square, if it exists.
-    pub const fn down(&self) -> Option<Square> {
+    pub const fn down(self) -> Option<Square> {
         if self.rank() == Rank::One {
             None
         } else {
@@ -248,7 +248,7 @@ impl Square {
     }
 
     /// Returns the square to the left of the current square, if it exists.
-    pub const fn left(&self) -> Option<Square> {
+    pub const fn left(self) -> Option<Square> {
         if self.file() == File::A {
             None
         } else {
@@ -257,7 +257,7 @@ impl Square {
     }
 
     /// Returns the square to the right of the current square, if it exists.
-    pub const fn right(&self) -> Option<Square> {
+    pub const fn right(self) -> Option<Square> {
         if self.file() == File::H {
             None
         } else {
@@ -266,7 +266,7 @@ impl Square {
     }
 
     /// Returns the square northwest of the current square, if it exists.
-    pub const fn up_left(&self) -> Option<Square> {
+    pub const fn up_left(self) -> Option<Square> {
         if self.rank() == Rank::Eight || self.file() == File::A {
             None
         } else {
@@ -275,7 +275,7 @@ impl Square {
     }
 
     /// Returns the square northeast of the current square, if it exists.
-    pub const fn up_right(&self) -> Option<Square> {
+    pub const fn up_right(self) -> Option<Square> {
         if self.rank() == Rank::Eight || self.file() == File::H {
             None
         } else {
@@ -284,7 +284,7 @@ impl Square {
     }
 
     /// Returns the square southwest of the current square, if it exists.
-    pub const fn down_left(&self) -> Option<Square> {
+    pub const fn down_left(self) -> Option<Square> {
         if self.rank() == Rank::One || self.file() == File::A {
             None
         } else {
@@ -293,7 +293,7 @@ impl Square {
     }
 
     /// Returns the square southeast of the current square, if it exists.
-    pub const fn down_right(&self) -> Option<Square> {
+    pub const fn down_right(self) -> Option<Square> {
         if self.rank() == Rank::One || self.file() == File::H {
             None
         } else {
@@ -315,23 +315,23 @@ impl Square {
     }
 
     /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
-    pub const fn rotated_perspective(&self) -> Square {
-        Square::from_u8(63 - *self as u8)
+    pub const fn rotated_perspective(self) -> Square {
+        Square::from_u8(63 - self as u8)
     }
 
     /// Returns the character corresponding to the file of the square.
-    pub const fn file_char(&self) -> char {
+    pub const fn file_char(self) -> char {
         (b'a' + self.file() as u8) as char
     }
 
     /// Returns the character corresponding to the rank of the square.
-    pub const fn rank_char(&self) -> char {
+    pub const fn rank_char(self) -> char {
         (b'1' + self.rank() as u8) as char
     }
 
     /// Returns a string representing the square in algebraic notation.
-    pub const fn algebraic(&self) -> &str {
-        Self::ALL_ALGEBRAIC[*self as usize]
+    pub const fn algebraic(self) -> &'static str {
+        Self::ALL_ALGEBRAIC[self as usize]
     }
 
     /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
@@ -440,7 +440,7 @@ pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
     (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
 }
 
-const DIAGONALS_MASK_DATA: Array<Bitboard, 64> = Array({
+const DIAGONALS_MASK_LOOKUP: Array<Bitboard, 64> = Array({
     let mut arr = [0u64; 64];
     let mut i = 0u8;
     while i < 64 {
@@ -449,8 +449,6 @@ const DIAGONALS_MASK_DATA: Array<Bitboard, 64> = Array({
     }
     arr
 });
-
-const DIAGONALS_MASK_LOOKUP: SquaresToMasks = SquaresToMasks::from_array(DIAGONALS_MASK_DATA.0);
 
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
