@@ -452,7 +452,7 @@ impl<'a> PieceMagicInitializer<'a> {
         mappings: &[(Bitboard, Bitboard)],
     ) -> (Bitboard, Vec<Bitboard>) {
         loop {
-            let magic_number = self.rng.generate_sparse();
+            let magic_number = self.rng.generate() & self.rng.generate() & self.rng.generate();
 
             match Self::test_magic_number(magic_number, right_shift_amount, mappings) {
                 Some(attacks_lookup) => return (magic_number, attacks_lookup),

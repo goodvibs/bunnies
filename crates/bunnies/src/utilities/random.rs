@@ -16,8 +16,4 @@ impl Prng {
         z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
         z ^ (z >> 31)
     }
-
-    pub const fn generate_sparse(&mut self) -> u64 {
-        self.generate() & self.generate() & self.generate()
-    }
 }
