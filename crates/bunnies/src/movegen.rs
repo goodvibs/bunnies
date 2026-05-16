@@ -34,12 +34,59 @@ fn generate_pawn_promotions(src_square: Square, dst_square: Square) -> [Move; 4]
 
 /// EP pseudo-move may expose the king along a rank; needs full attack evaluation.
 #[inline]
-fn en_passant_requires_full_attack_probe(
+const fn en_passant_requires_full_attack_probe(
     checkers: Bitboard,
     king_sq: Square,
     pawn_src: Square,
 ) -> bool {
     checkers != 0 || king_sq.rank() == pawn_src.rank()
+}
+
+#[inline]
+const fn resolve_mask_for_checker(
+    checker_sq: Square,
+    king_sq: Square,
+    stm_pieces: Bitboard,
+    checker_is_sliding: bool,
+) -> Bitboard {
+    if checker_is_sliding {
+        !stm_pieces & (checker_sq.mask() | Bitboard::between(checker_sq, king_sq))
+    } else {
+        checker_sq.mask()
+    }
+}
+
+#[inline]
+fn resolve_dst_mask_and_castling(
+    checkers: Bitboard,
+    stm_pieces: Bitboard,
+    king_sq: Square,
+    checker_is_sliding: impl Fn(Square) -> bool,
+) -> (Bitboard, bool) {
+    match Square::from_bitboard(checkers) {
+        None => (!stm_pieces, true),
+        Some(checker_sq) => (
+            resolve_mask_for_checker(
+                checker_sq,
+                king_sq,
+                stm_pieces,
+                checker_is_sliding(checker_sq),
+            ),
+            false,
+        ),
+    }
+}
+
+#[inline]
+const fn split_promotions(to_mask: Bitboard, promo_rank: Bitboard) -> (Bitboard, Bitboard) {
+    let promotions = to_mask & promo_rank;
+    (to_mask & !promotions, promotions)
+}
+
+#[inline]
+const fn count_pawn_dsts(to_mask: Bitboard, promo_rank: Bitboard) -> u32 {
+    let (normal, promotions) = split_promotions(to_mask, promo_rank);
+    normal.count_ones() + promotions.count_ones() * 4
 }
 
 fn splat_promotions(sd: SquareDelta, to_mask: Bitboard, moves: &mut MoveList) {
@@ -66,8 +113,8 @@ const fn splat_moves(from: Square, to_mask: Bitboard, moves: &mut MoveList) {
 /// per-delta splat helpers. `sd` is the delta needed to recover `from` from each `to`.
 #[inline]
 fn emit_pawn_dsts(sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard, moves: &mut MoveList) {
-    let promotions = to_mask & promo_rank;
-    splat_normal_pawn_moves(sd, to_mask & !promotions, moves);
+    let (normal, promotions) = split_promotions(to_mask, promo_rank);
+    splat_normal_pawn_moves(sd, normal, moves);
     splat_promotions(sd, promotions, moves);
 }
 
@@ -142,6 +189,42 @@ fn add_en_passants<const STM: Color>(
     }
 }
 
+fn count_en_passants<const STM: Color>(
+    dpf: DoublePawnPushFile,
+    checkers: Bitboard,
+    stm_pawns: Bitboard,
+    king_sq: Square,
+    pinned: Bitboard,
+    ep_is_legal: impl Fn(Square, Square, Square) -> bool,
+) -> u32 {
+    if !dpf.has_file() {
+        return 0;
+    }
+
+    if checkers.count_ones() > 1 {
+        return 0;
+    }
+
+    let capture_square = dpf.ep_capture_square(STM);
+    let to = dpf.ep_dst_square(STM);
+    let to_mask = to.mask();
+    let mut count = 0;
+
+    for from in (dpf.ep_possible_src_mask(STM) & stm_pawns).iter_set_bits_as_squares() {
+        if pin_restrict(from, to_mask, king_sq, pinned) == 0 {
+            continue;
+        }
+
+        let needs_probe = en_passant_requires_full_attack_probe(checkers, king_sq, from);
+        if needs_probe && !ep_is_legal(from, to, capture_square) {
+            continue;
+        }
+        count += 1;
+    }
+
+    count
+}
+
 fn add_pawn_pushes<const STM: Color>(
     occupied: Bitboard,
     pawns_stm: Bitboard,
@@ -166,6 +249,57 @@ fn add_pawn_pushes<const STM: Color>(
     splat_normal_pawn_moves(down * 2, double_push_dsts, moves);
 }
 
+fn count_pawn_pushes<const STM: Color>(
+    occupied: Bitboard,
+    pawns_stm: Bitboard,
+    king_sq: Square,
+    dst_mask: Bitboard,
+    pinned: Bitboard,
+) -> u32 {
+    // Pinned pawns can only push if pinned along the king's file (vertical pin).
+    let king_file_mask = king_sq.file().mask();
+    let movable_pawns = pawns_stm & !(pinned & !king_file_mask);
+
+    let promo_rank = Rank::Eight.from_perspective(STM).mask();
+    let push_again_mask = Rank::Three.from_perspective(STM).mask();
+    let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
+    let single_push_count = count_pawn_dsts(single_push_dsts & dst_mask, promo_rank);
+    let double_push_count =
+        (multi_pawn_moves(single_push_dsts & push_again_mask, STM) & !occupied & dst_mask)
+            .count_ones();
+
+    single_push_count + double_push_count
+}
+
+fn count_non_ep_pawn_captures<const STM: Color>(
+    stm_pawns: Bitboard,
+    opposite_pieces: Bitboard,
+    king_sq: Square,
+    dst_mask: Bitboard,
+    pinned: Bitboard,
+) -> u32 {
+    let promo_rank = Rank::Eight.from_perspective(STM).mask();
+    let mut count = 0;
+
+    // Free pawns: batch attack generation, no pin reasoning required.
+    let free = stm_pawns & !pinned;
+    let left = multi_pawn_attacks_left(free, STM) & opposite_pieces & dst_mask;
+    let right = multi_pawn_attacks_right(free, STM) & opposite_pieces & dst_mask;
+    count += count_pawn_dsts(left, promo_rank);
+    count += count_pawn_dsts(right, promo_rank);
+
+    // Pinned pawns (rare): per-source emission so the pin restriction is just an AND.
+    for from in (stm_pawns & pinned).iter_set_bits_as_squares() {
+        let attacks = multi_pawn_attacks(from.mask(), STM)
+            & opposite_pieces
+            & dst_mask
+            & Bitboard::edge_to_edge_ray(from, king_sq);
+        count += count_pawn_dsts(attacks, promo_rank);
+    }
+
+    count
+}
+
 const fn add_knight_moves(
     stm_knights_not_pinned: Bitboard,
     dst_mask: Bitboard,
@@ -175,6 +309,15 @@ const fn add_knight_moves(
         let to_mask = single_knight_attacks(src_square) & dst_mask;
         splat_moves(src_square, to_mask, moves);
     }
+}
+
+const fn count_knight_moves(stm_knights_not_pinned: Bitboard, dst_mask: Bitboard) -> u32 {
+    let mut count = 0;
+    for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
+        let to_mask = single_knight_attacks(src_square) & dst_mask;
+        count += to_mask.count_ones();
+    }
+    count
 }
 
 fn add_sliding_moves<const P: Piece>(
@@ -189,6 +332,21 @@ fn add_sliding_moves<const P: Piece>(
         let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
         splat_moves(from, pin_restrict(from, to_mask, king_sq, pinned), moves);
     }
+}
+
+fn count_sliding_moves<const P: Piece>(
+    occupancy: Bitboard,
+    stm_pieces_of_kind: Bitboard,
+    king_sq: Square,
+    dst_mask: Bitboard,
+    pinned: Bitboard,
+) -> u32 {
+    let mut count = 0;
+    for from in stm_pieces_of_kind.iter_set_bits_as_squares() {
+        let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
+        count += pin_restrict(from, to_mask, king_sq, pinned).count_ones();
+    }
+    count
 }
 
 /// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
@@ -212,6 +370,24 @@ fn add_king_moves(
     }
 }
 
+fn count_king_moves(
+    king_sq: Square,
+    stm_occupancy: Bitboard,
+    king_mask: Bitboard,
+    king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
+) -> u32 {
+    let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
+    let mut count = 0;
+
+    for dst_square in king_moves.iter_set_bits_as_squares() {
+        if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
+            count += 1;
+        }
+    }
+
+    count
+}
+
 fn add_castling_moves<const STM: Color>(may_castle: impl Fn(Flank) -> bool, moves: &mut MoveList) {
     let king_src_square = STM.king_initial_square();
 
@@ -224,6 +400,16 @@ fn add_castling_moves<const STM: Color>(may_castle: impl Fn(Flank) -> bool, move
             ));
         }
     }
+}
+
+fn count_castling_moves(may_castle: impl Fn(Flank) -> bool) -> u32 {
+    let mut count = 0;
+    for flank in Flank::ALL {
+        if may_castle(flank) {
+            count += 1;
+        }
+    }
+    count
 }
 
 impl<const N: usize, const STM: Color> Position<N, STM> {
@@ -252,17 +438,10 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         // 3. Single / no check: compute destination mask + castling eligibility.
         //    - No check: any non-friendly square; castling allowed.
         //    - Single check: must capture the checker, or (for sliders) interpose; no castling.
-        let (dst_mask, allow_castling) = match Square::from_bitboard(ctx.checkers) {
-            None => (!stm_pieces, true),
-            Some(checker_sq) => {
-                let resolve_mask = if board.piece_at(checker_sq).is_sliding_piece() {
-                    !stm_pieces & (ctx.checkers | Bitboard::between(checker_sq, king_sq))
-                } else {
-                    checker_sq.mask()
-                };
-                (resolve_mask, false)
-            }
-        };
+        let (dst_mask, allow_castling) =
+            resolve_dst_mask_and_castling(ctx.checkers, stm_pieces, king_sq, |checker_sq| {
+                board.piece_at(checker_sq).is_sliding_piece()
+            });
 
         // 4. Emit pawns, knights, sliders, castling.
         let pawns = stm_pieces & board.piece_mask::<{ Piece::Pawn }>();
@@ -321,6 +500,87 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
             add_castling_moves::<STM>(|flank| self.can_legally_castle(flank), moves);
         }
     }
+
+    /// Counts all legal moves without materializing [`Move`] values.
+    pub fn count_legal_moves(&self) -> u32 {
+        let ctx = self.context();
+        let board = &self.board;
+        let king_sq = self.king_square(STM);
+        let stm_pieces = board.color_mask_at(STM);
+        let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
+        let mut count = 0;
+
+        // 1. King moves are always legal candidates, regardless of check status.
+        count += count_king_moves(king_sq, stm_pieces, stm_king_mask, |dst, occ| {
+            !board.is_square_attacked_after_move(dst, STM.other(), occ)
+        });
+
+        // 2. Double check: only the king can move.
+        if ctx.checkers.count_ones() > 1 {
+            return count;
+        }
+
+        // 3. Single / no check: compute destination mask + castling eligibility.
+        let (dst_mask, allow_castling) =
+            resolve_dst_mask_and_castling(ctx.checkers, stm_pieces, king_sq, |checker_sq| {
+                board.piece_at(checker_sq).is_sliding_piece()
+            });
+
+        // 4. Count pawns, knights, sliders, castling.
+        let pawns = stm_pieces & board.piece_mask::<{ Piece::Pawn }>();
+        let opposite = board.color_mask_at(STM.other());
+        let occupied = board.pieces();
+
+        count += count_non_ep_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned);
+
+        count += count_en_passants::<STM>(
+            ctx.double_pawn_push_file,
+            ctx.checkers,
+            pawns,
+            king_sq,
+            ctx.pinned,
+            |src, dst, capture_square| {
+                !board.is_square_attacked_after_move(
+                    king_sq,
+                    STM.other(),
+                    src.mask() | dst.mask() | capture_square.mask(),
+                )
+            },
+        );
+
+        count += count_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned);
+
+        let knights = stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned;
+        count += count_knight_moves(knights, dst_mask);
+
+        count += count_sliding_moves::<{ Piece::Bishop }>(
+            occupied,
+            stm_pieces & board.piece_mask::<{ Piece::Bishop }>(),
+            king_sq,
+            dst_mask,
+            ctx.pinned,
+        );
+        count += count_sliding_moves::<{ Piece::Rook }>(
+            occupied,
+            stm_pieces & board.piece_mask::<{ Piece::Rook }>(),
+            king_sq,
+            dst_mask,
+            ctx.pinned,
+        );
+        count += count_sliding_moves::<{ Piece::Queen }>(
+            occupied,
+            stm_pieces & board.piece_mask::<{ Piece::Queen }>(),
+            king_sq,
+            dst_mask,
+            ctx.pinned,
+        );
+
+        if allow_castling {
+            count += count_castling_moves(|flank| self.can_legally_castle(flank));
+        }
+
+        count
+    }
 }
 
 #[cfg(test)]
@@ -367,6 +627,28 @@ mod tests {
             "b" => {
                 let pos = Position::<1, { Color::Black }>::from_fen(fen).unwrap();
                 expected_moves_test_for_position(&pos, include_move_black, expected_moves);
+            }
+            _ => panic!("invalid side-to-move in FEN"),
+        }
+    }
+
+    fn assert_count_matches_generated_len(fen: &str) {
+        let side_to_move = fen
+            .split_ascii_whitespace()
+            .nth(1)
+            .expect("valid FEN has side-to-move field");
+        match side_to_move {
+            "w" => {
+                let pos = Position::<1, { Color::White }>::from_fen(fen).unwrap();
+                let mut legal = MoveList::new();
+                pos.generate_moves(&mut legal);
+                assert_eq!(pos.count_legal_moves() as usize, legal.len());
+            }
+            "b" => {
+                let pos = Position::<1, { Color::Black }>::from_fen(fen).unwrap();
+                let mut legal = MoveList::new();
+                pos.generate_moves(&mut legal);
+                assert_eq!(pos.count_legal_moves() as usize, legal.len());
             }
             _ => panic!("invalid side-to-move in FEN"),
         }
@@ -708,5 +990,27 @@ mod tests {
             is_castling_move_black,
             [],
         );
+    }
+
+    #[test]
+    fn test_count_legal_moves_matches_generate_moves_on_edge_cases() {
+        let edge_case_fens = [
+            // Double-check: only king moves should be legal.
+            "4k3/4R3/8/1B6/8/8/8/4K3 b - - 0 1",
+            // Pinned pieces and constrained replies under pressure.
+            "2B2rk1/pP5p/Q2p1n2/2p1p3/Npq3r1/1B1r1NRn/1P1P1PPP/R3K2R b KQ - 0 1",
+            // En-passant with discovered-check constraints.
+            "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - e3 0 1",
+            // En-passant where legal captures exist.
+            "8/8/3p4/KPpP3r/1R3p1k/8/4P1P1/8 w - c6 0 2",
+            // Castling availability.
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+            // Promotion-rich pawn moves/captures.
+            "1qbb3k/P1PpqP1P/bn2pnp1/3Pr3/1p5b/1nNQ3p/PPPPPPPP/Rqn1Kb1R w KQ - 0 1",
+        ];
+
+        for fen in edge_case_fens {
+            assert_count_matches_generated_len(fen);
+        }
     }
 }

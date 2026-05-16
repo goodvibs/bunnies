@@ -8,12 +8,11 @@ fn count_nodes<const N: usize, const STM: Color>(
     if depth == 0 {
         return 1;
     }
+    if depth == 1 {
+        return position.count_legal_moves() as u64;
+    }
     let mut moves = MoveList::new();
     position.generate_moves(&mut moves);
-
-    if depth == 1 {
-        return moves.len() as u64;
-    }
 
     let mut total = 0u64;
     for &move_ in moves.as_slice() {
