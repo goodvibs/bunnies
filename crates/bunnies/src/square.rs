@@ -440,12 +440,10 @@ pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
     (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
 }
 
-const DIAGONALS_MASK_LOOKUP: Array<Bitboard, 64> = Array({
+static DIAGONALS_MASK_LOOKUP: Array<Bitboard, 64> = Array({
     let mut arr = [0u64; 64];
-    let mut i = 0u8;
-    while i < 64 {
-        arr[i as usize] = diagonals_union_impl(Square::from_u8(i));
-        i += 1;
+    for square in Square::ALL {
+        arr[square as usize] = diagonals_union_impl(square);
     }
     arr
 });

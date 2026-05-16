@@ -20,20 +20,16 @@ use std::sync::LazyLock;
 
 static ROOK_RELEVANT_MASKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];
-    let mut i = 0u8;
-    while i < 64 {
-        arr[i as usize] = calc_rook_relevant_mask(Square::from_u8(i));
-        i += 1;
+    for square in Square::ALL {
+        arr[square as usize] = calc_rook_relevant_mask(square);
     }
     arr
 });
 
 static BISHOP_RELEVANT_MASKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];
-    let mut i = 0u8;
-    while i < 64 {
-        arr[i as usize] = calc_bishop_relevant_mask(Square::from_u8(i));
-        i += 1;
+    for square in Square::ALL {
+        arr[square as usize] = calc_bishop_relevant_mask(square);
     }
     arr
 });

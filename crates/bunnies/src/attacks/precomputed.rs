@@ -5,22 +5,18 @@ use crate::Square;
 use crate::attacks::manual;
 use crate::utilities::Array;
 
-const SINGLE_KING_ATTACKS: Array<Bitboard, 64> = Array({
+static SINGLE_KING_ATTACKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];
-    let mut i = 0u8;
-    while i < 64 {
-        arr[i as usize] = manual::multi_king_attacks(Square::from_u8(i).mask());
-        i += 1;
+    for square in Square::ALL {
+        arr[square as usize] = manual::multi_king_attacks(square.mask());
     }
     arr
 });
 
-const SINGLE_KNIGHT_ATTACKS: Array<Bitboard, 64> = Array({
+static SINGLE_KNIGHT_ATTACKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];
-    let mut i = 0u8;
-    while i < 64 {
-        arr[i as usize] = manual::multi_knight_attacks(Square::from_u8(i).mask());
-        i += 1;
+    for square in Square::ALL {
+        arr[square as usize] = manual::multi_knight_attacks(square.mask());
     }
     arr
 });

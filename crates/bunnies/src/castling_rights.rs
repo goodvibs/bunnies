@@ -74,7 +74,7 @@ impl Default for CastlingRights {
 /// `make_move` ANDs the previous rights with both `MASK[from]` and `MASK[to]`, which collectively
 /// handle every right-clearing case: a king leaving its home, a rook leaving its starting corner,
 /// and a rook being captured on its starting corner. All other squares pass through unchanged.
-const CASTLING_RIGHTS_MASK: Array<CastlingRights, 64> = Array({
+static CASTLING_RIGHTS_MASK: Array<CastlingRights, 64> = Array({
     let mut mask = [CastlingRights::from_bits(0b1111u8); 64];
     mask[Square::E1 as usize] = CastlingRights::from_bits(!0b1100u8 & 0b1111);
     mask[Square::E8 as usize] = CastlingRights::from_bits(!0b0011u8 & 0b1111);

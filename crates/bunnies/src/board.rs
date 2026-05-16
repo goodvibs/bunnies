@@ -26,17 +26,14 @@ impl Board {
         piece_masks: &[Bitboard; Piece::LIMIT as usize],
     ) -> [Piece; 64] {
         let mut out = [Piece::Null; 64];
-        let mut sq: u8 = 0;
-        while sq < 64 {
-            let square = Square::from_u8(sq);
+        for square in Square::ALL {
             let mask = square.mask();
             for piece in Piece::PIECES {
                 if piece_masks[piece as usize] & mask != 0 {
-                    out[sq as usize] = piece;
+                    out[square as usize] = piece;
                     break;
                 }
             }
-            sq += 1;
         }
         out
     }
@@ -326,9 +323,7 @@ impl Board {
             return false;
         }
 
-        let mut sq: u8 = 0;
-        while sq < 64 {
-            let square = Square::from_u8(sq);
+        for square in Square::ALL {
             let mask = square.mask();
             let mut from_masks = Piece::Null;
             for piece in Piece::PIECES {
@@ -337,10 +332,9 @@ impl Board {
                     break;
                 }
             }
-            if (from_masks as u8) != (self.pieces[sq as usize] as u8) {
+            if (from_masks as u8) != (self.pieces[square as usize] as u8) {
                 return false;
             }
-            sq += 1;
         }
 
         true

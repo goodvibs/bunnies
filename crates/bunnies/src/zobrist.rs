@@ -22,7 +22,7 @@ const fn zobrist_table() -> [[Bitboard; 12]; 64] {
     zobrist
 }
 
-const ZOBRIST_TABLE: [[Bitboard; 12]; 64] = zobrist_table();
+static ZOBRIST_TABLE: [[Bitboard; 12]; 64] = zobrist_table();
 
 /// Gets the Zobrist hash for a piece on a square.
 pub const fn get_piece_zobrist_hash(square: Square, piece: Piece) -> Bitboard {
