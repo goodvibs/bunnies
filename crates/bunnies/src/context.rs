@@ -26,7 +26,7 @@ impl PositionContext {
         PositionContext {
             halfmove_clock: 0,
             double_pawn_push_file: DoublePawnPushFile::NONE,
-            castling_rights: CastlingRights::NONE,
+            castling_rights: CastlingRights::B0000,
             captured_piece: Piece::Null,
             zobrist_hash: 0,
             pinned: 0,

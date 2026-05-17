@@ -28,8 +28,24 @@ pub enum CastlingRights {
 }
 
 impl CastlingRights {
-    pub const NONE: Self = CastlingRights::B0000;
-    pub const ALL: Self = CastlingRights::B1111;
+    pub const ALL: Array<Self, 16> = Array([
+        Self::B0000,
+        Self::B0001,
+        Self::B0010,
+        Self::B0011,
+        Self::B0100,
+        Self::B0101,
+        Self::B0110,
+        Self::B0111,
+        Self::B1000,
+        Self::B1001,
+        Self::B1010,
+        Self::B1011,
+        Self::B1100,
+        Self::B1101,
+        Self::B1110,
+        Self::B1111,
+    ]);
 
     #[inline]
     pub const fn from_bits(bits: u8) -> Self {
@@ -65,7 +81,7 @@ impl CastlingRights {
 
 impl Default for CastlingRights {
     fn default() -> Self {
-        CastlingRights::NONE
+        CastlingRights::B0000
     }
 }
 

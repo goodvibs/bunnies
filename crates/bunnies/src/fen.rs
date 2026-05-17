@@ -39,7 +39,7 @@ fn parse_side_to_move(fen_side_to_move: &str) -> Result<Color, FenParseError> {
 
 fn parse_castling_rights(fen_castling_rights: &str) -> Result<CastlingRights, FenParseError> {
     if fen_castling_rights == "-" {
-        Ok(CastlingRights::NONE)
+        Ok(CastlingRights::B0000)
     } else {
         let mut bits = 0u8;
         for c in fen_castling_rights.chars() {
@@ -180,7 +180,7 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
             let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
             let board = parse_fen_board(fen_board)?;
 
-            let zobrist_hash = crate::calc_zobrist_hash(&board);
+            let zobrist_hash = board.calc_zobrist_hash();
             let halfmove =
                 (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
             let mut context = PositionContext::blank();

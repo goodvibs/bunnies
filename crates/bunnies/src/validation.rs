@@ -19,7 +19,7 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Checks if the zobrist hash in the context matches the board piece placement hash.
     pub fn is_zobrist_consistent(&self) -> bool {
-        self.context().zobrist_hash == crate::calc_zobrist_hash(&self.board)
+        self.context().zobrist_hash == self.board.calc_zobrist_hash()
     }
 
     pub fn is_opposite_side_in_check(&self) -> bool {

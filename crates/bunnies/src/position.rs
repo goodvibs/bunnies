@@ -84,8 +84,8 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         );
         let board = Board::initial();
         let mut context = PositionContext::blank();
-        context.castling_rights = CastlingRights::ALL;
-        context.zobrist_hash = crate::calc_zobrist_hash(&board);
+        context.castling_rights = CastlingRights::B1111;
+        context.zobrist_hash = board.calc_zobrist_hash();
         let mut contexts = [PositionContext::blank(); N];
         contexts[0] = context;
         let mut res = Position {
