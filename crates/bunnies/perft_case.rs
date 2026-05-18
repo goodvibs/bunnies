@@ -1,4 +1,4 @@
-use bunnies::{Color, Position, INITIAL_FEN};
+use bunnies::{Color, Position, PositionWithoutZobrist, WithoutZobrist, ZobristPolicy, INITIAL_FEN};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PerftCase {
@@ -20,38 +20,50 @@ impl PerftCase {
         }
     }
 
-    pub fn with_position<const N: usize, R>(
+    fn with_position_policy<const N: usize, Z: ZobristPolicy, R>(
         self,
-        white: impl FnOnce(Position<N, { Color::White }>) -> R,
-        black: impl FnOnce(Position<N, { Color::Black }>) -> R,
+        white: impl FnOnce(Position<N, { Color::White }, Z>) -> R,
+        black: impl FnOnce(Position<N, { Color::Black }, Z>) -> R,
     ) -> R {
         match self {
-            PerftCase::Initial => white(Position::<N, { Color::White }>::from_fen(INITIAL_FEN).unwrap()),
-            PerftCase::Kiwipete => white(Position::<N, { Color::White }>::from_fen(
+            PerftCase::Initial => {
+                white(Position::<N, { Color::White }, Z>::from_fen(INITIAL_FEN).unwrap())
+            }
+            PerftCase::Kiwipete => white(Position::<N, { Color::White }, Z>::from_fen(
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
             )
             .unwrap()),
             PerftCase::Position3 => {
                 white(
-                    Position::<N, { Color::White }>::from_fen(
+                    Position::<N, { Color::White }, Z>::from_fen(
                         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
                     )
                     .unwrap(),
                 )
             }
-            PerftCase::Position4 => black(Position::<N, { Color::Black }>::from_fen(
+            PerftCase::Position4 => black(Position::<N, { Color::Black }, Z>::from_fen(
                 "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
             )
             .unwrap()),
             PerftCase::Position5 => {
                 white(
-                    Position::<N, { Color::White }>::from_fen(
+                    Position::<N, { Color::White }, Z>::from_fen(
                         "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
                     )
                     .unwrap(),
                 )
             }
         }
+    }
+
+    #[inline]
+    /// Perft fixtures intentionally expose only the no-zobrist constructor path.
+    pub fn with_position_without_zobrist<const N: usize, R>(
+        self,
+        white: impl FnOnce(PositionWithoutZobrist<N, { Color::White }>) -> R,
+        black: impl FnOnce(PositionWithoutZobrist<N, { Color::Black }>) -> R,
+    ) -> R {
+        self.with_position_policy::<N, WithoutZobrist, R>(white, black)
     }
 
     const fn nodes_depth_map(self) -> &'static [u64; 8] {

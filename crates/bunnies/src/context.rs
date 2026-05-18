@@ -9,26 +9,26 @@ use super::DoublePawnPushFile;
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
-pub struct PositionContext {
+pub struct PositionContext<H = u64> {
     pub halfmove_clock: u8,
     /// File index for en passant after a double push; see [`DoublePawnPushFile`].
     pub double_pawn_push_file: DoublePawnPushFile,
     pub castling_rights: CastlingRights,
     pub captured_piece: Piece,
-    pub zobrist_hash: Bitboard,
+    pub zobrist_hash: H,
     pub pinned: Bitboard,
     pub checkers: Bitboard,
 }
 
-impl PositionContext {
+impl<H: Default> PositionContext<H> {
     /// Creates a new context with no previous context.
-    pub const fn blank() -> PositionContext {
+    pub fn blank() -> PositionContext<H> {
         PositionContext {
             halfmove_clock: 0,
             double_pawn_push_file: DoublePawnPushFile::NONE,
             castling_rights: CastlingRights::B0000,
             captured_piece: Piece::Null,
-            zobrist_hash: 0,
+            zobrist_hash: H::default(),
             pinned: 0,
             checkers: 0,
         }
@@ -40,7 +40,7 @@ impl PositionContext {
     }
 }
 
-impl Default for PositionContext {
+impl<H: Default> Default for PositionContext<H> {
     fn default() -> Self {
         Self::blank()
     }

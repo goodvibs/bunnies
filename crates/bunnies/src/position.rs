@@ -3,6 +3,7 @@
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::{
     Bitboard, BitboardUtils, Board, CastlingRights, Color, Piece, PositionContext, Square,
+    WithZobrist, ZobristPolicy,
 };
 use std::fmt;
 
@@ -16,14 +17,18 @@ use std::fmt;
 /// slots** (including the root). Pushing beyond that is a **contract violation**: debug builds
 /// panic on `debug_assert!`; release builds may exhibit **undefined behavior** (out-of-bounds write).
 #[derive(Clone)]
-pub struct Position<const N: usize, const STM: Color> {
+pub struct Position<const N: usize, const STM: Color, Z: ZobristPolicy = WithZobrist> {
     pub board: Board,
     pub halfmove: u16,
-    pub(crate) contexts: [PositionContext; N],
+    pub(crate) contexts: [PositionContext<Z::HashState>; N],
     pub(crate) num_contexts: usize,
 }
 
-impl<const N: usize, const STM: Color> fmt::Debug for Position<N, STM> {
+pub type PositionWithZobrist<const N: usize, const STM: Color> = Position<N, STM, WithZobrist>;
+pub type PositionWithoutZobrist<const N: usize, const STM: Color> =
+    Position<N, STM, crate::WithoutZobrist>;
+
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> fmt::Debug for Position<N, STM, Z> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Position")
             .field("board", &self.board)
@@ -34,7 +39,7 @@ impl<const N: usize, const STM: Color> fmt::Debug for Position<N, STM> {
     }
 }
 
-impl<const N: usize, const STM: Color> PartialEq for Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> PartialEq for Position<N, STM, Z> {
     fn eq(&self, other: &Self) -> bool {
         self.board == other.board
             && self.halfmove == other.halfmove
@@ -43,15 +48,15 @@ impl<const N: usize, const STM: Color> PartialEq for Position<N, STM> {
     }
 }
 
-impl<const N: usize, const STM: Color> Eq for Position<N, STM> {}
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Eq for Position<N, STM, Z> {}
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     /// Builds a [`Position`] with a different const `STM` from the same fields (layout does not depend on `STM`).
     ///
     /// Only use when the underlying state already corresponds to side to move `NEXT` (for example after
     /// `make_move_in_place` or `unmake_move_in_place`).
     #[inline]
-    pub fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT> {
+    pub fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT, Z> {
         let Position {
             board,
             halfmove,
@@ -66,8 +71,19 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         }
     }
 
+    /// Reinterprets a mutable reference to this position as having side-to-move `NEXT`.
+    ///
+    /// # Safety
+    /// Caller must guarantee the underlying board/context already represent `NEXT` to move.
+    #[inline]
+    pub unsafe fn rebrand_stm_mut<const NEXT: Color>(&mut self) -> &mut Position<N, NEXT, Z> {
+        // SAFETY: `Position` has identical layout for any `STM` value; only the type-level
+        // side-to-move marker changes. Callers must uphold that runtime state matches `NEXT`.
+        unsafe { &mut *(self as *mut Self).cast::<Position<N, NEXT, Z>>() }
+    }
+
     /// Active context stack entries (root at index 0, current at `len - 1`).
-    pub fn context_slice(&self) -> &[PositionContext] {
+    pub fn context_slice(&self) -> &[PositionContext<Z::HashState>] {
         &self.contexts[..self.num_contexts]
     }
 
@@ -77,16 +93,21 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     }
 
     /// Creates an initial state with the standard starting position (White to move).
-    pub fn initial() -> Position<N, { Color::White }> {
+    pub fn initial() -> Position<N, { Color::White }, Z> {
         debug_assert!(
             N >= 1,
             "Position context stack capacity N must be at least 1"
         );
         let board = Board::initial();
-        let mut context = PositionContext::blank();
+        let mut context = PositionContext::<Z::HashState>::blank();
         context.castling_rights = CastlingRights::B1111;
-        context.zobrist_hash = board.calc_zobrist_hash();
-        let mut contexts = [PositionContext::blank(); N];
+        context.zobrist_hash = Z::initial_hash(
+            &board,
+            context.castling_rights,
+            context.double_pawn_push_file,
+            Color::White,
+        );
+        let mut contexts = [PositionContext::<Z::HashState>::blank(); N];
         contexts[0] = context;
         let mut res = Position {
             board,
@@ -109,23 +130,23 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
         .expect("king present for side")
     }
 
-    pub const fn context(&self) -> &PositionContext {
+    pub const fn context(&self) -> &PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 0);
         &self.contexts[self.num_contexts - 1]
     }
 
-    pub const fn mut_context(&mut self) -> &mut PositionContext {
+    pub const fn mut_context(&mut self) -> &mut PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 0);
         &mut self.contexts[self.num_contexts - 1]
     }
 
-    pub const fn push_context(&mut self, context: PositionContext) {
+    pub const fn push_context(&mut self, context: PositionContext<Z::HashState>) {
         debug_assert!(self.num_contexts < N);
         self.contexts[self.num_contexts] = context;
         self.num_contexts += 1;
     }
 
-    pub const fn pop_context(&mut self) -> PositionContext {
+    pub const fn pop_context(&mut self) -> PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 1);
         let popped = self.contexts[self.num_contexts - 1];
         self.num_contexts -= 1;
@@ -135,6 +156,68 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
     pub(crate) const fn decrement_context_stack_for_unmake(&mut self) {
         debug_assert!(self.num_contexts > 1);
         self.num_contexts -= 1;
+    }
+
+    #[inline(always)]
+    pub fn put_piece_at(&mut self, piece: Piece, square: Square) {
+        self.board.put_piece_at(piece, square);
+        Z::on_put_piece(&mut self.mut_context().zobrist_hash, piece, square);
+    }
+
+    #[inline(always)]
+    pub fn put_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
+        self.board.put_piece_and_color(color, piece, square);
+        Z::on_put_piece(&mut self.mut_context().zobrist_hash, piece, square);
+    }
+
+    #[inline(always)]
+    pub fn remove_piece_at(&mut self, piece: Piece, square: Square) {
+        self.board.remove_piece_at(piece, square);
+        Z::on_remove_piece(&mut self.mut_context().zobrist_hash, piece, square);
+    }
+
+    #[inline(always)]
+    pub fn remove_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
+        self.board.remove_piece_and_color(color, piece, square);
+        Z::on_remove_piece(&mut self.mut_context().zobrist_hash, piece, square);
+    }
+
+    #[inline(always)]
+    pub fn move_piece(&mut self, piece: Piece, from: Square, to: Square) {
+        self.board.move_piece(piece, from, to);
+        Z::on_move_piece(&mut self.mut_context().zobrist_hash, piece, from, to);
+    }
+
+    #[inline(always)]
+    pub fn move_color(&mut self, color: Color, from: Square, to: Square) {
+        self.board.move_color(color, from, to);
+    }
+
+    #[inline(always)]
+    pub fn move_piece_and_color(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
+        self.board.move_piece_and_color(color, piece, from, to);
+        Z::on_move_piece(&mut self.mut_context().zobrist_hash, piece, from, to);
+    }
+
+    #[inline(always)]
+    pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
+        let context = self.mut_context();
+        let old = context.castling_rights;
+        context.castling_rights = castling_rights;
+        Z::on_castling_rights_change(&mut context.zobrist_hash, old, castling_rights);
+    }
+
+    #[inline(always)]
+    pub fn set_double_pawn_push_file(&mut self, double_pawn_push_file: crate::DoublePawnPushFile) {
+        let context = self.mut_context();
+        let old = context.double_pawn_push_file;
+        context.double_pawn_push_file = double_pawn_push_file;
+        Z::on_double_pawn_push_file_change(&mut context.zobrist_hash, old, double_pawn_push_file);
+    }
+
+    #[inline(always)]
+    pub fn flip_side_to_move_hash(&mut self) {
+        Z::on_side_to_move_flip(&mut self.mut_context().zobrist_hash);
     }
 
     /// Gets the fullmove number of the position. 1-based.

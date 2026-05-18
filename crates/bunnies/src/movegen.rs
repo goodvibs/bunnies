@@ -13,7 +13,7 @@ use crate::attacks::{
 };
 use crate::{Bitboard, Color, DoublePawnPushFile, Flank};
 use crate::{BitboardUtils, ConstDoublePawnPushFile, Piece};
-use crate::{Move, MoveFlag, MoveList, Position};
+use crate::{Move, MoveFlag, MoveList, Position, ZobristPolicy};
 
 /// Returns `to_mask` restricted to squares legal for `from` given current pins.
 /// For non-pinned pieces, returns `to_mask` unchanged. Branchless on the hot path.
@@ -346,7 +346,7 @@ fn emit_castling_moves<const STM: Color, S: LegalMoveSink>(
     }
 }
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     fn visit_legal_moves<S: LegalMoveSink>(&self, sink: &mut S) {
         let ctx = self.context();
         let board = &self.board;

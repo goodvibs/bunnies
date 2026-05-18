@@ -1,6 +1,6 @@
-use crate::{Color, Flank, Piece, Position};
+use crate::{Color, Flank, Piece, Position, ZobristPolicy};
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     /// Returns whether the current side to move has castling rights on `flank`.
     pub fn has_castling_rights(&self, flank: Flank) -> bool {
         self.context().castling_rights.has(flank, STM)

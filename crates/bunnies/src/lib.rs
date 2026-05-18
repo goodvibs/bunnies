@@ -45,28 +45,30 @@ mod typed_position;
 pub mod utilities;
 mod validation;
 mod zobrist;
+mod zobrist_policy;
 
 pub use bitboard::*;
 pub use board::*;
-pub use castling_rights::CastlingRights;
+pub use castling_rights::*;
 pub use color::*;
 pub use colored_piece::*;
 pub use context::*;
 pub use double_pawn_push_file::*;
 pub use fen::*;
-pub use file::File;
+pub use file::*;
 pub use flank::*;
 pub use game_state::*;
 #[allow(unused_imports)]
 pub use insufficient_material::*;
-pub use r#move::Move;
-pub use move_flag::MoveFlag;
-pub use move_list::MoveList;
+pub use r#move::*;
+pub use move_flag::*;
+pub use move_list::*;
 pub use piece::*;
-pub use position::Position;
-pub use rank::Rank;
+pub use position::*;
+pub use rank::*;
 pub use square::*;
-pub use typed_position::TypedPosition;
+pub use typed_position::*;
 #[allow(unused_imports)]
 pub use validation::*;
 pub use zobrist::*;
+pub use zobrist_policy::*;

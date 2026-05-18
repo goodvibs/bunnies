@@ -9,6 +9,8 @@ use crate::Position;
 use crate::PositionContext;
 use crate::Square;
 use crate::TypedPosition;
+use crate::WithZobrist;
+use crate::ZobristPolicy;
 
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -156,9 +158,9 @@ fn parse_fen_board(fen_board: &str) -> Result<Board, FenParseError> {
 }
 
 /// Parses a FEN string into [`TypedPosition`]. Requires `N >= 1`.
-pub(crate) fn parse_fen_to_typed_position<const N: usize>(
+pub(crate) fn parse_fen_to_typed_position<const N: usize, Z: ZobristPolicy>(
     fen: &str,
-) -> Result<TypedPosition<N>, FenParseError> {
+) -> Result<TypedPosition<N, Z>, FenParseError> {
     let fen_parts: Vec<&str> = fen.split_ascii_whitespace().collect();
     if fen_parts.len() != 6 {
         return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
@@ -180,21 +182,25 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
             let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
             let board = parse_fen_board(fen_board)?;
 
-            let zobrist_hash = board.calc_zobrist_hash();
             let halfmove =
                 (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
-            let mut context = PositionContext::blank();
+            let mut context = PositionContext::<Z::HashState>::blank();
             context.castling_rights = castling_rights;
-            context.zobrist_hash = zobrist_hash;
             context.double_pawn_push_file = double_pawn_push_file;
             context.halfmove_clock = halfmove_clock;
+            context.zobrist_hash = Z::initial_hash(
+                &board,
+                context.castling_rights,
+                context.double_pawn_push_file,
+                side_to_move,
+            );
 
-            let mut contexts = [PositionContext::blank(); N];
+            let mut contexts = [PositionContext::<Z::HashState>::blank(); N];
             contexts[0] = context;
 
             match side_to_move {
                 Color::White => {
-                    let mut state = Position::<N, { Color::White }> {
+                    let mut state = Position::<N, { Color::White }, Z> {
                         board,
                         halfmove,
                         contexts,
@@ -208,7 +214,7 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
                     }
                 }
                 Color::Black => {
-                    let mut state = Position::<N, { Color::Black }> {
+                    let mut state = Position::<N, { Color::Black }, Z> {
                         board,
                         halfmove,
                         contexts,
@@ -227,10 +233,10 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize>(
     }
 }
 
-pub fn parse_fen_to_position<const N: usize, const STM: Color>(
+pub fn parse_fen_to_position_with_policy<const N: usize, const STM: Color, Z: ZobristPolicy>(
     fen: &str,
-) -> Result<Position<N, STM>, FenParseError> {
-    match parse_fen_to_typed_position::<N>(fen)? {
+) -> Result<Position<N, STM, Z>, FenParseError> {
+    match parse_fen_to_typed_position::<N, Z>(fen)? {
         TypedPosition::White(pos) if STM == Color::White => Ok(pos.rebrand_stm::<STM>()),
         TypedPosition::Black(pos) if STM == Color::Black => Ok(pos.rebrand_stm::<STM>()),
         TypedPosition::White(_) => Err(FenParseError::InvalidSideToMove("w".to_string())),
@@ -238,9 +244,15 @@ pub fn parse_fen_to_position<const N: usize, const STM: Color>(
     }
 }
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+pub fn parse_fen_to_position<const N: usize, const STM: Color>(
+    fen: &str,
+) -> Result<Position<N, STM, WithZobrist>, FenParseError> {
+    parse_fen_to_position_with_policy::<N, STM, WithZobrist>(fen)
+}
+
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
-        parse_fen_to_position::<N, STM>(fen)
+        parse_fen_to_position_with_policy::<N, STM, Z>(fen)
     }
 }
 

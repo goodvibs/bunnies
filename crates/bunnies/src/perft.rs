@@ -1,8 +1,8 @@
 use crate::Color;
-use crate::{MoveList, Position};
+use crate::{MoveList, Position, ZobristPolicy};
 
-fn count_nodes<const N: usize, const STM: Color>(
-    position: &mut Position<N, STM>,
+fn count_nodes<const N: usize, const STM: Color, Z: ZobristPolicy>(
+    position: &mut Position<N, STM, Z>,
     depth: u8,
 ) -> u64 {
     if depth == 0 {
@@ -19,18 +19,12 @@ fn count_nodes<const N: usize, const STM: Color>(
         position.make_move(move_);
         match STM {
             Color::White => {
-                // SAFETY: After `make_move_in_place`, board/context match `Position<N, { Color::Black }>`;
-                // same memory as `position` until `unmake_move_in_place`.
-                let child = unsafe {
-                    &mut *std::ptr::from_mut(position).cast::<Position<N, { Color::Black }>>()
-                };
+                let child = unsafe { position.rebrand_stm_mut::<{ Color::Black }>() };
                 total += count_nodes(child, depth - 1);
                 child.unmake_move(move_);
             }
             Color::Black => {
-                let child = unsafe {
-                    &mut *std::ptr::from_mut(position).cast::<Position<N, { Color::White }>>()
-                };
+                let child = unsafe { position.rebrand_stm_mut::<{ Color::White }>() };
                 total += count_nodes(child, depth - 1);
                 child.unmake_move(move_);
             }
@@ -39,7 +33,7 @@ fn count_nodes<const N: usize, const STM: Color>(
     total
 }
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     /// Counts leaf nodes to `depth` (divide-perft), mutating this position in place.
     /// Must be called on the search root; context stack must fit the traversal depth.
     #[inline]

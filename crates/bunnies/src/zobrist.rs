@@ -113,6 +113,18 @@ impl Board {
     }
 }
 
+pub const fn calc_position_zobrist_hash(
+    board: &Board,
+    castling_rights: CastlingRights,
+    double_pawn_push_file: DoublePawnPushFile,
+    side_to_move: Color,
+) -> u64 {
+    board.calc_zobrist_hash()
+        ^ castling_rights_key(castling_rights)
+        ^ double_pawn_push_key(double_pawn_push_file)
+        ^ side_to_move_key(side_to_move)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

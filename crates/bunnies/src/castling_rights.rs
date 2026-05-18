@@ -7,8 +7,9 @@ use crate::{Color, Flank, Square};
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, Hash)]
-#[derive_const(PartialEq)]
+#[derive_const(PartialEq, Default)]
 pub enum CastlingRights {
+    #[default]
     B0000 = 0,
     B0001 = 1,
     B0010 = 2,
@@ -76,12 +77,6 @@ impl CastlingRights {
     #[inline]
     pub const fn after_move(self, affected_square: Square) -> Self {
         Self::from_bits(self.bits() & CASTLING_RIGHTS_MASK[affected_square as usize].bits())
-    }
-}
-
-impl Default for CastlingRights {
-    fn default() -> Self {
-        CastlingRights::B0000
     }
 }
 

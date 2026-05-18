@@ -1,5 +1,5 @@
 use crate::Color;
-use crate::{Move, MoveList, Position};
+use crate::{Move, MoveList, Position, ZobristPolicy};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum TerminalReason {
@@ -96,8 +96,8 @@ impl<P> GameState<P> {
     }
 }
 
-fn classify_terminal<const N: usize, const STM: Color>(
-    position: &Position<N, STM>,
+fn classify_terminal<const N: usize, const STM: Color, Z: ZobristPolicy>(
+    position: &Position<N, STM, Z>,
 ) -> Option<TerminalReason> {
     if position.context().halfmove_clock >= 100 {
         return Some(TerminalReason::FiftyMoveRule);
@@ -123,21 +123,21 @@ fn classify_terminal<const N: usize, const STM: Color>(
     }
 }
 
-impl<const N: usize, const STM: Color> Ongoing<Position<N, STM>> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Ongoing<Position<N, STM, Z>> {
     #[inline]
     pub fn legal_moves(&self, moves: &mut MoveList) {
         self.0.generate_moves(moves);
     }
 
     #[inline]
-    pub fn play_unchecked(self, move_: Move) -> Ongoing<Position<N, { STM.other() }>> {
+    pub fn play_unchecked(self, move_: Move) -> Ongoing<Position<N, { STM.other() }, Z>> {
         let mut position = self.0;
         position.make_move(move_);
         Ongoing(position.rebrand_stm::<{ STM.other() }>())
     }
 
     #[inline]
-    pub fn play_and_classify(self, move_: Move) -> GameState<Position<N, { STM.other() }>> {
+    pub fn play_and_classify(self, move_: Move) -> GameState<Position<N, { STM.other() }, Z>> {
         let next = self.play_unchecked(move_).into_position();
         match classify_terminal(&next) {
             Some(reason) => GameState::from_terminal(next, reason),

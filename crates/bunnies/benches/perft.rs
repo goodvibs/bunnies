@@ -15,7 +15,7 @@ macro_rules! define_perft_benches {
                 group.throughput(Throughput::Elements(nodes));
                 group.bench_function(BenchmarkId::new(stringify!($name), $depth), |b| {
                     b.iter(|| {
-                        let nodes = ($case).with_position::<CONTEXTS_CAPACITY, _>(
+                        let nodes = ($case).with_position_without_zobrist::<CONTEXTS_CAPACITY, _>(
                             |mut p| p.perft(black_box($depth)),
                             |mut p| p.perft(black_box($depth)),
                         );

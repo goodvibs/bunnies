@@ -1,6 +1,6 @@
-use crate::{Color, DoublePawnPushFileUtils, Flank, Piece, Position, Square};
+use crate::{Color, DoublePawnPushFileUtils, Flank, Piece, Position, Square, ZobristPolicy};
 
-impl<const N: usize, const STM: Color> Position<N, STM> {
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     /// Rigorous check for whether the current positional information is consistent and valid.
     pub fn is_unequivocally_valid(&self) -> bool {
         self.board.is_unequivocally_valid()
@@ -19,7 +19,14 @@ impl<const N: usize, const STM: Color> Position<N, STM> {
 
     /// Checks if the zobrist hash in the context matches the board piece placement hash.
     pub fn is_zobrist_consistent(&self) -> bool {
-        self.context().zobrist_hash == self.board.calc_zobrist_hash()
+        let context = self.context();
+        Z::is_consistent(
+            &context.zobrist_hash,
+            &self.board,
+            context.castling_rights,
+            context.double_pawn_push_file,
+            STM,
+        )
     }
 
     pub fn is_opposite_side_in_check(&self) -> bool {

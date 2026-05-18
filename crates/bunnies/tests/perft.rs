@@ -6,7 +6,7 @@ macro_rules! define_perft_tests {
             #[test]
             fn $name() {
                 const CONTEXTS_CAPACITY: usize = $depth + 1;
-                let nodes_observed = ($case).with_position::<CONTEXTS_CAPACITY, _>(
+                let nodes_observed = ($case).with_position_without_zobrist::<CONTEXTS_CAPACITY, _>(
                     |mut p| p.perft($depth),
                     |mut p| p.perft($depth),
                 );
