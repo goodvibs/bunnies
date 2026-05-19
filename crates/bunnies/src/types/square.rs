@@ -3,8 +3,7 @@ use std::fmt::Display;
 use super::bitboard::Bitboard;
 use super::file::File;
 use super::rank::Rank;
-use super::square_delta::SquareDelta;
-use super::square_delta_utils::SquareDeltaUtils;
+use super::square_delta::{SquareDelta, SquareDeltaUtils};
 use crate::{
     types::BitboardUtils,
     utils::{Array, QueenLikeMoveDirection},
