@@ -151,12 +151,6 @@ struct MoveCountSink {
     count: u32,
 }
 
-impl MoveCountSink {
-    fn total(self) -> u32 {
-        self.count
-    }
-}
-
 impl const LegalMoveSink for MoveCountSink {
     fn normal(&mut self, _from: Square, _to: Square) {
         self.count += 1;
@@ -442,7 +436,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     pub fn count_legal_moves(&self) -> u32 {
         let mut sink = MoveCountSink::default();
         self.visit_legal_moves(&mut sink);
-        sink.total()
+        sink.count
     }
 }
 
