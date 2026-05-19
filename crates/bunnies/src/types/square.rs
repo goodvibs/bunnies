@@ -5,44 +5,52 @@ use super::file::File;
 use super::rank::Rank;
 use super::square_delta::SquareDelta;
 use super::square_delta_utils::SquareDeltaUtils;
-use crate::utils::{Array, QueenLikeMoveDirection};
+use crate::{
+    types::BitboardUtils,
+    utils::{Array, QueenLikeMoveDirection},
+};
 
-// Full-board masks for each BR→TL and BL→TR diagonal (15 lines each); used to resolve which line a square lies on.
-pub(crate) const DIAGONALS_BR_TO_TL: Array<Bitboard, 15> = Array([
-    0x0000000000000001,
-    0x0000000000000102,
-    0x0000000000010204,
-    0x0000000001020408,
-    0x0000000102040810,
-    0x0000010204081020,
-    0x0001020408102040,
-    0x0102040810204080,
-    0x0204081020408000,
-    0x0408102040800000,
-    0x0810204080000000,
-    0x1020408000000000,
-    0x2040800000000000,
-    0x4080000000000000,
-    0x8000000000000000,
-]);
+const fn resolve_square_mask(maybe_square: Option<Square>) -> Bitboard {
+    match maybe_square {
+        Some(square) => square.mask(),
+        None => 0,
+    }
+}
 
-pub(crate) const DIAGONALS_BL_TO_TR: Array<Bitboard, 15> = Array([
-    0x0000000000000080,
-    0x0000000000008040,
-    0x0000000000804020,
-    0x0000000080402010,
-    0x0000008040201008,
-    0x0000804020100804,
-    0x0080402010080402,
-    0x8040201008040201,
-    0x4020100804020100,
-    0x2010080402010000,
-    0x1008040201000000,
-    0x0804020100000000,
-    0x0402010000000000,
-    0x0201000000000000,
-    0x0100000000000000,
-]);
+const fn build_diagonals(
+    start: Square,
+    next_a: QueenLikeMoveDirection,
+    next_b: QueenLikeMoveDirection,
+) -> Array<Bitboard, 15> {
+    let mut builder = Array([0; 15]);
+
+    let mut i = 0;
+    let mut mask = start.mask();
+    while i < 15 {
+        builder[i] = mask;
+        let mut new_mask = 0;
+        for square in mask.iter_set_bits_as_squares() {
+            new_mask |= resolve_square_mask(square.neighbor_in_direction(next_a))
+                | resolve_square_mask(square.neighbor_in_direction(next_b));
+        }
+        mask = new_mask;
+        i += 1;
+    }
+
+    builder
+}
+
+const DIAGONALS_BR_TO_TL: Array<Bitboard, 15> = build_diagonals(
+    Square::H1,
+    QueenLikeMoveDirection::Left,
+    QueenLikeMoveDirection::Up,
+);
+
+const DIAGONALS_BL_TO_TR: Array<Bitboard, 15> = build_diagonals(
+    Square::A1,
+    QueenLikeMoveDirection::Right,
+    QueenLikeMoveDirection::Up,
+);
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]

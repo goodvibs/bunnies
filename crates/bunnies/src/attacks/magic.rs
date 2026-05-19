@@ -1,9 +1,7 @@
 //! This module provides functionality for calculating sliding piece attacks using magic bitboards.
 
 use crate::attacks::manual::manual_sliding_piece_attacks;
-use crate::types::{
-    Bitboard, BitboardUtils, DIAGONALS_BL_TO_TR, DIAGONALS_BR_TO_TL, File, Piece, Rank, Square,
-};
+use crate::types::{Bitboard, BitboardUtils, File, Piece, Rank, Square};
 use crate::utils::{Array, Prng};
 use std::boxed::Box;
 use std::fs;
@@ -63,19 +61,9 @@ const fn calc_rook_relevant_mask(square: Square) -> Bitboard {
 
 /// Calculate the relevant mask for a bishop on a given square
 const fn calc_bishop_relevant_mask(square: Square) -> Bitboard {
-    let square_mask = square.mask();
-    let mut res: Bitboard = 0;
-    for diagonal in DIAGONALS_BR_TO_TL {
-        if diagonal & square_mask != 0 {
-            res |= diagonal;
-        }
-    }
-    for diagonal in DIAGONALS_BL_TO_TR {
-        if diagonal & square_mask != 0 {
-            res |= diagonal;
-        }
-    }
-    res & !square_mask & !(File::A.mask() | File::H.mask() | Rank::One.mask() | Rank::Eight.mask())
+    square.diagonals_mask()
+        & !square.mask()
+        & !(File::A.mask() | File::H.mask() | Rank::One.mask() | Rank::Eight.mask())
 }
 
 /// Magic info for a single square, using a pointer to its attack subset.
