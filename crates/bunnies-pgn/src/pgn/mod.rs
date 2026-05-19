@@ -5,24 +5,22 @@
 
 mod buffered_position_brancher;
 mod buffered_position_context;
-mod lexing_error;
+mod error;
 mod move_data;
 mod move_tree_node;
 mod object;
 mod parser;
-mod parsing_error;
 mod parsing_state;
 mod position_context;
 mod rendering_config;
 mod token;
 mod token_types;
 
-pub use lexing_error::*;
-pub use object::*;
-pub use parser::*;
-pub use parsing_error::*;
-pub use parsing_state::*;
-pub use rendering_config::*;
+pub use error::PgnError;
+pub use object::PgnObject;
+pub use parser::PgnParser;
+pub use parsing_state::PgnParsingState;
+pub use rendering_config::PgnRenderingConfig;
 
 #[cfg(test)]
 mod tests {

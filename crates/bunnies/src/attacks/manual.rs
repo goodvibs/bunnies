@@ -1,10 +1,6 @@
 //! Contains functions that manually calculate attacks for all pieces
 
-use crate::Bitboard;
-use crate::Color;
-use crate::File;
-use crate::Piece;
-use crate::Square;
+use crate::types::{Bitboard, Color, File, Piece, Square};
 use std::cmp;
 
 #[inline]

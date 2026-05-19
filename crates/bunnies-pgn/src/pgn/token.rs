@@ -1,5 +1,5 @@
 use crate::Color;
-use crate::pgn::lexing_error::PgnLexingError;
+use crate::pgn::error::PgnError;
 use crate::pgn::token_types::PgnCastlingMove;
 use crate::pgn::token_types::PgnComment;
 use crate::pgn::token_types::PgnMoveNumber;
@@ -7,13 +7,21 @@ use crate::pgn::token_types::PgnNonCastlingMove;
 use crate::pgn::token_types::PgnTag;
 use logos::{Lexer, Logos};
 
+pub(crate) const TAG_REGEX: &str = r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#;
+pub(crate) const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
+pub(crate) const NON_CASTLING_MOVE_REGEX: &str =
+    r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?";
+pub(crate) const CASTLING_MOVE_REGEX: &str =
+    r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?";
+pub(crate) const COMMENT_REGEX: &str = r"\{([^}]*)\}";
+
 pub trait ParsablePgnToken: Sized {
-    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnLexingError>;
+    fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnError>;
 }
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"\s+")]
-#[logos(error = PgnLexingError)]
+#[logos(error = PgnError)]
 pub enum PgnToken {
     // Tags [Name "Value"]
     #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#, PgnTag::parse)]

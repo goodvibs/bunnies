@@ -1,74 +1,21 @@
-#![feature(const_for)]
 #![feature(const_trait_impl)]
 #![feature(const_convert)]
 #![feature(const_iter)]
 #![feature(const_default)]
 #![feature(const_precise_live_drops)]
-#![feature(const_closures)]
 #![feature(const_index)]
 #![feature(const_slice_make_iter)]
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
-#![feature(const_param_ty_trait)]
 #![feature(const_cmp)]
-#![feature(transmutability)]
 #![allow(incomplete_features)]
-#![allow(unused_features)]
 
+// Public modules
 pub mod attacks;
-mod bitboard;
-mod board;
-mod castling;
-mod castling_rights;
-mod color;
-mod colored_piece;
-mod context;
-mod double_pawn_push_file;
-mod fen;
-mod file;
-mod flank;
-mod game_state;
-mod insufficient_material;
-mod make_move;
-mod r#move;
-mod move_flag;
-mod move_list;
-mod movegen;
-mod perft;
-mod piece;
-mod position;
-mod rank;
-mod san;
-mod square;
-mod typed_position;
-pub mod utilities;
-mod validation;
-mod zobrist;
-mod zobrist_policy;
+pub mod io;
+pub mod logic;
+pub mod types;
 
-pub use bitboard::*;
-pub use board::*;
-pub use castling_rights::*;
-pub use color::*;
-pub use colored_piece::*;
-pub use context::*;
-pub use double_pawn_push_file::*;
-pub use fen::*;
-pub use file::*;
-pub use flank::*;
-pub use game_state::*;
-#[allow(unused_imports)]
-pub use insufficient_material::*;
-pub use r#move::*;
-pub use move_flag::*;
-pub use move_list::*;
-pub use piece::*;
-pub use position::*;
-pub use rank::*;
-pub use square::*;
-pub use typed_position::*;
-#[allow(unused_imports)]
-pub use validation::*;
-pub use zobrist::*;
-pub use zobrist_policy::*;
+// Private modules
+mod utils;

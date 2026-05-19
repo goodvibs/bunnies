@@ -1,0 +1,146 @@
+use crate::types::{Color, Move, MoveList, Position, ZobristPolicy};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum TerminalReason {
+    Checkmate,
+    Stalemate,
+    InsufficientMaterial,
+    FiftyMoveRule,
+    ThreefoldRepetition,
+    OtherDraw,
+    Win,
+    OtherLoss,
+    Unknown,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Ongoing<P>(P);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Terminal<P> {
+    position: P,
+    reason: TerminalReason,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum GameState<P> {
+    Ongoing(Ongoing<P>),
+    Terminal(Terminal<P>),
+}
+
+impl<P> Ongoing<P> {
+    #[inline]
+    pub fn new(position: P) -> Self {
+        Self(position)
+    }
+
+    #[inline]
+    pub fn into_position(self) -> P {
+        self.0
+    }
+
+    #[inline]
+    pub fn position(&self) -> &P {
+        &self.0
+    }
+}
+
+impl<P> Terminal<P> {
+    #[inline]
+    pub fn new(position: P, reason: TerminalReason) -> Self {
+        Self { position, reason }
+    }
+
+    #[inline]
+    pub fn reason(&self) -> TerminalReason {
+        self.reason
+    }
+
+    #[inline]
+    pub fn position(&self) -> &P {
+        &self.position
+    }
+
+    #[inline]
+    pub fn into_parts(self) -> (P, TerminalReason) {
+        (self.position, self.reason)
+    }
+}
+
+impl<P> GameState<P> {
+    #[inline]
+    pub fn from_ongoing(position: P) -> Self {
+        Self::Ongoing(Ongoing::new(position))
+    }
+
+    #[inline]
+    pub fn from_terminal(position: P, reason: TerminalReason) -> Self {
+        Self::Terminal(Terminal::new(position, reason))
+    }
+
+    #[inline]
+    pub fn into_position(self) -> P {
+        match self {
+            GameState::Ongoing(ongoing) => ongoing.into_position(),
+            GameState::Terminal(terminal) => terminal.into_parts().0,
+        }
+    }
+
+    #[inline]
+    pub fn position(&self) -> &P {
+        match self {
+            GameState::Ongoing(ongoing) => ongoing.position(),
+            GameState::Terminal(terminal) => terminal.position(),
+        }
+    }
+}
+
+fn classify_terminal<const N: usize, const STM: Color, Z: ZobristPolicy>(
+    position: &Position<N, STM, Z>,
+) -> Option<TerminalReason> {
+    if position.context().halfmove_clock >= 100 {
+        return Some(TerminalReason::FiftyMoveRule);
+    }
+
+    if position
+        .board
+        .are_both_sides_insufficient_material::<false>()
+    {
+        return Some(TerminalReason::InsufficientMaterial);
+    }
+
+    let mut replies = MoveList::new();
+    position.generate_moves(&mut replies);
+    if replies.is_empty() {
+        if position.is_current_side_in_check() {
+            Some(TerminalReason::Checkmate)
+        } else {
+            Some(TerminalReason::Stalemate)
+        }
+    } else {
+        None
+    }
+}
+
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Ongoing<Position<N, STM, Z>> {
+    #[inline]
+    pub fn legal_moves(&self, moves: &mut MoveList) {
+        self.0.generate_moves(moves);
+    }
+
+    #[inline]
+    pub fn play_unchecked(self, move_: Move) -> Ongoing<Position<N, { STM.other() }, Z>> {
+        let mut position = self.0;
+        position.make_move(move_);
+        Ongoing(position.rebrand_stm::<{ STM.other() }>())
+    }
+
+    #[inline]
+    pub fn play_and_classify(self, move_: Move) -> GameState<Position<N, { STM.other() }, Z>> {
+        let next = self.play_unchecked(move_).into_position();
+        match classify_terminal(&next) {
+            Some(reason) => GameState::from_terminal(next, reason),
+            None => GameState::from_ongoing(next),
+        }
+    }
+}

@@ -1,0 +1,281 @@
+use crate::types::{
+    Board, CastlingRights, Color, ColoredPiece, ConstDoublePawnPushFile, DoublePawnPushFile, File,
+    Position, PositionContext, Square, TypedPosition, WithZobrist, ZobristPolicy,
+};
+
+/// The FEN string representing the starting position of a standard chess game.
+pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+#[derive(Eq, PartialEq, Debug)]
+/// An error that occurs when parsing a FEN string.
+pub enum FenParseError {
+    InvalidFieldCount(usize),
+    InvalidRankCount(usize),
+    InvalidBoardRow(String),
+    InvalidSideToMove(String),
+    InvalidCastlingRights(String),
+    InvalidEnPassantTarget(String),
+    InvalidHalfmoveClock(String),
+    InvalidFullmoveNumber(String),
+    InvalidPosition(String),
+}
+
+fn parse_side_to_move(fen_side_to_move: &str) -> Result<Color, FenParseError> {
+    match fen_side_to_move {
+        "w" => Ok(Color::White),
+        "b" => Ok(Color::Black),
+        _ => Err(FenParseError::InvalidSideToMove(
+            fen_side_to_move.to_string(),
+        )),
+    }
+}
+
+fn parse_castling_rights(fen_castling_rights: &str) -> Result<CastlingRights, FenParseError> {
+    if fen_castling_rights == "-" {
+        Ok(CastlingRights::B0000)
+    } else {
+        let mut bits = 0u8;
+        for c in fen_castling_rights.chars() {
+            match c {
+                'K' => bits |= 0b1000,
+                'Q' => bits |= 0b0100,
+                'k' => bits |= 0b0010,
+                'q' => bits |= 0b0001,
+                _ => {
+                    return Err(FenParseError::InvalidCastlingRights(
+                        fen_castling_rights.to_string(),
+                    ));
+                }
+            }
+        }
+        Ok(CastlingRights::from_bits(bits))
+    }
+}
+
+fn parse_en_passant_target(
+    fen_en_passant_target: &str,
+) -> Result<DoublePawnPushFile, FenParseError> {
+    if fen_en_passant_target == "-" {
+        Ok(-1)
+    } else {
+        if fen_en_passant_target.len() != 2 {
+            return Err(FenParseError::InvalidEnPassantTarget(
+                fen_en_passant_target.to_string(),
+            ));
+        }
+        let file = fen_en_passant_target.chars().next().unwrap();
+        let rank = fen_en_passant_target.chars().nth(1).unwrap();
+        if !('a'..='h').contains(&file) || !('1'..='8').contains(&rank) {
+            return Err(FenParseError::InvalidEnPassantTarget(
+                fen_en_passant_target.to_string(),
+            ));
+        }
+        Ok(DoublePawnPushFile::from_file(Some(File::from_u8(
+            file as u8 - b'a',
+        ))))
+    }
+}
+
+fn parse_fen_halfmove_clock(fen_halfmove_clock: &str) -> Result<u8, FenParseError> {
+    match fen_halfmove_clock.parse::<u8>() {
+        Ok(halfmove_clock) if halfmove_clock <= 100 => Ok(halfmove_clock),
+        _ => Err(FenParseError::InvalidHalfmoveClock(
+            fen_halfmove_clock.to_string(),
+        )),
+    }
+}
+
+fn parse_fen_fullmove_number(fen_fullmove_number: &str) -> Result<u16, FenParseError> {
+    match fen_fullmove_number.parse::<u16>() {
+        Ok(fullmove_number) if fullmove_number > 0 => Ok(fullmove_number),
+        _ => Err(FenParseError::InvalidFullmoveNumber(
+            fen_fullmove_number.to_string(),
+        )),
+    }
+}
+
+fn parse_fen_board_row(
+    row: &str,
+    row_from_top: u8,
+    board: &mut Board,
+) -> Result<(), FenParseError> {
+    debug_assert!(row_from_top < 8);
+
+    let mut file = 0;
+    for c in row.chars() {
+        if c.is_ascii_digit() {
+            file += c.to_digit(10).unwrap() as u8;
+            if file > 8 {
+                return Err(FenParseError::InvalidBoardRow(row.to_string()));
+            }
+        } else if c.is_ascii_alphabetic() {
+            match ColoredPiece::from_ascii(c) {
+                ColoredPiece::NoPiece => {
+                    return Err(FenParseError::InvalidBoardRow(row.to_string()));
+                }
+                cp => {
+                    let dst = Square::from_u8(row_from_top * 8 + file);
+                    board.put_piece_and_color(cp.color(), cp.piece(), dst);
+
+                    file += 1;
+                }
+            };
+        } else {
+            return Err(FenParseError::InvalidBoardRow(row.to_string()));
+        }
+    }
+
+    if file == 8 {
+        Ok(())
+    } else {
+        Err(FenParseError::InvalidBoardRow(row.to_string()))
+    }
+}
+
+fn parse_fen_board(fen_board: &str) -> Result<Board, FenParseError> {
+    let fen_board_rows: Vec<&str> = fen_board.split('/').collect();
+
+    let row_count = fen_board_rows.len();
+    if row_count != 8 {
+        return Err(FenParseError::InvalidRankCount(row_count));
+    }
+
+    let mut board = Board::blank();
+    for (row_from_top, fen_board_row) in fen_board_rows.into_iter().enumerate() {
+        parse_fen_board_row(fen_board_row, row_from_top as u8, &mut board)?;
+    }
+
+    Ok(board)
+}
+
+/// Parses a FEN string into [`TypedPosition`]. Requires `N >= 1`.
+pub(crate) fn parse_fen_to_typed_position<const N: usize, Z: ZobristPolicy>(
+    fen: &str,
+) -> Result<TypedPosition<N, Z>, FenParseError> {
+    let fen_parts: Vec<&str> = fen.split_ascii_whitespace().collect();
+    if fen_parts.len() != 6 {
+        return Err(FenParseError::InvalidFieldCount(fen_parts.len()));
+    }
+
+    match fen_parts[..] {
+        [
+            fen_board,
+            fen_side_to_move,
+            fen_castling_rights,
+            fen_en_passant_target,
+            fen_halfmove_clock,
+            fen_fullmove_number,
+        ] => {
+            let side_to_move = parse_side_to_move(fen_side_to_move)?;
+            let castling_rights = parse_castling_rights(fen_castling_rights)?;
+            let double_pawn_push_file = parse_en_passant_target(fen_en_passant_target)?;
+            let halfmove_clock = parse_fen_halfmove_clock(fen_halfmove_clock)?;
+            let fullmove_number = parse_fen_fullmove_number(fen_fullmove_number)?;
+            let board = parse_fen_board(fen_board)?;
+
+            let halfmove =
+                (fullmove_number - 1) * 2 + if side_to_move == Color::Black { 1 } else { 0 };
+            let mut context = PositionContext::<Z::HashState>::blank();
+            context.castling_rights = castling_rights;
+            context.double_pawn_push_file = double_pawn_push_file;
+            context.halfmove_clock = halfmove_clock;
+            context.zobrist_hash = Z::initial_hash(
+                &board,
+                context.castling_rights,
+                context.double_pawn_push_file,
+                side_to_move,
+            );
+
+            let mut contexts = [PositionContext::<Z::HashState>::blank(); N];
+            contexts[0] = context;
+
+            match side_to_move {
+                Color::White => {
+                    let mut state = Position::<N, { Color::White }, Z> {
+                        board,
+                        halfmove,
+                        contexts,
+                        num_contexts: 1,
+                    };
+                    if state.is_unequivocally_valid() {
+                        state.update_pins_and_checks();
+                        Ok(TypedPosition::White(state))
+                    } else {
+                        Err(FenParseError::InvalidPosition(fen.to_string()))
+                    }
+                }
+                Color::Black => {
+                    let mut state = Position::<N, { Color::Black }, Z> {
+                        board,
+                        halfmove,
+                        contexts,
+                        num_contexts: 1,
+                    };
+                    if state.is_unequivocally_valid() {
+                        state.update_pins_and_checks();
+                        Ok(TypedPosition::Black(state))
+                    } else {
+                        Err(FenParseError::InvalidPosition(fen.to_string()))
+                    }
+                }
+            }
+        }
+        _ => Err(FenParseError::InvalidFieldCount(fen_parts.len())),
+    }
+}
+
+pub fn parse_fen_to_position_with_policy<const N: usize, const STM: Color, Z: ZobristPolicy>(
+    fen: &str,
+) -> Result<Position<N, STM, Z>, FenParseError> {
+    match parse_fen_to_typed_position::<N, Z>(fen)? {
+        TypedPosition::White(pos) if STM == Color::White => Ok(pos.rebrand_stm::<STM>()),
+        TypedPosition::Black(pos) if STM == Color::Black => Ok(pos.rebrand_stm::<STM>()),
+        TypedPosition::White(_) => Err(FenParseError::InvalidSideToMove("w".to_string())),
+        TypedPosition::Black(_) => Err(FenParseError::InvalidSideToMove("b".to_string())),
+    }
+}
+
+pub fn parse_fen_to_position<const N: usize, const STM: Color>(
+    fen: &str,
+) -> Result<Position<N, STM, WithZobrist>, FenParseError> {
+    parse_fen_to_position_with_policy::<N, STM, WithZobrist>(fen)
+}
+
+impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
+    pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
+        parse_fen_to_position_with_policy::<N, STM, Z>(fen)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::TypedPosition;
+
+    #[test]
+    fn test_from_fen() {
+        let fen = "8/1P1n1B2/5P2/4pkNp/1PQ4K/p2p2P1/8/3R1N2 w - - 0 1";
+        let state_result = TypedPosition::<1>::from_fen(fen);
+        assert!(state_result.is_ok());
+
+        let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 36 18";
+        let state_result = TypedPosition::<1>::from_fen(fen);
+        assert!(state_result.is_err());
+        assert_eq!(
+            state_result.err().unwrap(),
+            FenParseError::InvalidPosition(fen.to_string())
+        );
+
+        let fen = "1k2N1K1/4Q3/6p1/2B2B2/p1PPb3/2P2Nb1/2r5/n7 b - - 35 18";
+        let state_result = TypedPosition::<1>::from_fen(fen);
+        assert!(state_result.is_ok(), "{:?}", state_result);
+
+        let fen = "r3k3/P3P3/1B3q2/N3P2P/R6N/8/np2b2p/1K3n2 w q - 100 96";
+        let state_result = TypedPosition::<1>::from_fen(fen);
+        assert!(state_result.is_ok());
+
+        let fen = "nb4K1/2N4p/8/3P1rk1/1r2P3/5p2/3P1Q2/B2R1b2 b - - 0 1";
+        let state_result = TypedPosition::<1>::from_fen(fen);
+        assert!(state_result.is_ok());
+    }
+}

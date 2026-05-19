@@ -1,4 +1,7 @@
-use bunnies::{Color, Position, PositionWithoutZobrist, WithoutZobrist, ZobristPolicy, INITIAL_FEN};
+use bunnies::io::fen::INITIAL_FEN;
+use bunnies::types::{
+    Color, Position, PositionWithoutZobrist, WithoutZobrist, ZobristPolicy,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PerftCase {
