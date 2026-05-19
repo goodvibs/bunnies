@@ -3,9 +3,10 @@
 
 use crate::logic::attacks::manual::multi_pawn_attacks_left;
 use crate::logic::attacks::manual::multi_pawn_attacks_right;
+use crate::logic::attacks::single_bishop_attacks;
+use crate::logic::attacks::single_rook_attacks;
 use crate::logic::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
-    sliding_piece_attacks,
 };
 use crate::types::{
     Bitboard, BitboardUtils, Color, ConstDoublePawnPushFile, DoublePawnPushFile, Flank, Move,
@@ -81,14 +82,134 @@ const fn split_promotions(to_mask: Bitboard, promo_rank: Bitboard) -> (Bitboard,
     (to_mask & !promotions, promotions)
 }
 
-const trait LegalMoveSink {
+trait LegalMoveSink {
     fn normal(&mut self, from: Square, to: Square);
     fn promotions(&mut self, from: Square, to: Square);
     fn en_passant(&mut self, from: Square, to: Square);
     fn castling(&mut self, from: Square, to: Square);
     fn normal_mask(&mut self, from: Square, to_mask: Bitboard);
     fn promotions_mask(&mut self, from: Square, to_mask: Bitboard);
-    fn pawn_dsts_from_sd(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard);
+    fn emit_pawn_dsts(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard);
+
+    fn emit_non_ep_pawn_captures<const STM: Color>(
+        &mut self,
+        stm_pawns: Bitboard,
+        opposite_pieces: Bitboard,
+        king_sq: Square,
+        dst_mask: Bitboard,
+        pinned: Bitboard,
+    ) {
+        let up_left = SquareDelta::UP_LEFT.for_perspective(STM);
+        let up_right = SquareDelta::UP_RIGHT.for_perspective(STM);
+        let down_right = -up_left;
+        let down_left = -up_right;
+        let promo_rank = Rank::Eight.from_perspective(STM).mask();
+
+        // Free pawns: batch attack generation, no pin reasoning required.
+        let free = stm_pawns & !pinned;
+        let left = multi_pawn_attacks_left(free, STM) & opposite_pieces & dst_mask;
+        let right = multi_pawn_attacks_right(free, STM) & opposite_pieces & dst_mask;
+        self.emit_pawn_dsts(down_right, left, promo_rank);
+        self.emit_pawn_dsts(down_left, right, promo_rank);
+
+        // Pinned pawns (rare): per-source emission so the pin restriction is just an AND.
+        for from in (stm_pawns & pinned).iter_set_bits_as_squares() {
+            let attacks = multi_pawn_attacks(from.mask(), STM)
+                & opposite_pieces
+                & dst_mask
+                & Bitboard::edge_to_edge_ray(from, king_sq);
+            let (normal, promotions) = split_promotions(attacks, promo_rank);
+            self.normal_mask(from, normal);
+            self.promotions_mask(from, promotions);
+        }
+    }
+
+    fn emit_en_passants<const STM: Color>(
+        &mut self,
+        dpf: DoublePawnPushFile,
+        checkers: Bitboard,
+        stm_pawns: Bitboard,
+        king_sq: Square,
+        pinned: Bitboard,
+        ep_is_legal: impl Fn(Square, Square, Square) -> bool,
+    ) {
+        if !dpf.has_file() || checkers.count_ones() > 1 {
+            return;
+        }
+
+        let capture_square = dpf.ep_capture_square(STM);
+        let to = dpf.ep_dst_square(STM);
+        let to_mask = to.mask();
+
+        for from in (dpf.ep_possible_src_mask(STM) & stm_pawns).iter_set_bits_as_squares() {
+            if pin_restrict(from, to_mask, king_sq, pinned) == 0 {
+                continue;
+            }
+
+            let needs_probe = en_passant_requires_full_attack_probe(checkers, king_sq, from);
+            if needs_probe && !ep_is_legal(from, to, capture_square) {
+                continue;
+            }
+            self.en_passant(from, to);
+        }
+    }
+
+    fn emit_pawn_pushes<const STM: Color>(
+        &mut self,
+        occupied: Bitboard,
+        pawns_stm: Bitboard,
+        king_sq: Square,
+        dst_mask: Bitboard,
+        pinned: Bitboard,
+    ) {
+        // Pinned pawns can only push if pinned along the king's file (vertical pin).
+        let king_file_mask = king_sq.file().mask();
+        let movable_pawns = pawns_stm & !(pinned & !king_file_mask);
+
+        let promo_rank = Rank::Eight.from_perspective(STM).mask();
+        let push_again_mask = Rank::Three.from_perspective(STM).mask();
+        let down = SquareDelta::DOWN.for_perspective(STM);
+
+        let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
+        self.emit_pawn_dsts(down, single_push_dsts & dst_mask, promo_rank);
+
+        let double_push_dsts =
+            multi_pawn_moves(single_push_dsts & push_again_mask, STM) & !occupied & dst_mask;
+        self.emit_pawn_dsts(down * 2, double_push_dsts, 0);
+    }
+
+    fn emit_moves(&mut self, moves: impl Fn(Square) -> Bitboard, pieces: Bitboard) {
+        for from in pieces.iter_set_bits_as_squares() {
+            let to_mask = moves(from);
+            self.normal_mask(from, to_mask);
+        }
+    }
+
+    /// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
+    fn emit_king_moves(
+        &mut self,
+        king_sq: Square,
+        stm_occupancy: Bitboard,
+        king_mask: Bitboard,
+        king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
+    ) {
+        let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
+
+        for dst_square in king_moves.iter_set_bits_as_squares() {
+            if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
+                self.normal(king_sq, dst_square);
+            }
+        }
+    }
+
+    fn emit_castling_moves<const STM: Color>(&mut self, may_castle: impl Fn(Flank) -> bool) {
+        let king_src_square = STM.king_initial_square();
+        for flank in Flank::ALL {
+            if may_castle(flank) {
+                self.castling(king_src_square, flank.king_castled_square(STM));
+            }
+        }
+    }
 }
 
 struct MoveListSink<'a> {
@@ -133,7 +254,7 @@ impl LegalMoveSink for MoveListSink<'_> {
         }
     }
 
-    fn pawn_dsts_from_sd(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
+    fn emit_pawn_dsts(&mut self, sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
         let (normal, promotions) = split_promotions(to_mask, promo_rank);
         for to in normal.iter_set_bits_as_squares() {
             let from = to.relative(sd).expect("Invalid SquareDelta for to_mask");
@@ -151,7 +272,7 @@ struct MoveCountSink {
     count: u32,
 }
 
-impl const LegalMoveSink for MoveCountSink {
+impl LegalMoveSink for MoveCountSink {
     fn normal(&mut self, _from: Square, _to: Square) {
         self.count += 1;
     }
@@ -176,165 +297,9 @@ impl const LegalMoveSink for MoveCountSink {
         self.count += to_mask.count_ones() * 4;
     }
 
-    fn pawn_dsts_from_sd(&mut self, _sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
+    fn emit_pawn_dsts(&mut self, _sd: SquareDelta, to_mask: Bitboard, promo_rank: Bitboard) {
         let (normal, promotions) = split_promotions(to_mask, promo_rank);
         self.count += normal.count_ones() + promotions.count_ones() * 4;
-    }
-}
-
-fn emit_moves<S: LegalMoveSink>(from: Square, to_mask: Bitboard, sink: &mut S) {
-    sink.normal_mask(from, to_mask);
-}
-
-/// Splits `to_mask` into promotions (on `promo_rank`) and the rest, emitting both via sink.
-#[inline]
-fn emit_pawn_dsts<S: LegalMoveSink>(
-    sd: SquareDelta,
-    to_mask: Bitboard,
-    promo_rank: Bitboard,
-    sink: &mut S,
-) {
-    sink.pawn_dsts_from_sd(sd, to_mask, promo_rank);
-}
-
-fn emit_non_ep_pawn_captures<const STM: Color, S: LegalMoveSink>(
-    stm_pawns: Bitboard,
-    opposite_pieces: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-    sink: &mut S,
-) {
-    let up_left = SquareDelta::UP_LEFT.for_perspective(STM);
-    let up_right = SquareDelta::UP_RIGHT.for_perspective(STM);
-    let down_right = -up_left;
-    let down_left = -up_right;
-    let promo_rank = Rank::Eight.from_perspective(STM).mask();
-
-    // Free pawns: batch attack generation, no pin reasoning required.
-    let free = stm_pawns & !pinned;
-    let left = multi_pawn_attacks_left(free, STM) & opposite_pieces & dst_mask;
-    let right = multi_pawn_attacks_right(free, STM) & opposite_pieces & dst_mask;
-    emit_pawn_dsts(down_right, left, promo_rank, sink);
-    emit_pawn_dsts(down_left, right, promo_rank, sink);
-
-    // Pinned pawns (rare): per-source emission so the pin restriction is just an AND.
-    for from in (stm_pawns & pinned).iter_set_bits_as_squares() {
-        let attacks = multi_pawn_attacks(from.mask(), STM)
-            & opposite_pieces
-            & dst_mask
-            & Bitboard::edge_to_edge_ray(from, king_sq);
-        let (normal, promotions) = split_promotions(attacks, promo_rank);
-        emit_moves(from, normal, sink);
-        sink.promotions_mask(from, promotions);
-    }
-}
-
-fn emit_en_passants<const STM: Color, S: LegalMoveSink>(
-    dpf: DoublePawnPushFile,
-    checkers: Bitboard,
-    stm_pawns: Bitboard,
-    king_sq: Square,
-    pinned: Bitboard,
-    ep_is_legal: impl Fn(Square, Square, Square) -> bool,
-    sink: &mut S,
-) {
-    if !dpf.has_file() || checkers.count_ones() > 1 {
-        return;
-    }
-
-    let capture_square = dpf.ep_capture_square(STM);
-    let to = dpf.ep_dst_square(STM);
-    let to_mask = to.mask();
-
-    for from in (dpf.ep_possible_src_mask(STM) & stm_pawns).iter_set_bits_as_squares() {
-        if pin_restrict(from, to_mask, king_sq, pinned) == 0 {
-            continue;
-        }
-
-        let needs_probe = en_passant_requires_full_attack_probe(checkers, king_sq, from);
-        if needs_probe && !ep_is_legal(from, to, capture_square) {
-            continue;
-        }
-        sink.en_passant(from, to);
-    }
-}
-
-fn emit_pawn_pushes<const STM: Color, S: LegalMoveSink>(
-    occupied: Bitboard,
-    pawns_stm: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-    sink: &mut S,
-) {
-    // Pinned pawns can only push if pinned along the king's file (vertical pin).
-    let king_file_mask = king_sq.file().mask();
-    let movable_pawns = pawns_stm & !(pinned & !king_file_mask);
-
-    let promo_rank = Rank::Eight.from_perspective(STM).mask();
-    let push_again_mask = Rank::Three.from_perspective(STM).mask();
-    let down = SquareDelta::DOWN.for_perspective(STM);
-
-    let single_push_dsts = multi_pawn_moves(movable_pawns, STM) & !occupied;
-    emit_pawn_dsts(down, single_push_dsts & dst_mask, promo_rank, sink);
-
-    let double_push_dsts =
-        multi_pawn_moves(single_push_dsts & push_again_mask, STM) & !occupied & dst_mask;
-    sink.pawn_dsts_from_sd(down * 2, double_push_dsts, 0);
-}
-
-fn emit_knight_moves<S: LegalMoveSink>(
-    stm_knights_not_pinned: Bitboard,
-    dst_mask: Bitboard,
-    sink: &mut S,
-) {
-    for src_square in stm_knights_not_pinned.iter_set_bits_as_squares() {
-        let to_mask = single_knight_attacks(src_square) & dst_mask;
-        emit_moves(src_square, to_mask, sink);
-    }
-}
-
-fn emit_sliding_moves<const P: Piece, S: LegalMoveSink>(
-    occupancy: Bitboard,
-    stm_pieces_of_kind: Bitboard,
-    king_sq: Square,
-    dst_mask: Bitboard,
-    pinned: Bitboard,
-    sink: &mut S,
-) {
-    for from in stm_pieces_of_kind.iter_set_bits_as_squares() {
-        let to_mask = sliding_piece_attacks(from, occupancy, P) & dst_mask;
-        emit_moves(from, pin_restrict(from, to_mask, king_sq, pinned), sink);
-    }
-}
-
-/// `king_dst_is_safe(dst, king_mask | dst.mask())` must be true iff the king may step to `dst`.
-fn emit_king_moves<S: LegalMoveSink>(
-    king_sq: Square,
-    stm_occupancy: Bitboard,
-    king_mask: Bitboard,
-    king_dst_is_safe: impl Fn(Square, Bitboard) -> bool,
-    sink: &mut S,
-) {
-    let king_moves = single_king_attacks(king_sq) & !stm_occupancy;
-
-    for dst_square in king_moves.iter_set_bits_as_squares() {
-        if king_dst_is_safe(dst_square, king_mask | dst_square.mask()) {
-            sink.normal(king_sq, dst_square);
-        }
-    }
-}
-
-fn emit_castling_moves<const STM: Color, S: LegalMoveSink>(
-    may_castle: impl Fn(Flank) -> bool,
-    sink: &mut S,
-) {
-    let king_src_square = STM.king_initial_square();
-    for flank in Flank::ALL {
-        if may_castle(flank) {
-            sink.castling(king_src_square, flank.king_castled_square(STM));
-        }
     }
 }
 
@@ -347,13 +312,9 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         let stm_king_mask = stm_pieces & board.piece_mask::<{ Piece::King }>();
 
         // 1. King moves are always legal candidates, regardless of check status.
-        emit_king_moves(
-            king_sq,
-            stm_pieces,
-            stm_king_mask,
-            |dst, occ| !board.is_square_attacked_after_move(dst, STM.other(), occ),
-            sink,
-        );
+        sink.emit_king_moves(king_sq, stm_pieces, stm_king_mask, |dst, occ| {
+            !board.is_square_attacked_after_move(dst, STM.other(), occ)
+        });
 
         // 2. Double check: only the king can move.
         if ctx.checkers.count_ones() > 1 {
@@ -373,9 +334,9 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         let opposite = board.color_mask_at(STM.other());
         let occupied = board.pieces();
 
-        emit_non_ep_pawn_captures::<STM, _>(pawns, opposite, king_sq, dst_mask, ctx.pinned, sink);
+        sink.emit_non_ep_pawn_captures::<STM>(pawns, opposite, king_sq, dst_mask, ctx.pinned);
 
-        emit_en_passants::<STM, _>(
+        sink.emit_en_passants::<STM>(
             ctx.double_pawn_push_file,
             ctx.checkers,
             pawns,
@@ -388,41 +349,43 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
                     src.mask() | dst.mask() | capture_square.mask(),
                 )
             },
-            sink,
         );
 
-        emit_pawn_pushes::<STM, _>(occupied, pawns, king_sq, dst_mask, ctx.pinned, sink);
+        sink.emit_pawn_pushes::<STM>(occupied, pawns, king_sq, dst_mask, ctx.pinned);
 
-        let knights = stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned;
-        emit_knight_moves(knights, dst_mask, sink);
+        sink.emit_moves(
+            |from| single_knight_attacks(from) & dst_mask,
+            stm_pieces & board.piece_mask::<{ Piece::Knight }>() & !ctx.pinned,
+        );
 
-        emit_sliding_moves::<{ Piece::Bishop }, _>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Bishop }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-            sink,
+        let queens = board.piece_mask::<{ Piece::Queen }>();
+
+        sink.emit_moves(
+            |from| {
+                pin_restrict(
+                    from,
+                    single_bishop_attacks(from, occupied) & dst_mask,
+                    king_sq,
+                    ctx.pinned,
+                )
+            },
+            stm_pieces & (board.piece_mask::<{ Piece::Bishop }>() | queens),
         );
-        emit_sliding_moves::<{ Piece::Rook }, _>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Rook }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-            sink,
-        );
-        emit_sliding_moves::<{ Piece::Queen }, _>(
-            occupied,
-            stm_pieces & board.piece_mask::<{ Piece::Queen }>(),
-            king_sq,
-            dst_mask,
-            ctx.pinned,
-            sink,
+
+        sink.emit_moves(
+            |from| {
+                pin_restrict(
+                    from,
+                    single_rook_attacks(from, occupied) & dst_mask,
+                    king_sq,
+                    ctx.pinned,
+                )
+            },
+            stm_pieces & (board.piece_mask::<{ Piece::Rook }>() | queens),
         );
 
         if allow_castling {
-            emit_castling_moves::<STM, _>(|flank| self.can_legally_castle(flank), sink);
+            sink.emit_castling_moves::<STM>(|flank| self.can_legally_castle(flank));
         }
     }
 
