@@ -8,6 +8,7 @@ use super::rank::Rank;
 use super::square::Square;
 use crate::logic::attacks::*;
 use crate::utilities::Array;
+use crate::utilities::IterableEnum;
 
 /// A struct representing the positions of all pieces on the board, for both colors.
 ///

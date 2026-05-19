@@ -5,6 +5,7 @@
 #![feature(const_precise_live_drops)]
 #![feature(const_index)]
 #![feature(const_slice_make_iter)]
+#![feature(const_result_unwrap_unchecked)]
 #![feature(derive_const)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]

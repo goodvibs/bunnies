@@ -74,8 +74,8 @@ static MOVE_DIRECTION_LOOKUP: Array<Array<UnifiedMoveDirection, 64>, 64> = {
     let mut arr = [UnifiedMoveDirection::NULL; 64 * 64];
     let mut i = 0usize;
     while i < 64 * 64 {
-        let src_square = Square::from_u8((i / 64) as u8);
-        let dst_square = Square::from_u8((i % 64) as u8);
+        let src_square = unsafe { Square::try_from((i / 64) as u8).unwrap_unchecked() };
+        let dst_square = unsafe { Square::try_from((i % 64) as u8).unwrap_unchecked() };
         arr[i] = unified_move_direction_at(src_square, dst_square);
         i += 1;
     }

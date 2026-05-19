@@ -4,7 +4,9 @@ use super::bitboard::Bitboard;
 use super::file::File;
 use super::rank::Rank;
 use super::square_delta::{SquareDelta, SquareDeltaUtils};
+use crate::impl_u8_conversions;
 use crate::types::{Array, BitboardUtils, QueenLikeMoveDirection};
+use crate::utilities::IterableEnum;
 
 const fn resolve_square_mask(maybe_square: Option<Square>) -> Bitboard {
     match maybe_square {
@@ -120,30 +122,25 @@ pub enum Square {
 }
 
 impl Square {
-    /// Board index `0..64` → square (A8→0 … H1→63), same layout as [`File::from_u8`] / [`Rank::from_u8`].
-    ///
-    /// **Contract:** `index` must be `< 64`. In debug builds, invalid values panic; in release, invalid
-    /// values are **undefined behavior** (invalid enum bit pattern). Use FEN parsing for validated input
-    /// from text.
-    #[inline]
-    pub const fn from_u8(index: u8) -> Square {
-        debug_assert!(index < 64);
-        unsafe { std::mem::transmute::<u8, Square>(index) }
-    }
-
     /// Returns a square from a bitboard with **exactly one** bit set, or `None` if the mask is empty or has multiple bits.
     #[inline]
     pub const fn from_bitboard(bitboard: Bitboard) -> Option<Square> {
         if bitboard == 0 || !bitboard.is_power_of_two() {
             return None;
         }
-        Some(Square::from_u8(bitboard.leading_zeros() as u8))
+        Some({
+            let value = bitboard.leading_zeros() as u8;
+            unsafe { Self::try_from(value).unwrap_unchecked() }
+        })
     }
 
     /// Returns the square for the given [`Rank`] and [`File`] (same layout as chmog `fromRankAndFile`).
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Square {
-        Square::from_u8((7 - rank as u8) * 8 + file as u8)
+        {
+            let value = (7 - rank as u8) * 8 + file as u8;
+            unsafe { Self::try_from(value).unwrap_unchecked() }
+        }
     }
 
     /// Returns the bitboard mask for the square.
@@ -152,11 +149,14 @@ impl Square {
     }
 
     pub const fn file(self) -> File {
-        File::from_u8(self as u8 % 8)
+        {
+            let value = self as u8 % 8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        }
     }
 
     pub const fn rank(self) -> Rank {
-        Rank::from_u8(7 - self as u8 / 8)
+        unsafe { (7 - self as u8 / 8).try_into().unwrap_unchecked() }
     }
 
     /// Returns the combined file and rank mask for the square.
@@ -189,7 +189,10 @@ impl Square {
     pub const fn relative(self, delta: SquareDelta) -> Option<Square> {
         let idx = self as u8 as i16 + delta as i16;
         if idx >= 0 && idx <= 63 {
-            Some(Square::from_u8(idx as u8))
+            Some({
+                let value = idx as u8;
+                unsafe { Self::try_from(value).unwrap_unchecked() }
+            })
         } else {
             None
         }
@@ -282,7 +285,10 @@ impl Square {
 
     /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
     pub const fn rotated_perspective(self) -> Square {
-        Square::from_u8(63 - self as u8)
+        {
+            let value = 63 - self as u8;
+            unsafe { Self::try_from(value).unwrap_unchecked() }
+        }
     }
 
     /// Returns the character corresponding to the file of the square.
@@ -300,8 +306,60 @@ impl Square {
         Self::ALL_ALGEBRAIC[self as usize]
     }
 
-    /// An array of all possible squares, ordered from A8 to H1, left to right, top to bottom (numerically ascending).
-    pub const ALL: Array<Square, 64> = Array([
+    pub const ALL_ALGEBRAIC: Array<&'static str, 64> = Array([
+        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
+        "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",
+        "g5", "h5", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a3", "b3", "c3", "d3", "e3",
+        "f3", "g3", "h3", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", "a1", "b1", "c1", "d1",
+        "e1", "f1", "g1", "h1",
+    ]);
+}
+
+const fn ascending_diagonal_mask_impl(square: Square) -> Bitboard {
+    let mask = square.mask();
+    for diagonal in DIAGONALS_BR_TO_TL {
+        if diagonal & mask != 0 {
+            return diagonal;
+        }
+    }
+    0
+}
+
+const fn descending_diagonal_mask_impl(square: Square) -> Bitboard {
+    let mask = square.mask();
+    for diagonal in DIAGONALS_BL_TO_TR {
+        if diagonal & mask != 0 {
+            return diagonal;
+        }
+    }
+    0
+}
+
+const fn diagonals_union_impl(square: Square) -> Bitboard {
+    ascending_diagonal_mask_impl(square) | descending_diagonal_mask_impl(square)
+}
+
+/// Whether `sq2` lies on a rank, file, or diagonal through `sq1` (compile-time friendly).
+pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
+    (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
+}
+
+static DIAGONALS_MASK_LOOKUP: Array<Bitboard, 64> = Array({
+    let mut arr = [0u64; 64];
+    for square in <Square as IterableEnum<64>>::ALL {
+        arr[square as usize] = diagonals_union_impl(square);
+    }
+    arr
+});
+
+impl Display for Square {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.algebraic())
+    }
+}
+
+impl const IterableEnum<64> for Square {
+    const ALL: Array<Square, 64> = Array([
         Square::A8,
         Square::B8,
         Square::C8,
@@ -367,58 +425,9 @@ impl Square {
         Square::G1,
         Square::H1,
     ]);
-
-    pub const ALL_ALGEBRAIC: Array<&'static str, 64> = Array([
-        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
-        "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",
-        "g5", "h5", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a3", "b3", "c3", "d3", "e3",
-        "f3", "g3", "h3", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", "a1", "b1", "c1", "d1",
-        "e1", "f1", "g1", "h1",
-    ]);
 }
 
-const fn ascending_diagonal_mask_impl(square: Square) -> Bitboard {
-    let mask = square.mask();
-    for diagonal in DIAGONALS_BR_TO_TL {
-        if diagonal & mask != 0 {
-            return diagonal;
-        }
-    }
-    0
-}
-
-const fn descending_diagonal_mask_impl(square: Square) -> Bitboard {
-    let mask = square.mask();
-    for diagonal in DIAGONALS_BL_TO_TR {
-        if diagonal & mask != 0 {
-            return diagonal;
-        }
-    }
-    0
-}
-
-const fn diagonals_union_impl(square: Square) -> Bitboard {
-    ascending_diagonal_mask_impl(square) | descending_diagonal_mask_impl(square)
-}
-
-/// Whether `sq2` lies on a rank, file, or diagonal through `sq1` (compile-time friendly).
-pub(crate) const fn same_line(sq1: Square, sq2: Square) -> bool {
-    (sq1.orthogonals_mask() | diagonals_union_impl(sq1)) & sq2.mask() != 0
-}
-
-static DIAGONALS_MASK_LOOKUP: Array<Bitboard, 64> = Array({
-    let mut arr = [0u64; 64];
-    for square in Square::ALL {
-        arr[square as usize] = diagonals_union_impl(square);
-    }
-    arr
-});
-
-impl Display for Square {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.algebraic())
-    }
-}
+impl_u8_conversions!(Square, 64);
 
 #[cfg(test)]
 mod tests {
@@ -440,20 +449,11 @@ mod tests {
 
     #[test]
     fn test_from_square_number() {
-        assert_eq!(Square::from_u8(0), Square::A8);
-        assert_eq!(Square::from_u8(7), Square::H8);
-        assert_eq!(Square::from_u8(56), Square::A1);
-        assert_eq!(Square::from_u8(63), Square::H1);
-        assert_eq!(Square::from_u8(36), Square::E4);
-    }
-
-    #[cfg(debug_assertions)]
-    #[test]
-    fn test_from_u8_out_of_range_debug_panics() {
-        let r = std::panic::catch_unwind(|| {
-            let _ = Square::from_u8(64);
-        });
-        assert!(r.is_err(), "from_u8(64) should panic in debug builds");
+        assert_eq!(Square::try_from(0).unwrap(), Square::A8);
+        assert_eq!(Square::try_from(7).unwrap(), Square::H8);
+        assert_eq!(Square::try_from(56).unwrap(), Square::A1);
+        assert_eq!(Square::try_from(63).unwrap(), Square::H1);
+        assert_eq!(Square::try_from(36).unwrap(), Square::E4);
     }
 
     #[test]
@@ -498,19 +498,27 @@ mod tests {
 
     #[test]
     fn test_get_file_mask() {
-        let a_file_mask = File::from_u8(Square::A1.file() as u8).mask();
-        let h_file_mask = File::from_u8(Square::H1.file() as u8).mask();
+        let a_file_mask = {
+            let value = Square::A1.file() as u8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        }
+        .mask();
+        let h_file_mask = {
+            let value = Square::H1.file() as u8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        }
+        .mask();
 
         assert_eq!(a_file_mask, File::A.mask());
         assert_eq!(h_file_mask, File::H.mask());
 
         assert_eq!(
-            File::from_u8(Square::A1.file() as u8).mask(),
-            File::from_u8(Square::A8.file() as u8).mask()
+            unsafe { File::try_from(Square::A1.file() as u8).unwrap_unchecked() }.mask(),
+            unsafe { File::try_from(Square::A8.file() as u8).unwrap_unchecked() }.mask(),
         );
         assert_eq!(
-            File::from_u8(Square::H1.file() as u8).mask(),
-            File::from_u8(Square::H8.file() as u8).mask()
+            unsafe { File::try_from(Square::H1.file() as u8).unwrap_unchecked() }.mask(),
+            unsafe { File::try_from(Square::H8.file() as u8).unwrap_unchecked() }.mask(),
         );
     }
 
@@ -523,19 +531,27 @@ mod tests {
 
     #[test]
     fn test_get_rank_mask() {
-        let rank_1_mask = Rank::from_u8(Square::A1.rank() as u8).mask();
-        let rank_8_mask = Rank::from_u8(Square::A8.rank() as u8).mask();
+        let rank_1_mask = {
+            let value = Square::A1.rank() as u8;
+            unsafe { Rank::try_from(value).unwrap_unchecked() }
+        }
+        .mask();
+        let rank_8_mask = {
+            let value = Square::A8.rank() as u8;
+            unsafe { Rank::try_from(value).unwrap_unchecked() }
+        }
+        .mask();
 
         assert_eq!(rank_1_mask, Rank::One.mask());
         assert_eq!(rank_8_mask, Rank::Eight.mask());
 
         assert_eq!(
-            Rank::from_u8(Square::A1.rank() as u8).mask(),
-            Rank::from_u8(Square::H1.rank() as u8).mask()
+            Rank::try_from(Square::A1.rank() as u8).unwrap().mask(),
+            Rank::try_from(Square::H1.rank() as u8).unwrap().mask()
         );
         assert_eq!(
-            Rank::from_u8(Square::A8.rank() as u8).mask(),
-            Rank::from_u8(Square::H8.rank() as u8).mask()
+            Rank::try_from(Square::A8.rank() as u8).unwrap().mask(),
+            Rank::try_from(Square::H8.rank() as u8).unwrap().mask()
         );
     }
 

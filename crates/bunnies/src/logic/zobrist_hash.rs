@@ -1,7 +1,7 @@
 //! All Zobrist hashing-related code.
 
 use crate::types::{Board, CastlingRights, Color, DoublePawnPushFile, Piece, Square};
-use crate::utilities::{Array, Prng};
+use crate::utilities::{Array, IterableEnum, Prng};
 
 const RNG_SEED: u64 = 161803398875;
 
@@ -125,6 +125,8 @@ pub const fn calc_position_zobrist_hash(
 
 #[cfg(test)]
 mod tests {
+    use crate::utilities::IterableEnum;
+
     use super::*;
     use std::collections::HashSet;
 

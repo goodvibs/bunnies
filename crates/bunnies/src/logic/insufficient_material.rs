@@ -1,4 +1,7 @@
-use crate::types::{Board, Color, Piece};
+use crate::{
+    types::{Board, Color, Piece},
+    utilities::IterableEnum,
+};
 
 impl Board {
     /// Returns true if there is insufficient material on both sides to checkmate.

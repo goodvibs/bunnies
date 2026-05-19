@@ -2,7 +2,7 @@
 
 use crate::logic::attacks::manual::manual_sliding_piece_attacks;
 use crate::types::{Bitboard, BitboardUtils, File, Piece, Rank, Square};
-use crate::utilities::{Array, Prng};
+use crate::utilities::{Array, IterableEnum, Prng};
 use std::boxed::Box;
 use std::fs;
 use std::io;
@@ -482,6 +482,7 @@ mod tests {
     use crate::logic::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::types::BitboardUtils;
     use crate::types::{Piece, Square};
+    use crate::utilities::IterableEnum;
 
     fn assert_magic_matches_manual<const P: Piece>(
         manual_attacks_for: impl Fn(Square, u64) -> u64,

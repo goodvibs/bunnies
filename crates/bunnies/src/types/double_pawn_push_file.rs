@@ -72,7 +72,10 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
 
     fn file(self) -> Option<File> {
         if self.has_file() {
-            Some(File::from_u8(self as u8))
+            Some({
+                let value = self as u8;
+                unsafe { File::try_from(value).unwrap_unchecked() }
+            })
         } else {
             None
         }
@@ -80,7 +83,10 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
 
     fn ep_possible_src_mask(self, stm: Color) -> Bitboard {
         debug_assert!(self.has_file());
-        let f = File::from_u8(self as u8);
+        let f = {
+            let value = self as u8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        };
         let double_pawn_push_dst = match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f).mask(),
             Color::Black => Square::from_rank_and_file(Rank::Four, f).mask(),
@@ -92,7 +98,10 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
 
     fn ep_dst_square(self, stm: Color) -> Square {
         debug_assert!(self.has_file());
-        let f = File::from_u8(self as u8);
+        let f = {
+            let value = self as u8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        };
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Six, f),
             Color::Black => Square::from_rank_and_file(Rank::Three, f),
@@ -101,7 +110,10 @@ impl const ConstDoublePawnPushFile for DoublePawnPushFile {
 
     fn ep_capture_square(self, stm: Color) -> Square {
         debug_assert!(self.has_file());
-        let f = File::from_u8(self as u8);
+        let f = {
+            let value = self as u8;
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        };
         match stm {
             Color::White => Square::from_rank_and_file(Rank::Five, f),
             Color::Black => Square::from_rank_and_file(Rank::Four, f),
@@ -121,7 +133,7 @@ impl DoublePawnPushFileUtils for DoublePawnPushFile {
         let pawns_mask = board.piece_mask::<{ Piece::Pawn }>();
         let colored_pawns_mask = pawns_mask & board.color_mask_at(color_just_moved);
         debug_assert!(self.has_file());
-        let file_mask = File::from_u8(self as u8).mask();
+        let file_mask = unsafe { File::try_from(self as u8).unwrap_unchecked() }.mask();
         let rank_mask = match color_just_moved {
             Color::White => Rank::Four.mask(),
             Color::Black => Rank::Five.mask(),

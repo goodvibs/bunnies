@@ -91,7 +91,7 @@ impl KnightMoveDirection {
 #[cfg(test)]
 mod tests {
     use super::{KnightMoveDirection, Square};
-    use crate::types::QueenLikeMoveDirection;
+    use crate::{types::QueenLikeMoveDirection, utilities::IterableEnum};
 
     fn test_knight_direction_for_square(square: Square, direction: KnightMoveDirection) {
         let next_square = match direction {

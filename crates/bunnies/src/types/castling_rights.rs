@@ -3,7 +3,10 @@
 use super::color::Color;
 use super::flank::Flank;
 use super::square::Square;
-use crate::utilities::Array;
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).
@@ -31,25 +34,6 @@ pub enum CastlingRights {
 }
 
 impl CastlingRights {
-    pub const ALL: Array<Self, 16> = Array([
-        Self::B0000,
-        Self::B0001,
-        Self::B0010,
-        Self::B0011,
-        Self::B0100,
-        Self::B0101,
-        Self::B0110,
-        Self::B0111,
-        Self::B1000,
-        Self::B1001,
-        Self::B1010,
-        Self::B1011,
-        Self::B1100,
-        Self::B1101,
-        Self::B1110,
-        Self::B1111,
-    ]);
-
     #[inline]
     pub const fn from_bits(bits: u8) -> Self {
         debug_assert!(bits <= 0b1111);
@@ -81,6 +65,29 @@ impl CastlingRights {
         Self::from_bits(self.bits() & CASTLING_RIGHTS_MASK[affected_square as usize].bits())
     }
 }
+
+impl const IterableEnum<16> for CastlingRights {
+    const ALL: Array<Self, 16> = Array([
+        Self::B0000,
+        Self::B0001,
+        Self::B0010,
+        Self::B0011,
+        Self::B0100,
+        Self::B0101,
+        Self::B0110,
+        Self::B0111,
+        Self::B1000,
+        Self::B1001,
+        Self::B1010,
+        Self::B1011,
+        Self::B1100,
+        Self::B1101,
+        Self::B1110,
+        Self::B1111,
+    ]);
+}
+
+impl_u8_conversions!(CastlingRights, 16);
 
 /// Per-square AND mask applied to the castling-rights nibble after a move touches that square.
 ///

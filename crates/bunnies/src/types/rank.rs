@@ -2,13 +2,16 @@
 
 use super::bitboard::Bitboard;
 use super::color::Color;
-use crate::utilities::Array;
-use std::hash::{Hash, Hasher};
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 
 /// Algebraic rank: [`Rank::One`] = rank 1 (White’s back rank in the start position), … [`Rank::Eight`] = rank 8.
 /// Discriminant matches [`crate::Square::rank`] (`0`…`7`).
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug)]
+#[derive_const(PartialEq)]
 pub enum Rank {
     One = 0,
     Two = 1,
@@ -21,31 +24,14 @@ pub enum Rank {
 }
 
 impl Rank {
-    pub const ALL: Array<Rank, 8> = Array([
-        Rank::One,
-        Rank::Two,
-        Rank::Three,
-        Rank::Four,
-        Rank::Five,
-        Rank::Six,
-        Rank::Seven,
-        Rank::Eight,
-    ]);
-
     #[inline]
     pub const fn mask(self) -> Bitboard {
         0xFFu64 << ((self as u8) * 8)
     }
 
     #[inline]
-    pub const fn from_u8(rank: u8) -> Self {
-        debug_assert!(rank < 8);
-        unsafe { std::mem::transmute::<u8, Self>(rank) }
-    }
-
-    #[inline]
     pub const fn mirrored(self) -> Self {
-        Self::from_u8(7 - self as u8)
+        unsafe { (7 - self as u8).try_into().unwrap_unchecked() }
     }
 
     #[inline]
@@ -57,14 +43,17 @@ impl Rank {
     }
 }
 
-impl const PartialEq for Rank {
-    fn eq(&self, other: &Self) -> bool {
-        *self as u8 == *other as u8
-    }
+impl const IterableEnum<8> for Rank {
+    const ALL: Array<Rank, 8> = Array([
+        Rank::One,
+        Rank::Two,
+        Rank::Three,
+        Rank::Four,
+        Rank::Five,
+        Rank::Six,
+        Rank::Seven,
+        Rank::Eight,
+    ]);
 }
 
-impl Hash for Rank {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (*self as u8).hash(state);
-    }
-}
+impl_u8_conversions!(Rank, 8);

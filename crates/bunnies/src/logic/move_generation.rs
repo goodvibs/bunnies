@@ -13,6 +13,7 @@ use crate::types::{
     MoveFlag, MoveList, Piece, Position, Rank, Square, SquareDelta, SquareDeltaUtils,
     ZobristPolicy,
 };
+use crate::utilities::IterableEnum;
 
 /// Returns `to_mask` restricted to squares legal for `from` given current pins.
 /// For non-pinned pieces, returns `to_mask` unchanged. Branchless on the hot path.

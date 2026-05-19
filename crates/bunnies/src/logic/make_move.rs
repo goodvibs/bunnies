@@ -50,8 +50,10 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
                 self.mut_context().halfmove_clock = 0;
             }
             MoveFlag::EnPassant => {
-                let capture_square =
-                    Square::from_u8((to as u8).wrapping_add_signed(en_passant_capture_offset(STM)));
+                let capture_square = unsafe {
+                    Square::try_from((to as u8).wrapping_add_signed(en_passant_capture_offset(STM)))
+                        .unwrap_unchecked()
+                };
                 self.remove_piece_and_color(STM.other(), Piece::Pawn, capture_square);
                 let context = self.mut_context();
                 context.captured_piece = Piece::Pawn;
@@ -103,9 +105,12 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
                 self.put_piece_at(Piece::Pawn, from);
             }
             MoveFlag::EnPassant => {
-                let capture_square = Square::from_u8(
-                    (to as u8).wrapping_add_signed(en_passant_capture_offset(side_just_moved)),
-                );
+                let capture_square = unsafe {
+                    Square::try_from(
+                        (to as u8).wrapping_add_signed(en_passant_capture_offset(side_just_moved)),
+                    )
+                    .unwrap_unchecked()
+                };
                 self.move_piece_and_color(STM, Piece::Pawn, to, capture_square);
             }
             MoveFlag::Castling => {

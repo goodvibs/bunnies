@@ -7,7 +7,10 @@ use super::color::Color;
 use super::file::File;
 use super::rank::Rank;
 use super::square::Square;
-use crate::utilities::Array;
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, Hash)]
@@ -18,8 +21,6 @@ pub enum Flank {
 }
 
 impl Flank {
-    pub const ALL: Array<Flank, 2> = Array([Flank::Kingside, Flank::Queenside]);
-
     pub const fn from_bool(is_queenside: bool) -> Self {
         unsafe { mem::transmute(is_queenside) }
     }
@@ -78,3 +79,9 @@ impl Flank {
         }
     }
 }
+
+impl const IterableEnum<2> for Flank {
+    const ALL: Array<Flank, 2> = Array([Flank::Kingside, Flank::Queenside]);
+}
+
+impl_u8_conversions!(Flank, 2);

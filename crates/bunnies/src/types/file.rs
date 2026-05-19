@@ -2,7 +2,10 @@
 
 use super::bitboard::Bitboard;
 use super::flank::Flank;
-use crate::utilities::Array;
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 use std::hash::{Hash, Hasher};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
@@ -20,17 +23,6 @@ pub enum File {
 }
 
 impl File {
-    pub const ALL: Array<File, 8> = Array([
-        File::A,
-        File::B,
-        File::C,
-        File::D,
-        File::E,
-        File::F,
-        File::G,
-        File::H,
-    ]);
-
     /// MSB column in bunnies’ bitboard layout (same as former `FILE_A`).
     const FILE_A: Bitboard = 0x8080_8080_8080_8080;
 
@@ -38,12 +30,6 @@ impl File {
     #[inline]
     pub const fn mask(self) -> Bitboard {
         Self::FILE_A >> (self as u8)
-    }
-
-    #[inline]
-    pub const fn from_u8(file: u8) -> Self {
-        debug_assert!(file < 8);
-        unsafe { std::mem::transmute::<u8, File>(file) }
     }
 
     pub const fn flank(self) -> Flank {
@@ -63,3 +49,18 @@ impl Hash for File {
         (*self as u8).hash(state);
     }
 }
+
+impl const IterableEnum<8> for File {
+    const ALL: Array<File, 8> = Array([
+        File::A,
+        File::B,
+        File::C,
+        File::D,
+        File::E,
+        File::F,
+        File::G,
+        File::H,
+    ]);
+}
+
+impl_u8_conversions!(File, 8);

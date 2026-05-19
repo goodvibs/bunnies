@@ -1,6 +1,9 @@
 use super::rank::Rank;
 use super::square::Square;
-use crate::utilities::Array;
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
@@ -40,10 +43,13 @@ impl Color {
             Self::Black => Rank::Four,
         }
     }
-
-    /// An array of all Colors (2 colors).
-    pub const ALL: Array<Color, 2> = Array([Color::White, Color::Black]);
 }
+
+impl const IterableEnum<2> for Color {
+    const ALL: Array<Color, 2> = Array([Color::White, Color::Black]);
+}
+
+impl_u8_conversions!(Color, 2);
 
 #[cfg(test)]
 mod tests {

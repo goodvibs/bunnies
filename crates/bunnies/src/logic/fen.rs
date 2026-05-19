@@ -70,9 +70,10 @@ fn parse_en_passant_target(
                 fen_en_passant_target.to_string(),
             ));
         }
-        Ok(DoublePawnPushFile::from_file(Some(File::from_u8(
-            file as u8 - b'a',
-        ))))
+        Ok(DoublePawnPushFile::from_file(Some({
+            let value = file as u8 - b'a';
+            unsafe { File::try_from(value).unwrap_unchecked() }
+        })))
     }
 }
 
@@ -114,7 +115,8 @@ fn parse_fen_board_row(
                     return Err(FenParseError::InvalidBoardRow(row.to_string()));
                 }
                 cp => {
-                    let dst = Square::from_u8(row_from_top * 8 + file);
+                    let dst =
+                        unsafe { Square::try_from(row_from_top * 8 + file).unwrap_unchecked() };
                     board.put_piece_and_color(cp.color(), cp.piece(), dst);
 
                     file += 1;

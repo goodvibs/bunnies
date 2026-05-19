@@ -42,13 +42,13 @@ impl Move {
     /// Gets the target square of the move.
     pub const fn to(&self) -> Square {
         let to_int = (self.value >> 10) as u8;
-        Square::from_u8(to_int)
+        unsafe { Square::try_from(to_int).unwrap_unchecked() }
     }
 
     /// Gets the origin square of the move.
     pub const fn from(&self) -> Square {
         let from_int = ((self.value & 0b0000001111110000) >> 4) as u8;
-        Square::from_u8(from_int)
+        unsafe { Square::try_from(from_int).unwrap_unchecked() }
     }
 
     /// Gets the promotion piece type of the move.
@@ -101,7 +101,10 @@ impl std::fmt::Debug for Move {
 #[cfg(test)]
 mod tests {
     use super::{Move, MoveFlag};
-    use crate::types::{Piece, Square};
+    use crate::{
+        types::{Piece, Square},
+        utilities::IterableEnum,
+    };
 
     #[test]
     fn test_move() {
