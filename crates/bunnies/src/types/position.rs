@@ -11,7 +11,13 @@ use super::square::Square;
 use super::with_zobrist::WithZobrist;
 use super::zobrist_policy::ZobristPolicy;
 use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
+use crate::types::WithoutZobrist;
 use std::fmt;
+
+pub type PositionWithZobrist<const N: usize, const STM: Color> = Position<N, STM, WithZobrist>;
+
+pub type PositionWithoutZobrist<const N: usize, const STM: Color> =
+    Position<N, STM, WithoutZobrist>;
 
 /// Chess position with a fixed-size context stack of capacity `N` (root plus at most `N - 1` plies).
 ///
