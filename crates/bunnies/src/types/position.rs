@@ -10,7 +10,7 @@ use super::position_context::PositionContext;
 use super::square::Square;
 use super::with_zobrist::WithZobrist;
 use super::zobrist_policy::ZobristPolicy;
-use crate::attacks::{multi_pawn_attacks, single_knight_attacks};
+use crate::logic::attacks::{multi_pawn_attacks, single_knight_attacks};
 use crate::types::WithoutZobrist;
 use std::fmt;
 

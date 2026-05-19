@@ -1,6 +1,6 @@
 //! This module provides functionality for calculating sliding piece attacks using magic bitboards.
 
-use crate::attacks::manual::manual_sliding_piece_attacks;
+use crate::logic::attacks::manual::manual_sliding_piece_attacks;
 use crate::types::{Bitboard, BitboardUtils, File, Piece, Rank, Square};
 use crate::utilities::{Array, Prng};
 use std::boxed::Box;
@@ -476,10 +476,10 @@ pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) 
 
 #[cfg(test)]
 mod tests {
-    use crate::attacks::magic::{
+    use crate::logic::attacks::magic::{
         magic_single_bishop_attacks, magic_single_rook_attacks, sliding_piece_relevant_mask,
     };
-    use crate::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
+    use crate::logic::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
     use crate::types::BitboardUtils;
     use crate::types::{Piece, Square};
 

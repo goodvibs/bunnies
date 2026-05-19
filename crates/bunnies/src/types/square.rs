@@ -4,10 +4,7 @@ use super::bitboard::Bitboard;
 use super::file::File;
 use super::rank::Rank;
 use super::square_delta::{SquareDelta, SquareDeltaUtils};
-use crate::{
-    types::BitboardUtils,
-    utilities::{Array, QueenLikeMoveDirection},
-};
+use crate::types::{Array, BitboardUtils, QueenLikeMoveDirection};
 
 const fn resolve_square_mask(maybe_square: Option<Square>) -> Bitboard {
     match maybe_square {

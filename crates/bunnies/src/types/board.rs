@@ -6,7 +6,7 @@ use super::color::Color;
 use super::piece::Piece;
 use super::rank::Rank;
 use super::square::Square;
-use crate::attacks::*;
+use crate::logic::attacks::*;
 use crate::utilities::Array;
 
 /// A struct representing the positions of all pieces on the board, for both colors.

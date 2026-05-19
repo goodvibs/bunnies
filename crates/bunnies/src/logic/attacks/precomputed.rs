@@ -1,6 +1,6 @@
 //! Precomputed attack tables for non-sliding pieces.
 
-use crate::attacks::manual;
+use crate::logic::attacks::manual;
 use crate::types::{Bitboard, Square};
 use crate::utilities::Array;
 

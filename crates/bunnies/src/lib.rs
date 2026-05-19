@@ -11,8 +11,6 @@
 #![feature(const_cmp)]
 #![allow(incomplete_features)]
 
-pub mod attacks;
-pub mod io;
 pub mod logic;
 pub mod types;
 

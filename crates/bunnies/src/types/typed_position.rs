@@ -4,7 +4,7 @@ use super::color::Color;
 use super::position::Position;
 use super::with_zobrist::WithZobrist;
 use super::zobrist_policy::ZobristPolicy;
-use crate::io::fen::FenParseError;
+use crate::logic::fen::FenParseError;
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl<const N: usize, Z: ZobristPolicy> Eq for TypedPosition<N, Z> {}
 impl<const N: usize, Z: ZobristPolicy> TypedPosition<N, Z> {
     /// Parses a FEN string into a typed position.
     pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
-        crate::io::fen::parse_fen_to_typed_position(fen)
+        crate::logic::fen::parse_fen_to_typed_position(fen)
     }
 
     /// Dispatches to the closure corresponding to the compile-time side to move.

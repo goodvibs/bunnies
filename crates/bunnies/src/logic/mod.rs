@@ -1,7 +1,11 @@
-pub mod apply_move;
+pub mod attacks;
 pub mod castling;
+pub mod fen;
 pub mod game_state;
 pub mod insufficient_material;
+pub mod make_move;
 pub mod move_generation;
 pub mod perft;
+pub mod san;
+pub mod validation;
 pub mod zobrist_hash;

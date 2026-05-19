@@ -1,4 +1,4 @@
-use bunnies::io::fen::INITIAL_FEN;
+use bunnies::logic::fen::INITIAL_FEN;
 use bunnies::types::{
     Color, Position, PositionWithoutZobrist, WithoutZobrist, ZobristPolicy,
 };

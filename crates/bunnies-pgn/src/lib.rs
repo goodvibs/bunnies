@@ -9,7 +9,7 @@ pub use bunnies::types::*;
 pub use bunnies::*;
 
 pub mod position {
-    pub use bunnies::io::fen::INITIAL_FEN;
+    pub use bunnies::logic::fen::INITIAL_FEN;
     pub use bunnies::types::{Board, Position};
 }
 

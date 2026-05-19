@@ -1,9 +1,9 @@
 //! Move generation: small pure helpers for masks, then writers that take explicit
 //! bitboards and closures only where attack or castling needs hidden board state.
 
-use crate::attacks::manual::multi_pawn_attacks_left;
-use crate::attacks::manual::multi_pawn_attacks_right;
-use crate::attacks::{
+use crate::logic::attacks::manual::multi_pawn_attacks_left;
+use crate::logic::attacks::manual::multi_pawn_attacks_right;
+use crate::logic::attacks::{
     multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
     sliding_piece_attacks,
 };
