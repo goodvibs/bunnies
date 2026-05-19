@@ -3,13 +3,11 @@
 use super::bitboard::Bitboard;
 use super::bitboard::BitboardUtils;
 use super::color::Color;
-use super::colored_piece::ColoredPiece;
 use super::piece::Piece;
 use super::rank::Rank;
 use super::square::Square;
 use crate::attacks::*;
-use crate::utils::{Array, Charboard, CharboardDisplay};
-use std::fmt::Display;
+use crate::utils::Array;
 
 /// A struct representing the positions of all pieces on the board, for both colors.
 ///
@@ -353,38 +351,6 @@ impl Board {
     /// Rigorous check for the validity and consistency of the board.
     pub const fn is_unequivocally_valid(&self) -> bool {
         self.has_valid_kings() && self.is_consistent()
-    }
-
-    /// Prints the board to the console.
-    pub fn print(&self) {
-        println!("{}", self);
-    }
-
-    pub const fn ascii_charboard(&self) -> Charboard {
-        let mut cb: Charboard = [[' '; 8]; 8];
-        for square in Square::ALL {
-            let piece = self.piece_at(square);
-            let color = self.color_at(square);
-            cb[square as usize / 8][square as usize % 8] = ColoredPiece::new(color, piece).ascii();
-        }
-        cb
-    }
-
-    pub const fn unicode_charboard(&self) -> Charboard {
-        let mut cb: Charboard = [[' '; 8]; 8];
-        for square in Square::ALL {
-            let piece = self.piece_at(square);
-            let color = self.color_at(square);
-            cb[square as usize / 8][square as usize % 8] =
-                ColoredPiece::new(color, piece).unicode();
-        }
-        cb
-    }
-}
-
-impl Display for Board {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.unicode_charboard().to_string())
     }
 }
 
