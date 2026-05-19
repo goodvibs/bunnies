@@ -2,7 +2,7 @@
 
 use super::bitboard::Bitboard;
 use super::flank::Flank;
-use crate::utils::Array;
+use crate::utilities::Array;
 use std::hash::{Hash, Hasher};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].

@@ -3,7 +3,7 @@
 use super::color::Color;
 use super::flank::Flank;
 use super::square::Square;
-use crate::utils::Array;
+use crate::utilities::Array;
 
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).

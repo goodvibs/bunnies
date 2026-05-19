@@ -6,7 +6,7 @@ use super::rank::Rank;
 use super::square_delta::{SquareDelta, SquareDeltaUtils};
 use crate::{
     types::BitboardUtils,
-    utils::{Array, QueenLikeMoveDirection},
+    utilities::{Array, QueenLikeMoveDirection},
 };
 
 const fn resolve_square_mask(maybe_square: Option<Square>) -> Bitboard {

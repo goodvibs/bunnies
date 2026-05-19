@@ -1,7 +1,7 @@
 //! All Zobrist hashing-related code.
 
 use crate::types::{Board, CastlingRights, Color, DoublePawnPushFile, Piece, Square};
-use crate::utils::{Array, Prng};
+use crate::utilities::{Array, Prng};
 
 const RNG_SEED: u64 = 161803398875;
 

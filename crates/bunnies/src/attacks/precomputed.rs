@@ -2,7 +2,7 @@
 
 use crate::attacks::manual;
 use crate::types::{Bitboard, Square};
-use crate::utils::Array;
+use crate::utilities::Array;
 
 static SINGLE_KING_ATTACKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];

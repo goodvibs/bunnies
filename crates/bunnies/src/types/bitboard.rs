@@ -1,5 +1,5 @@
 use super::square::{Square, same_line};
-use crate::utils::{
+use crate::utilities::{
     BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator, QueenLikeMoveDirection,
 };
 

@@ -11,11 +11,9 @@
 #![feature(const_cmp)]
 #![allow(incomplete_features)]
 
-// Public modules
 pub mod attacks;
 pub mod io;
 pub mod logic;
 pub mod types;
 
-// Private modules
-mod utils;
+mod utilities;

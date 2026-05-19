@@ -2,7 +2,7 @@
 
 use crate::attacks::manual::manual_sliding_piece_attacks;
 use crate::types::{Bitboard, BitboardUtils, File, Piece, Rank, Square};
-use crate::utils::{Array, Prng};
+use crate::utilities::{Array, Prng};
 use std::boxed::Box;
 use std::fs;
 use std::io;

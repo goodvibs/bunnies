@@ -1,4 +1,4 @@
-use crate::utils::Array;
+use crate::utilities::Array;
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]

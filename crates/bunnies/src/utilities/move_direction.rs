@@ -1,5 +1,5 @@
 use crate::types::{Square, same_line};
-use crate::utils::Array;
+use crate::utilities::Array;
 
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, Debug)]

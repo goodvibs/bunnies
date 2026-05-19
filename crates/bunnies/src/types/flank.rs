@@ -7,7 +7,7 @@ use super::color::Color;
 use super::file::File;
 use super::rank::Rank;
 use super::square::Square;
-use crate::utils::Array;
+use crate::utilities::Array;
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, Hash)]

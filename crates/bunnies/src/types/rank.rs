@@ -2,7 +2,7 @@
 
 use super::bitboard::Bitboard;
 use super::color::Color;
-use crate::utils::Array;
+use crate::utilities::Array;
 use std::hash::{Hash, Hasher};
 
 /// Algebraic rank: [`Rank::One`] = rank 1 (White’s back rank in the start position), … [`Rank::Eight`] = rank 8.
