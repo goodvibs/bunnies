@@ -1,5 +1,4 @@
-use super::color::Color;
-use super::piece::Piece;
+use super::{color::Color, piece::Piece};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug)]

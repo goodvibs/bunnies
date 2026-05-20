@@ -1,12 +1,14 @@
 //! Sentinel-encoded file for the side that just double-pushed a pawn (`-1` = none, `0..=7` = `File` index).
 
-use super::bitboard::Bitboard;
-use super::board::Board;
-use super::color::Color;
-use super::file::File;
-use super::piece::Piece;
-use super::rank::Rank;
-use super::square::Square;
+use super::{
+    bitboard::Bitboard,
+    board::Board,
+    color::Color,
+    file::File,
+    piece::Piece,
+    rank::Rank,
+    square::Square,
+};
 
 /// FEN / context encoding: `-1` means no en-passant target; otherwise the [`File`] index `0..=7`.
 pub type DoublePawnPushFile = i8;

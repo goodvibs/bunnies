@@ -1,6 +1,17 @@
 use crate::types::{
-    Board, CastlingRights, Color, ColoredPiece, ConstDoublePawnPushFile, DoublePawnPushFile, File,
-    Position, PositionContext, Square, TypedPosition, WithZobrist, ZobristPolicy,
+    Board,
+    CastlingRights,
+    Color,
+    ColoredPiece,
+    ConstDoublePawnPushFile,
+    DoublePawnPushFile,
+    File,
+    Position,
+    PositionContext,
+    Square,
+    TypedPosition,
+    WithZobrist,
+    ZobristPolicy,
 };
 
 /// The FEN string representing the starting position of a standard chess game.

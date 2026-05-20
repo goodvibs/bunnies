@@ -1,15 +1,20 @@
-use crate::File;
-use crate::Flank;
-use crate::Piece;
-use crate::Square;
-use crate::r#move::{Move, MoveFlag};
-use crate::pgn::error::PgnError;
-use crate::pgn::token::{CASTLING_MOVE_REGEX, NON_CASTLING_MOVE_REGEX, ParsablePgnToken, PgnToken};
-use crate::position::Board;
+use std::{fmt::Debug, sync::LazyLock};
+
 use logos::Lexer;
 use regex::{Match, Regex};
-use std::fmt::Debug;
-use std::sync::LazyLock;
+
+use crate::{
+    File,
+    Flank,
+    Piece,
+    Square,
+    r#move::{Move, MoveFlag},
+    pgn::{
+        error::PgnError,
+        token::{CASTLING_MOVE_REGEX, NON_CASTLING_MOVE_REGEX, ParsablePgnToken, PgnToken},
+    },
+    position::Board,
+};
 
 static COMPILED_NON_CASTLING_MOVE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(NON_CASTLING_MOVE_REGEX).unwrap());
@@ -233,12 +238,15 @@ impl ParsablePgnToken for PgnCastlingMove {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::Color;
-    use crate::Square;
-    use crate::pgn::token::PgnToken;
-    use crate::position::{INITIAL_FEN, Position};
     use logos::Logos;
+
+    use super::*;
+    use crate::{
+        Color,
+        Square,
+        pgn::token::PgnToken,
+        position::{INITIAL_FEN, Position},
+    };
 
     #[test]
     fn test_parse_pawn_move() {

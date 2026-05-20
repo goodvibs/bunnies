@@ -1,11 +1,7 @@
 //! Chess ranks 1–8. Line masks: one byte strip per rank, matching [`crate::Square::rank`] (0 = first rank).
 
-use super::bitboard::Bitboard;
-use super::color::Color;
-use crate::{
-    utilities::impl_u8_conversions,
-    utilities::{Array, IterableEnum},
-};
+use super::{bitboard::Bitboard, color::Color};
+use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
 /// Algebraic rank: [`Rank::One`] = rank 1 (White’s back rank in the start position), … [`Rank::Eight`] = rank 8.
 /// Discriminant matches [`crate::Square::rank`] (`0`…`7`).

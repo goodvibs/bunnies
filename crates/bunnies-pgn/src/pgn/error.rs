@@ -1,5 +1,7 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
 
 /// Represents errors that can occur while lexing or parsing PGN.
 #[derive(Debug, PartialEq, Clone)]

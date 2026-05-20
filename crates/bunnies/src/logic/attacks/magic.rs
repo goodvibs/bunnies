@@ -1,16 +1,20 @@
 //! This module provides functionality for calculating sliding piece attacks using magic bitboards.
 
-use crate::logic::attacks::manual::manual_sliding_piece_attacks;
-use crate::types::{Bitboard, BitboardUtils, File, Piece, Rank, Square};
-use crate::utilities::{Array, IterableEnum, Prng};
-use std::boxed::Box;
-use std::fs;
-use std::io;
-use std::io::Read;
-use std::io::Write;
-use std::path::PathBuf;
-use std::ptr::NonNull;
-use std::sync::LazyLock;
+use std::{
+    boxed::Box,
+    fs,
+    io,
+    io::{Read, Write},
+    path::PathBuf,
+    ptr::NonNull,
+    sync::LazyLock,
+};
+
+use crate::{
+    logic::attacks::manual::manual_sliding_piece_attacks,
+    types::{Bitboard, BitboardUtils, File, Piece, Rank, Square},
+    utilities::{Array, IterableEnum, Prng},
+};
 
 static ROOK_RELEVANT_MASKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];
@@ -476,13 +480,18 @@ pub fn magic_single_bishop_attacks(src_square: Square, occupied_mask: Bitboard) 
 
 #[cfg(test)]
 mod tests {
-    use crate::logic::attacks::magic::{
-        magic_single_bishop_attacks, magic_single_rook_attacks, sliding_piece_relevant_mask,
+    use crate::{
+        logic::attacks::{
+            magic::{
+                magic_single_bishop_attacks,
+                magic_single_rook_attacks,
+                sliding_piece_relevant_mask,
+            },
+            manual::{manual_single_bishop_attacks, manual_single_rook_attacks},
+        },
+        types::{BitboardUtils, Piece, Square},
+        utilities::IterableEnum,
     };
-    use crate::logic::attacks::manual::{manual_single_bishop_attacks, manual_single_rook_attacks};
-    use crate::types::BitboardUtils;
-    use crate::types::{Piece, Square};
-    use crate::utilities::IterableEnum;
 
     fn assert_magic_matches_manual<const P: Piece>(
         manual_attacks_for: impl Fn(Square, u64) -> u64,

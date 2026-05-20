@@ -1,10 +1,12 @@
-use crate::Color;
-use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::position::Position;
+use std::{cell::RefCell, rc::Rc};
+
 use indexmap::IndexMap;
-use std::cell::RefCell;
-use std::rc::Rc;
+
+use crate::{
+    Color,
+    pgn::{move_tree_node::MoveTreeNode, rendering_config::PgnRenderingConfig},
+    position::Position,
+};
 
 /// Represents a parsed PGN string.
 pub struct PgnObject<const N: usize> {

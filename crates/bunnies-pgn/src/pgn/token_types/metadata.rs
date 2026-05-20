@@ -1,9 +1,12 @@
-use crate::pgn::error::PgnError;
-use crate::pgn::token::{COMMENT_REGEX, MOVE_NUMBER_REGEX, TAG_REGEX};
-use crate::pgn::token::{ParsablePgnToken, PgnToken};
+use std::sync::LazyLock;
+
 use logos::Lexer;
 use regex::Regex;
-use std::sync::LazyLock;
+
+use crate::pgn::{
+    error::PgnError,
+    token::{COMMENT_REGEX, MOVE_NUMBER_REGEX, ParsablePgnToken, PgnToken, TAG_REGEX},
+};
 
 static COMPILED_TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(TAG_REGEX).unwrap());
 static COMPILED_MOVE_NUMBER_REGEX: LazyLock<Regex> =
@@ -92,9 +95,10 @@ impl ParsablePgnToken for PgnComment {
 
 #[cfg(test)]
 mod tests {
+    use logos::Logos;
+
     use super::*;
     use crate::pgn::token::PgnToken;
-    use logos::Logos;
 
     #[test]
     fn test_pgn_tag() {

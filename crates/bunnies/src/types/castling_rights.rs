@@ -1,10 +1,7 @@
 //! KQkq castling rights as a single byte-sized enum (discriminants `0`…`15` = lower four bits).
 
-use super::color::Color;
-use super::flank::Flank;
-use super::square::Square;
-use crate::utilities::impl_u8_conversions;
-use crate::utilities::{Array, IterableEnum};
+use super::{color::Color, flank::Flank, square::Square};
+use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).
@@ -105,8 +102,9 @@ static CASTLING_RIGHTS_MASK: Array<CastlingRights, 64> = Array({
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::mem::size_of;
+
+    use super::*;
 
     #[test]
     fn castling_rights_one_byte() {

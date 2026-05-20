@@ -72,9 +72,8 @@ impl UnifiedMoveDirection {
 
 #[cfg(test)]
 mod tests {
-    use crate::utilities::IterableEnum;
-
     use super::{KnightMoveDirection, QueenLikeMoveDirection, UnifiedMoveDirection};
+    use crate::utilities::IterableEnum;
 
     #[test]
     fn test_unified_move_direction() {

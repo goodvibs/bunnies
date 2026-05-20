@@ -5,12 +5,13 @@
 #![feature(const_cmp)]
 #![allow(incomplete_features)]
 
-pub use bunnies::types::*;
-pub use bunnies::*;
+pub use bunnies::{types::*, *};
 
 pub mod position {
-    pub use bunnies::logic::fen::INITIAL_FEN;
-    pub use bunnies::types::{Board, Position};
+    pub use bunnies::{
+        logic::fen::INITIAL_FEN,
+        types::{Board, Position},
+    };
 }
 
 pub mod r#move {

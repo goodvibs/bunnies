@@ -1,11 +1,7 @@
 //! Chess files a–h. Line masks derived from a single file-a bitboard, shifted by file index (chmog-style).
 
-use super::bitboard::Bitboard;
-use super::flank::Flank;
-use crate::{
-    utilities::impl_u8_conversions,
-    utilities::{Array, IterableEnum},
-};
+use super::{bitboard::Bitboard, flank::Flank};
+use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
 #[repr(u8)]

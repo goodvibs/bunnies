@@ -1,5 +1,4 @@
-use crate::Piece;
-use crate::r#move::Move;
+use crate::{Piece, r#move::Move};
 
 #[derive(Debug, Clone)]
 pub(crate) struct PgnMoveData {

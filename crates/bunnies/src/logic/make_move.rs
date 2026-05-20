@@ -1,8 +1,19 @@
 //! Contains [`Position::make_move`] and [`Position::unmake_move`].
 
 use crate::types::{
-    Color, ConstDoublePawnPushFile, DoublePawnPushFile, File, Flank, Move, MoveFlag, Piece,
-    Position, PositionContext, Rank, Square, ZobristPolicy,
+    Color,
+    ConstDoublePawnPushFile,
+    DoublePawnPushFile,
+    File,
+    Flank,
+    Move,
+    MoveFlag,
+    Piece,
+    Position,
+    PositionContext,
+    Rank,
+    Square,
+    ZobristPolicy,
 };
 
 impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {

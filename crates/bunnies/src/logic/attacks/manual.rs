@@ -1,7 +1,8 @@
 //! Contains functions that manually calculate attacks for all pieces
 
-use crate::types::{Bitboard, Color, File, Piece, Square};
 use std::cmp;
+
+use crate::types::{Bitboard, Color, File, Piece, Square};
 
 #[inline]
 const fn walk_ray_limited(

@@ -1,9 +1,11 @@
 //! Context struct and methods
 
-use super::bitboard::Bitboard;
-use super::castling_rights::CastlingRights;
-use super::double_pawn_push_file::{ConstDoublePawnPushFile, DoublePawnPushFile};
-use super::piece::Piece;
+use super::{
+    bitboard::Bitboard,
+    castling_rights::CastlingRights,
+    double_pawn_push_file::{ConstDoublePawnPushFile, DoublePawnPushFile},
+    piece::Piece,
+};
 
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]

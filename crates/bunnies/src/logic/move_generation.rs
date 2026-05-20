@@ -1,19 +1,36 @@
 //! Move generation: small pure helpers for masks, then writers that take explicit
 //! bitboards and closures only where attack or castling needs hidden board state.
 
-use crate::logic::attacks::manual::multi_pawn_attacks_left;
-use crate::logic::attacks::manual::multi_pawn_attacks_right;
-use crate::logic::attacks::single_bishop_attacks;
-use crate::logic::attacks::single_rook_attacks;
-use crate::logic::attacks::{
-    multi_pawn_attacks, multi_pawn_moves, single_king_attacks, single_knight_attacks,
+use crate::{
+    logic::attacks::{
+        manual::{multi_pawn_attacks_left, multi_pawn_attacks_right},
+        multi_pawn_attacks,
+        multi_pawn_moves,
+        single_bishop_attacks,
+        single_king_attacks,
+        single_knight_attacks,
+        single_rook_attacks,
+    },
+    types::{
+        Bitboard,
+        BitboardUtils,
+        Color,
+        ConstDoublePawnPushFile,
+        DoublePawnPushFile,
+        Flank,
+        Move,
+        MoveFlag,
+        MoveList,
+        Piece,
+        Position,
+        Rank,
+        Square,
+        SquareDelta,
+        SquareDeltaUtils,
+        ZobristPolicy,
+    },
+    utilities::IterableEnum,
 };
-use crate::types::{
-    Bitboard, BitboardUtils, Color, ConstDoublePawnPushFile, DoublePawnPushFile, Flank, Move,
-    MoveFlag, MoveList, Piece, Position, Rank, Square, SquareDelta, SquareDeltaUtils,
-    ZobristPolicy,
-};
-use crate::utilities::IterableEnum;
 
 /// Returns `to_mask` restricted to squares legal for `from` given current pins.
 /// For non-pinned pieces, returns `to_mask` unchanged. Branchless on the hot path.
@@ -406,8 +423,9 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::{Color, Move, MoveFlag, MoveList, Piece, Position, Square};
     use std::collections::HashSet;
+
+    use crate::types::{Color, Move, MoveFlag, MoveList, Piece, Position, Square};
 
     fn expected_moves_test_for_position<const M: usize, const STM: Color>(
         pos: &Position<1, STM>,

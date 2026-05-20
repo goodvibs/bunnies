@@ -1,7 +1,9 @@
 //! All Zobrist hashing-related code.
 
-use crate::types::{Board, CastlingRights, Color, DoublePawnPushFile, Piece, Square};
-use crate::utilities::{Array, IterableEnum, Prng};
+use crate::{
+    types::{Board, CastlingRights, Color, DoublePawnPushFile, Piece, Square},
+    utilities::{Array, IterableEnum, Prng},
+};
 
 const RNG_SEED: u64 = 161803398875;
 
@@ -125,10 +127,10 @@ pub const fn calc_position_zobrist_hash(
 
 #[cfg(test)]
 mod tests {
-    use crate::utilities::IterableEnum;
+    use std::collections::HashSet;
 
     use super::*;
-    use std::collections::HashSet;
+    use crate::utilities::IterableEnum;
 
     fn expected_randoms() -> [u64; NUM_RANDOMS] {
         let mut rng = Prng::new(RNG_SEED);

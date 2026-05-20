@@ -1,15 +1,16 @@
-use crate::Color;
-use crate::Piece;
-use crate::r#move::{MoveFlag, MoveList};
-use crate::pgn::move_data::PgnMoveData;
-use crate::pgn::rendering_config::PgnRenderingConfig;
-use crate::position::Position;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    Color,
+    Piece,
+    r#move::{MoveFlag, MoveList},
+    pgn::{move_data::PgnMoveData, rendering_config::PgnRenderingConfig},
+    position::Position,
+};
 
 pub(crate) struct MoveTreeNode<const N: usize, const STM: Color, const OPP: Color> {
     move_data: Option<PgnMoveData>, // None for the root node
-    comment: Option<String>,        // Root node may have a comment, so this is not part of MoveData
+    comment: Option<String>, // Root node may have a comment, so this is not part of MoveData
     continuations: Vec<Rc<RefCell<MoveTreeNode<N, OPP, STM>>>>,
 }
 

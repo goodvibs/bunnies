@@ -1,9 +1,11 @@
-use super::board::Board;
-use super::castling_rights::CastlingRights;
-use super::color::Color;
-use super::double_pawn_push_file::DoublePawnPushFile;
-use super::piece::Piece;
-use super::square::Square;
+use super::{
+    board::Board,
+    castling_rights::CastlingRights,
+    color::Color,
+    double_pawn_push_file::DoublePawnPushFile,
+    piece::Piece,
+    square::Square,
+};
 
 pub(crate) mod private {
     pub trait Sealed {}

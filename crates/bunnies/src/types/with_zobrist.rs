@@ -1,12 +1,17 @@
-use super::board::Board;
-use super::castling_rights::CastlingRights;
-use super::color::Color;
-use super::double_pawn_push_file::DoublePawnPushFile;
-use super::piece::Piece;
-use super::square::Square;
-use super::zobrist_policy::{ZobristPolicy, private};
+use super::{
+    board::Board,
+    castling_rights::CastlingRights,
+    color::Color,
+    double_pawn_push_file::DoublePawnPushFile,
+    piece::Piece,
+    square::Square,
+    zobrist_policy::{ZobristPolicy, private},
+};
 use crate::logic::zobrist_hash::{
-    calc_position_zobrist_hash, castling_rights_key, double_pawn_push_key, piece_square_key,
+    calc_position_zobrist_hash,
+    castling_rights_key,
+    double_pawn_push_key,
+    piece_square_key,
     side_to_move_key,
 };
 

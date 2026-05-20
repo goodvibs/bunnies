@@ -1,9 +1,11 @@
 //! Runtime sum type wrapping [`super::Position`] for API boundaries (FEN, PGN).
 
-use super::color::Color;
-use super::position::Position;
-use super::with_zobrist::WithZobrist;
-use super::zobrist_policy::ZobristPolicy;
+use super::{
+    color::Color,
+    position::Position,
+    with_zobrist::WithZobrist,
+    zobrist_policy::ZobristPolicy,
+};
 use crate::logic::fen::FenParseError;
 
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).

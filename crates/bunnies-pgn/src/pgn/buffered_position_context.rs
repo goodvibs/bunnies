@@ -1,10 +1,14 @@
-use crate::Color;
-use crate::pgn::move_data::PgnMoveData;
-use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::pgn::position_context::PgnPositionContext;
-use crate::position::Position;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    Color,
+    pgn::{
+        move_data::PgnMoveData,
+        move_tree_node::MoveTreeNode,
+        position_context::PgnPositionContext,
+    },
+    position::Position,
+};
 
 #[derive(Clone)]
 pub(crate) enum PgnPositionContextDyn<const N: usize> {

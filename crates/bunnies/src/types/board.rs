@@ -1,14 +1,16 @@
 //! Board struct and methods
 
-use super::bitboard::Bitboard;
-use super::bitboard::BitboardUtils;
-use super::color::Color;
-use super::piece::Piece;
-use super::rank::Rank;
-use super::square::Square;
-use crate::logic::attacks::*;
-use crate::utilities::Array;
-use crate::utilities::IterableEnum;
+use super::{
+    bitboard::{Bitboard, BitboardUtils},
+    color::Color,
+    piece::Piece,
+    rank::Rank,
+    square::Square,
+};
+use crate::{
+    logic::attacks::*,
+    utilities::{Array, IterableEnum},
+};
 
 /// A struct representing the positions of all pieces on the board, for both colors.
 ///

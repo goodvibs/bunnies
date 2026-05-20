@@ -1,12 +1,14 @@
-use crate::Color;
-use crate::pgn::buffered_position_context::{
-    PgnBufferedPositionContext, PgnBufferedPositionContextDyn,
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    Color,
+    pgn::{
+        buffered_position_context::{PgnBufferedPositionContext, PgnBufferedPositionContextDyn},
+        move_tree_node::MoveTreeNode,
+        position_context::PgnPositionContext,
+    },
+    position::Position,
 };
-use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::pgn::position_context::PgnPositionContext;
-use crate::position::Position;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub struct PgnBufferedPositionBrancher<const N: usize> {
     pub current_and_previous: PgnBufferedPositionContextDyn<N>,

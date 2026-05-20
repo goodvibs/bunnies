@@ -1,11 +1,12 @@
-use crate::Color;
-use crate::pgn::error::PgnError;
-use crate::pgn::token_types::PgnCastlingMove;
-use crate::pgn::token_types::PgnComment;
-use crate::pgn::token_types::PgnMoveNumber;
-use crate::pgn::token_types::PgnNonCastlingMove;
-use crate::pgn::token_types::PgnTag;
 use logos::{Lexer, Logos};
+
+use crate::{
+    Color,
+    pgn::{
+        error::PgnError,
+        token_types::{PgnCastlingMove, PgnComment, PgnMoveNumber, PgnNonCastlingMove, PgnTag},
+    },
+};
 
 pub(crate) const TAG_REGEX: &str = r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#;
 pub(crate) const MOVE_NUMBER_REGEX: &str = r"([0-9]+)\.+";
@@ -65,9 +66,7 @@ pub enum PgnToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Flank;
-    use crate::Piece;
-    use crate::Square;
+    use crate::{Flank, Piece, Square};
 
     #[test]
     fn test_lexing_variations() {

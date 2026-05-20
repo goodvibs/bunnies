@@ -1,5 +1,4 @@
-use crate::utilities::impl_u8_conversions;
-use crate::utilities::{Array, IterableEnum};
+use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]

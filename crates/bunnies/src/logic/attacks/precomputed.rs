@@ -1,8 +1,10 @@
 //! Precomputed attack tables for non-sliding pieces.
 
-use crate::logic::attacks::manual;
-use crate::types::{Bitboard, Square};
-use crate::utilities::{Array, IterableEnum};
+use crate::{
+    logic::attacks::manual,
+    types::{Bitboard, Square},
+    utilities::{Array, IterableEnum},
+};
 
 static SINGLE_KING_ATTACKS: Array<Bitboard, 64> = Array({
     let mut arr = [0 as Bitboard; 64];

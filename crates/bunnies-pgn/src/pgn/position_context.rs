@@ -1,8 +1,6 @@
-use crate::Color;
-use crate::pgn::move_tree_node::MoveTreeNode;
-use crate::position::Position;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{Color, pgn::move_tree_node::MoveTreeNode, position::Position};
 
 #[derive(Clone)]
 pub(crate) struct PgnPositionContext<const N: usize, const STM: Color, const OPP: Color> {

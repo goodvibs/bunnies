@@ -1,18 +1,22 @@
 //! Contains [`Position`], the main struct for representing a position in a chess game.
 
-use super::bitboard::Bitboard;
-use super::bitboard::BitboardUtils;
-use super::board::Board;
-use super::castling_rights::CastlingRights;
-use super::color::Color;
-use super::piece::Piece;
-use super::position_context::PositionContext;
-use super::square::Square;
-use super::with_zobrist::WithZobrist;
-use super::zobrist_policy::ZobristPolicy;
-use crate::logic::attacks::{multi_pawn_attacks, single_knight_attacks};
-use crate::types::WithoutZobrist;
 use std::fmt;
+
+use super::{
+    bitboard::{Bitboard, BitboardUtils},
+    board::Board,
+    castling_rights::CastlingRights,
+    color::Color,
+    piece::Piece,
+    position_context::PositionContext,
+    square::Square,
+    with_zobrist::WithZobrist,
+    zobrist_policy::ZobristPolicy,
+};
+use crate::{
+    logic::attacks::{multi_pawn_attacks, single_knight_attacks},
+    types::WithoutZobrist,
+};
 
 pub type PositionWithZobrist<const N: usize, const STM: Color> = Position<N, STM, WithZobrist>;
 

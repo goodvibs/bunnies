@@ -1,7 +1,6 @@
-use crate::utilities::impl_u8_conversions;
 use crate::{
     types::{Array, Square},
-    utilities::IterableEnum,
+    utilities::{IterableEnum, impl_u8_conversions},
 };
 
 #[repr(u8)]

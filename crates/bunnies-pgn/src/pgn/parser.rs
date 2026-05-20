@@ -1,20 +1,27 @@
-use crate::Color;
-use crate::r#move::MoveList;
-use crate::pgn::buffered_position_brancher::PgnBufferedPositionBrancher;
-use crate::pgn::buffered_position_context::PgnBufferedPositionContextDyn;
-use crate::pgn::error::PgnError;
-use crate::pgn::move_data::PgnMoveData;
-use crate::pgn::object::PgnObject;
-use crate::pgn::parsing_state::PgnParsingState;
-use crate::pgn::token::PgnToken;
-use crate::pgn::token_types::PgnCastlingMove;
-use crate::pgn::token_types::PgnComment;
-use crate::pgn::token_types::PgnMove;
-use crate::pgn::token_types::PgnMoveNumber;
-use crate::pgn::token_types::PgnNonCastlingMove;
-use crate::pgn::token_types::PgnTag;
-use crate::position::Position;
 use logos::{Lexer, Logos};
+
+use crate::{
+    Color,
+    r#move::MoveList,
+    pgn::{
+        buffered_position_brancher::PgnBufferedPositionBrancher,
+        buffered_position_context::PgnBufferedPositionContextDyn,
+        error::PgnError,
+        move_data::PgnMoveData,
+        object::PgnObject,
+        parsing_state::PgnParsingState,
+        token::PgnToken,
+        token_types::{
+            PgnCastlingMove,
+            PgnComment,
+            PgnMove,
+            PgnMoveNumber,
+            PgnNonCastlingMove,
+            PgnTag,
+        },
+    },
+    position::Position,
+};
 
 /// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
 /// while parsing (must fit the longest half-move path in the game, including variations).

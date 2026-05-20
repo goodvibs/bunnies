@@ -1,7 +1,4 @@
-use super::board::Board;
-use super::move_flag::MoveFlag;
-use super::piece::Piece;
-use super::square::Square;
+use super::{board::Board, move_flag::MoveFlag, piece::Piece, square::Square};
 
 /// Represents a move in the game.
 /// Internally, it is stored as a 16-bit unsigned integer.
