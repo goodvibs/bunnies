@@ -1,3 +1,5 @@
+//! No-op hashing policy used when Zobrist state is unnecessary.
+
 use super::{
     board::Board,
     castling_rights::CastlingRights,
@@ -9,11 +11,13 @@ use super::{
 };
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+/// Policy marker that disables hash storage and updates.
 pub struct WithoutZobrist;
 
 impl private::Sealed for WithoutZobrist {}
 
 impl ZobristPolicy for WithoutZobrist {
+    /// Empty hash state.
     type HashState = ();
 
     #[inline(always)]

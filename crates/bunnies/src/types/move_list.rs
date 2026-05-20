@@ -16,6 +16,7 @@ impl const Default for MoveList {
 }
 
 impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
+    /// Creates an empty move list with fixed capacity `MAX_MOVES`.
     pub const fn new() -> Self {
         Self {
             moves: [Move { value: 0 }; MAX_MOVES],
@@ -24,21 +25,25 @@ impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     }
 
     #[inline]
+    /// Clears the list without zeroing backing storage.
     pub const fn clear(&mut self) {
         self.len = 0;
     }
 
     #[inline]
+    /// Returns number of stored moves.
     pub const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
+    /// Returns `true` when no moves are stored.
     pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 
     #[inline]
+    /// Appends one move; debug-asserts if capacity is exceeded.
     pub const fn push(&mut self, m: Move) {
         debug_assert!(self.len < MAX_MOVES);
         self.moves[self.len] = m;
@@ -46,6 +51,7 @@ impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     }
 
     #[inline]
+    /// Appends all moves from `moves`; debug-asserts on capacity overflow.
     pub const fn push_all<const N: usize>(&mut self, moves: [Move; N]) {
         debug_assert!(self.len + N <= MAX_MOVES);
         self.moves[self.len..self.len + N].copy_from_slice(&moves);
@@ -53,11 +59,13 @@ impl<const MAX_MOVES: usize> MoveList<MAX_MOVES> {
     }
 
     #[inline]
+    /// Returns a slice view of the populated prefix.
     pub const fn as_slice(&self) -> &[Move] {
         &self.moves[..self.len]
     }
 
     #[inline]
+    /// Returns an iterator over populated moves.
     pub const fn iter(&self) -> core::slice::Iter<'_, Move> {
         self.as_slice().iter()
     }
@@ -67,6 +75,7 @@ impl<'a> const IntoIterator for &'a MoveList {
     type Item = &'a Move;
     type IntoIter = core::slice::Iter<'a, Move>;
 
+    /// Iterates borrowed moves in insertion order.
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }

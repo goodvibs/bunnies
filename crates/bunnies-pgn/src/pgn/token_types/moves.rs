@@ -1,3 +1,5 @@
+//! PGN move token payloads and matching helpers.
+
 use std::{fmt::Debug, sync::LazyLock};
 
 use logos::Lexer;
@@ -21,21 +23,30 @@ static COMPILED_NON_CASTLING_MOVE_REGEX: LazyLock<Regex> =
 static COMPILED_CASTLING_MOVE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(CASTLING_MOVE_REGEX).unwrap());
 
+/// Common interface for parsed PGN move tokens.
 pub trait PgnMove: Debug {
+    /// Returns whether this PGN token can represent `move_` from `from_board`.
     fn matches_move(&self, move_: Move, from_board: &Board) -> bool;
 
+    /// Returns shared check/annotation/NAG metadata.
     fn get_common_move_info(&self) -> &PgnCommonMoveInfo;
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// Metadata that can accompany any PGN move token.
 pub struct PgnCommonMoveInfo {
+    /// `true` when the move indicates check (`+` or `#`).
     pub is_check: bool,
+    /// `true` when the move indicates checkmate (`#`).
     pub is_checkmate: bool,
+    /// Symbolic annotation (`!`, `?`, `!?`, ...), if present.
     pub annotation: Option<String>,
+    /// Numeric annotation glyph (`$N`), if present.
     pub nag: Option<u8>,
 }
 
 impl PgnCommonMoveInfo {
+    /// Renders check/mate marker plus optional annotation/NAG suffixes.
     pub fn render(&self, include_annotation: bool, include_nag: bool) -> String {
         let check_or_checkmate = if self.is_checkmate {
             "#"
@@ -63,6 +74,7 @@ impl PgnCommonMoveInfo {
         format!("{}{}{}", check_or_checkmate, annotation, nag)
     }
 
+    /// Builds common metadata from regex captures.
     pub fn from(
         check_or_checkmate: Option<Match>,
         annotation: Option<Match>,
@@ -93,13 +105,21 @@ impl PgnCommonMoveInfo {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// Parsed non-castling move token (piece move, capture, promotion, disambiguation).
 pub struct PgnNonCastlingMove {
+    /// Source file disambiguator (for example `Nbd2` -> `Some('b')`).
     pub disambiguation_file: Option<char>,
+    /// Source rank disambiguator (for example `R1e1` -> `Some('1')`).
     pub disambiguation_rank: Option<char>,
+    /// Destination square.
     pub to: Square,
+    /// Piece designator from SAN (`Pawn` when omitted).
     pub piece_moved: Piece,
+    /// Promotion target piece or [`Piece::Null`] for non-promotions.
     pub promoted_to: Piece,
+    /// Whether SAN contains a capture marker (`x`) or implies en-passant capture.
     pub is_capture: bool,
+    /// Shared check/annotation/NAG metadata.
     pub common_move_info: PgnCommonMoveInfo,
 }
 
@@ -188,8 +208,11 @@ impl ParsablePgnToken for PgnNonCastlingMove {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// Parsed castling move token.
 pub struct PgnCastlingMove {
+    /// Castling side (`O-O` -> kingside, `O-O-O` -> queenside).
     pub flank: Flank,
+    /// Shared check/annotation/NAG metadata.
     pub common_move_info: PgnCommonMoveInfo,
 }
 

@@ -1,9 +1,14 @@
-/// Contains a configuration for rendering PGN (Portable Game Notation) data.
+//! Configuration for PGN output formatting.
+
+/// Controls which annotations and metadata are included when rendering PGN.
 #[derive(Debug, Clone, Copy, Eq)]
 #[derive_const(PartialEq)]
 pub struct PgnRenderingConfig {
+    /// Include textual annotations like `[!]` or `[?]`.
     pub include_annotations: bool,
+    /// Include Numeric Annotation Glyphs (NAGs, e.g., `$1`, `$2`).
     pub include_nags: bool,
+    /// Include `{comments}` in output.
     pub include_comments: bool,
 }
 
@@ -14,6 +19,7 @@ impl Default for PgnRenderingConfig {
 }
 
 impl PgnRenderingConfig {
+    /// Configuration that includes all markings (annotations, NAGs, comments).
     pub const fn all_markings() -> PgnRenderingConfig {
         PgnRenderingConfig {
             include_annotations: true,
@@ -22,7 +28,7 @@ impl PgnRenderingConfig {
         }
     }
 
-    /// Creates a new `PgnRenderingConfig` specifying no annotations, NAGs, or comments.
+    /// Configuration for clean output without any annotations.
     pub const fn no_markings() -> PgnRenderingConfig {
         PgnRenderingConfig {
             include_annotations: false,
@@ -31,19 +37,19 @@ impl PgnRenderingConfig {
         }
     }
 
-    /// Sets whether to include annotations.
+    /// Builder-style setter for annotations.
     pub fn annotations(&mut self, include: bool) -> &mut Self {
         self.include_annotations = include;
         self
     }
 
-    /// Sets whether to include NAGs (Numeric Annotation Glyphs).
+    /// Builder-style setter for NAGs.
     pub fn nags(&mut self, include: bool) -> &mut Self {
         self.include_nags = include;
         self
     }
 
-    /// Sets whether to include comments.
+    /// Builder-style setter for comments.
     pub fn comments(&mut self, include: bool) -> &mut Self {
         self.include_comments = include;
         self

@@ -1,3 +1,5 @@
+//! Real Zobrist-hashing policy implementation (`HashState = u64`).
+
 use super::{
     board::Board,
     castling_rights::CastlingRights,
@@ -16,11 +18,13 @@ use crate::logic::zobrist_hash::{
 };
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+/// Policy marker enabling incremental Zobrist updates.
 pub struct WithZobrist;
 
 impl private::Sealed for WithZobrist {}
 
 impl ZobristPolicy for WithZobrist {
+    /// 64-bit Zobrist hash value.
     type HashState = u64;
 
     #[inline(always)]

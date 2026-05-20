@@ -18,7 +18,7 @@ impl Flank {
         unsafe { mem::transmute(is_queenside) }
     }
 
-    /// Bit mask for this flank in the 4-bit castling rights nibble (same layout as FEN / [`crate::CastlingRights`]).
+    /// Bit mask for this flank in the 4-bit castling rights nibble (same layout as FEN / [`CastlingRights`](crate::types::CastlingRights)).
     pub const fn rights_mask(self, color: Color) -> u8 {
         match self {
             Flank::Kingside => 0b00001000u8 >> (color as u8 * 2),

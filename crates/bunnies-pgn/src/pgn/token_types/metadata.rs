@@ -1,3 +1,5 @@
+//! Metadata tokens: tags, move numbers, and comments.
+
 use std::sync::LazyLock;
 
 use logos::Lexer;
@@ -15,12 +17,16 @@ static COMPILED_COMMENT_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(COMMENT_REGEX).unwrap());
 
 #[derive(Clone, Debug, PartialEq)]
+/// PGN tag pair (`[Name "Value"]`).
 pub struct PgnTag {
+    /// Tag key (for example `Event`, `Site`, `Date`).
     pub name: String,
+    /// Tag value string without surrounding quotes.
     pub value: String,
 }
 
 impl PgnTag {
+    /// Renders this tag back to PGN text.
     pub fn render(&self) -> String {
         format!("[{} \"{}\"]", self.name, self.value)
     }
@@ -42,11 +48,14 @@ impl ParsablePgnToken for PgnTag {
 
 #[derive(Debug, Clone, Copy)]
 #[derive_const(PartialEq)]
+/// Fullmove number token (`1.`, `12...` etc.).
 pub struct PgnMoveNumber {
+    /// 1-based fullmove number.
     pub fullmove_number: u16,
 }
 
 impl PgnMoveNumber {
+    /// Renders with `num_periods` trailing periods.
     pub fn render(&self, num_periods: usize) -> String {
         format!("{}{}", self.fullmove_number, ".".repeat(num_periods))
     }
@@ -69,11 +78,14 @@ impl ParsablePgnToken for PgnMoveNumber {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Braced PGN comment token.
 pub struct PgnComment {
+    /// Comment body without surrounding braces.
     pub comment: String,
 }
 
 impl PgnComment {
+    /// Renders this comment back to PGN text.
     pub fn render(&self) -> String {
         format!("{{{}}}", self.comment)
     }

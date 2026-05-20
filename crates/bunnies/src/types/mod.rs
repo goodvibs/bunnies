@@ -1,3 +1,9 @@
+//! Core chess domain model types re-exported as the crate's primary API surface.
+//!
+//! This module includes board/state representations (`Position`, `Board`,
+//! `PositionContext`), move primitives (`Move`, `MoveList`, `MoveFlag`), geometry
+//! (`Square`, `File`, `Rank`), and hashing policy types.
+
 mod bitboard;
 mod board;
 mod castling_rights;

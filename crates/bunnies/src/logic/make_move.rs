@@ -1,4 +1,4 @@
-//! Contains [`Position::make_move`] and [`Position::unmake_move`].
+//! Contains [`crate::types::Position::make_move`] and [`crate::types::Position::unmake_move`].
 
 use crate::types::{
     Color,
@@ -17,10 +17,10 @@ use crate::types::{
 };
 
 impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
-    /// Applies a move in place, updating board state for the opponent.
+    /// Applies `move_` in place and advances the position by one ply.
     ///
-    /// After this returns, the layout matches the resulting type of [`Position::make_move`]
-    /// (`Position<N, { STM.other() }>`).
+    /// This pushes a new [`PositionContext`], updates board/hash/counters, then recomputes
+    /// pins and checkers for the opponent (`STM.other()`).
     pub fn make_move(&mut self, move_: Move) {
         debug_assert!(self.num_contexts < N);
 
@@ -93,7 +93,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         self.update_pins_and_checks_for_stm(STM.other());
     }
 
-    /// Undoes a move in place. After this, memory matches the resulting type of [`Position::unmake_move`].
+    /// Undoes `move_` in place, restoring the previous context and board state.
     pub fn unmake_move(&mut self, move_: Move) {
         let from = move_.from();
         let to = move_.to();

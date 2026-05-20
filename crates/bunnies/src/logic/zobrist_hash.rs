@@ -1,4 +1,4 @@
-//! All Zobrist hashing-related code.
+//! Zobrist random tables and hash-key helpers.
 
 use crate::{
     types::{Board, CastlingRights, Color, DoublePawnPushFile, Piece, Square},
@@ -78,14 +78,17 @@ static DOUBLE_PAWN_PUSH_FILE_KEYS: Array<u64, { NUM_DOUBLE_PAWN_PUSH_FILE_KEYS }
 
 static BLACK_SIDE_TO_MOVE_KEY: u64 = RANDOMS[SIDE_TO_MOVE_KEYS_START];
 
+/// Returns piece-square key contribution for (`piece`, `square`).
 pub const fn piece_square_key(piece: Piece, square: Square) -> u64 {
     PIECE_SQUARE_KEYS[piece as usize][square as usize]
 }
 
+/// Returns castling-rights key contribution.
 pub const fn castling_rights_key(castling_rights: CastlingRights) -> u64 {
     CASTLING_RIGHTS_KEYS[castling_rights as usize]
 }
 
+/// Returns en-passant-file key contribution (`0` when no file is available).
 pub const fn double_pawn_push_key(double_pawn_push_file: DoublePawnPushFile) -> u64 {
     if double_pawn_push_file < 0 {
         0
@@ -94,6 +97,7 @@ pub const fn double_pawn_push_key(double_pawn_push_file: DoublePawnPushFile) -> 
     }
 }
 
+/// Returns side-to-move key contribution.
 pub const fn side_to_move_key(side_to_move: Color) -> u64 {
     match side_to_move {
         Color::White => 0,
@@ -102,6 +106,7 @@ pub const fn side_to_move_key(side_to_move: Color) -> u64 {
 }
 
 impl Board {
+    /// Computes piece-placement Zobrist hash for this board only.
     pub const fn calc_zobrist_hash(&self) -> u64 {
         let mut hash = 0;
         for square in Square::ALL {
@@ -113,6 +118,7 @@ impl Board {
     }
 }
 
+/// Computes full position hash from board, castling rights, en-passant file, and side to move.
 pub const fn calc_position_zobrist_hash(
     board: &Board,
     castling_rights: CastlingRights,

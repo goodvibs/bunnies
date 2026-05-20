@@ -1,4 +1,4 @@
-//! Context struct and methods
+//! Context entries pushed for each ply in a [`crate::types::Position`] stack.
 
 use super::{
     bitboard::Bitboard,
@@ -10,13 +10,19 @@ use super::{
 /// A struct containing metadata about the current and past states of the game.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub struct PositionContext<H = u64> {
+    /// Halfmoves since last pawn move or capture (for 50-move rule).
     pub halfmove_clock: u8,
     /// File index for en passant after a double push; see [`DoublePawnPushFile`].
     pub double_pawn_push_file: DoublePawnPushFile,
+    /// Castling availability mask for the current position.
     pub castling_rights: CastlingRights,
+    /// Captured piece on the move that produced this context, or [`Piece::Null`].
     pub captured_piece: Piece,
+    /// Incremental hash state, policy-defined by `H`.
     pub zobrist_hash: H,
+    /// Friendly pieces pinned to the king for the side to move.
     pub pinned: Bitboard,
+    /// Enemy pieces currently giving check to the side to move.
     pub checkers: Bitboard,
 }
 

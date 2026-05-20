@@ -31,7 +31,7 @@ pub const trait ConstDoublePawnPushFile: private::Sealed {
 
     fn from_file(file: Option<File>) -> DoublePawnPushFile;
 
-    /// The file when [`Self::is_some`], otherwise `None`.
+    /// The file when [`Self::has_file`] returns `true`, otherwise `None`.
     fn file(self) -> Option<File>;
 
     /// Bitboard of squares from which the side to move might capture en passant on `self`'s file.

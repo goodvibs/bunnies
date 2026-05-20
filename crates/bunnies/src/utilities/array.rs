@@ -1,7 +1,15 @@
+//! Const-friendly array wrapper with iterator support.
+
 use std::ops::{Deref, DerefMut};
 
+/// A thin wrapper around `[T; N]` enabling const trait implementations.
+///
+/// Used throughout bunnies for lookup tables and fixed-size collections
+/// that need to work in const contexts where standard library arrays
+/// don't yet implement required traits.
 pub struct Array<T, const N: usize>(pub [T; N]);
 
+/// Const iterator over an [`Array`] by value.
 pub struct ConstIterator<T, const N: usize> {
     values: [T; N],
     current: usize,
@@ -33,6 +41,7 @@ impl<T: Copy, const N: usize> const IntoIterator for Array<T, N> {
     }
 }
 
+/// Const iterator over an [`Array`] by reference.
 pub struct ConstRefIterator<'a, T, const N: usize> {
     values: &'a [T; N],
     current: usize,

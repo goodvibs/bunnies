@@ -11,7 +11,9 @@ use crate::logic::fen::FenParseError;
 /// Chess position with side to move carried as [`Position`] with const generic `STM` ([`Color::White`] / [`Color::Black`]).
 #[derive(Debug)]
 pub enum TypedPosition<const N: usize, Z: ZobristPolicy = WithZobrist> {
+    /// Position where White is to move.
     White(Position<N, { Color::White }, Z>),
+    /// Position where Black is to move.
     Black(Position<N, { Color::Black }, Z>),
 }
 

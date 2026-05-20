@@ -1,3 +1,8 @@
+//! Position validation helpers with different strictness levels.
+//!
+//! Use [`crate::types::Position::is_probably_valid`] for fast post-move sanity checks and
+//! [`crate::types::Position::is_unequivocally_valid`] for full consistency validation.
+
 use crate::types::{Color, DoublePawnPushFileUtils, Flank, Piece, Position, Square, ZobristPolicy};
 
 impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
@@ -29,6 +34,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         )
     }
 
+    /// Returns whether the side *not* to move (`STM.other()`) is currently in check.
     pub fn is_opposite_side_in_check(&self) -> bool {
         let opponent = STM.other();
         let opponent_king_mask =

@@ -1,11 +1,15 @@
+//! Bitboard type and utility trait for 64-bit square masks.
+
 use super::{
     QueenLikeMoveDirection,
     square::{Square, same_line},
 };
 use crate::utilities::{BitCombinationsIterator, MaskBitsIterator, MaskSquaresIterator};
 
-/// A type alias for a bitboard. A bitboard is a 64-bit unsigned integer that represents an aspect of board state.
-/// Each bit represents a square on the board, with the most significant bit representing A8 and the least significant bit representing H1.
+/// A 64-bit bitboard where each bit represents a chess square.
+///
+/// Layout: MSB (bit 63) = A8, LSB (bit 0) = H1. This matches the bunnies board layout
+/// where square indices 0..63 map to A8..H1 respectively.
 pub type Bitboard = u64;
 
 mod private {
@@ -13,7 +17,7 @@ mod private {
     impl Sealed for super::Bitboard {}
 }
 
-/// Const-friendly ray geometry between squares (also a supertrait of [`BitboardUtils`]).
+/// Const-friendly ray geometry and bit-iteration helpers for [`Bitboard`].
 pub const trait BitboardUtils: private::Sealed {
     /// Returns the mask of squares **strictly between** the two squares (endpoints excluded).
     /// On a rank, file, or diagonal; otherwise returns zero.

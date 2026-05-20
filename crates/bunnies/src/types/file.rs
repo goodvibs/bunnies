@@ -3,7 +3,7 @@
 use super::{bitboard::Bitboard, flank::Flank};
 use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
-/// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
+/// One of eight files (a–h). `A = 0` … `H = 7`, matching [`Square::file`](crate::types::Square::file).
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug)]
 pub enum File {

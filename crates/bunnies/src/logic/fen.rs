@@ -1,3 +1,10 @@
+//! FEN parsing utilities for constructing typed positions.
+//!
+//! Entry points:
+//! - [`crate::logic::fen::parse_fen_to_position_with_policy`]: parse with explicit hashing policy.
+//! - [`crate::logic::fen::parse_fen_to_position`]: parse with default [`crate::types::WithZobrist`] policy.
+//! - [`crate::types::Position::from_fen`]: convenience method on a concrete `Position` type.
+
 use crate::types::{
     Board,
     CastlingRights,
@@ -17,17 +24,26 @@ use crate::types::{
 /// The FEN string representing the starting position of a standard chess game.
 pub const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-#[derive(Eq, PartialEq, Debug)]
 /// An error that occurs when parsing a FEN string.
+#[derive(Eq, PartialEq, Debug)]
 pub enum FenParseError {
+    /// FEN does not contain exactly six whitespace-separated fields.
     InvalidFieldCount(usize),
+    /// Board section does not contain exactly eight ranks.
     InvalidRankCount(usize),
+    /// A rank contains invalid piece data or does not expand to exactly eight files.
     InvalidBoardRow(String),
+    /// Side-to-move field is not `w` or `b`.
     InvalidSideToMove(String),
+    /// Castling-rights field is malformed.
     InvalidCastlingRights(String),
+    /// En-passant target field is malformed.
     InvalidEnPassantTarget(String),
+    /// Halfmove clock is invalid (non-numeric or out of range).
     InvalidHalfmoveClock(String),
+    /// Fullmove number is invalid (non-numeric or zero).
     InvalidFullmoveNumber(String),
+    /// Parsed position fails internal validity checks.
     InvalidPosition(String),
 }
 
@@ -237,6 +253,9 @@ pub(crate) fn parse_fen_to_typed_position<const N: usize, Z: ZobristPolicy>(
     }
 }
 
+/// Parses a FEN string into a concrete [`Position`] type with explicit Zobrist policy.
+///
+/// `STM` must match the side-to-move field in `fen`.
 pub fn parse_fen_to_position_with_policy<const N: usize, const STM: Color, Z: ZobristPolicy>(
     fen: &str,
 ) -> Result<Position<N, STM, Z>, FenParseError> {
@@ -248,6 +267,9 @@ pub fn parse_fen_to_position_with_policy<const N: usize, const STM: Color, Z: Zo
     }
 }
 
+/// Parses a FEN string into a [`Position`] using [`WithZobrist`] hashing.
+///
+/// `STM` must match the side-to-move field in `fen`.
 pub fn parse_fen_to_position<const N: usize, const STM: Color>(
     fen: &str,
 ) -> Result<Position<N, STM, WithZobrist>, FenParseError> {
@@ -255,6 +277,9 @@ pub fn parse_fen_to_position<const N: usize, const STM: Color>(
 }
 
 impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
+    /// Parses `fen` into `Self`.
+    ///
+    /// The side-to-move in the FEN must match const generic `STM`.
     pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
         parse_fen_to_position_with_policy::<N, STM, Z>(fen)
     }

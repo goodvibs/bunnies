@@ -1,5 +1,8 @@
+//! Internal move representation with PGN annotations.
+
 use crate::{Piece, r#move::Move};
 
+/// A move with its associated PGN metadata (text annotations and NAGs).
 #[derive(Debug, Clone)]
 pub(crate) struct PgnMoveData {
     pub(crate) move_: Move,
@@ -8,6 +11,7 @@ pub(crate) struct PgnMoveData {
 }
 
 impl PgnMoveData {
+    /// Renders the move with SAN notation plus optional annotations.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn render(
         &self,

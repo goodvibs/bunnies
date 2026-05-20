@@ -1,24 +1,32 @@
+//! Piece color and side-to-move marker.
+
 use super::{rank::Rank, square::Square};
 use crate::utilities::{Array, IterableEnum, impl_u8_conversions};
 
+/// Chess color (White/Black) used for pieces and as a const-generic side-to-move marker.
+///
+/// Used extensively as a const generic `const STM: Color` on [`Position<N, STM>`](crate::types::Position)
+/// to encode the side to move at compile time, enabling zero-cost type-state assertions.
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
 #[derive_const(PartialEq)]
-/// Represents a side of the board (piece color and, on [`crate::position::Position`], **side to move**
-/// via the const-generic parameter `const STM: Color`, spelled `Color::White` / `Color::Black`).
 pub enum Color {
+    /// White pieces / White to move.
     White = 0,
+    /// Black pieces / Black to move.
     Black = 1,
 }
 
 impl Color {
-    /// Returns a Color from a boolean value, where true is black and false is white.
+    /// Converts from a boolean: `false` → White, `true` → Black.
     pub const fn from_is_black(is_black: bool) -> Color {
         unsafe { std::mem::transmute::<bool, Color>(is_black) }
     }
 
-    /// Returns the other color. Takes `self` by value so [`Self::other`] is usable in const-generic
-    /// type positions (e.g. `Position<N, { STM.other() }>`).
+    /// The opposite color (White ↔ Black).
+    ///
+    /// Takes `self` by value so this method can be used in const-generic position:
+    /// `Position<N, { STM.other() }>`.
     pub const fn other(self) -> Color {
         match self {
             Color::White => Color::Black,
@@ -26,6 +34,7 @@ impl Color {
         }
     }
 
+    /// Initial king square for this color (E1 for White, E8 for Black).
     pub const fn king_initial_square(self: Color) -> Square {
         match self {
             Color::White => Square::E1,
@@ -33,6 +42,7 @@ impl Color {
         }
     }
 
+    /// The rank where pawns of this color can capture en passant.
     pub const fn en_passant_capture_rank(self) -> Rank {
         match self {
             Self::White => Rank::Five,

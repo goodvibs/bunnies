@@ -1,3 +1,5 @@
+//! Lexical token definitions for PGN input.
+
 use logos::{Lexer, Logos};
 
 use crate::{
@@ -16,7 +18,9 @@ pub(crate) const CASTLING_MOVE_REGEX: &str =
     r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?";
 pub(crate) const COMMENT_REGEX: &str = r"\{([^}]*)\}";
 
+/// Trait implemented by token payload types that can parse themselves from a lexer slice.
 pub trait ParsablePgnToken: Sized {
+    /// Parses current lexer slice into `Self`.
     fn parse(lex: &mut Lexer<PgnToken>) -> Result<Self, PgnError>;
 }
 
@@ -26,40 +30,49 @@ pub trait ParsablePgnToken: Sized {
 pub enum PgnToken {
     // Tags [Name "Value"]
     #[regex(r#"\[\s*([A-Za-z0-9_]+)\s+"([^"]*)"\s*\]"#, PgnTag::parse)]
+    /// Tag pair like `[Event "WCC"]`.
     Tag(PgnTag),
 
     // Move numbers like 1. or 1...
     #[regex(r"([0-9]+)\.+", PgnMoveNumber::parse)]
+    /// Move number marker (`1.` / `1...`).
     MoveNumber(PgnMoveNumber),
 
     // Moves like g4, Nf6, exd5+?!, etc.
     #[regex(r"([PNBRQK])?([a-h])?([1-8])?(x)?([a-h])([1-8])(?:=([NBRQ]))?([+#])?([?!]*)\s*(?:\$([0-9]+))?", PgnNonCastlingMove::parse)]
+    /// Non-castling move token.
     NonCastlingMove(PgnNonCastlingMove),
 
     #[regex(
         r"(?:(O-O-O|0-0-0)|(O-O|0-0))([+#])?([?!]+)?\s*(?:\$([0-9]+))?",
         PgnCastlingMove::parse
     )]
+    /// Castling move token (`O-O`, `O-O-O`, and `0-0` variants).
     CastlingMove(PgnCastlingMove),
 
     // Comments in { }
     #[regex(r"\{([^}]*)\}", PgnComment::parse)]
+    /// Braced comment token.
     Comment(PgnComment),
 
     // Start of variation
     #[token("(")]
+    /// Start of variation.
     StartVariation,
 
     // End of variation
     #[token(")")]
+    /// End of variation.
     EndVariation,
 
     #[token("1-0", |_| Some(Color::White))]
     #[token("0-1", |_| Some(Color::Black))]
     #[token("1/2-1/2", |_| None::<Color>)]
+    /// Game result (`1-0`, `0-1`, or `1/2-1/2`).
     Result(Option<Color>),
 
     #[token("*")]
+    /// Incomplete/unknown game result marker.
     Incomplete,
 }
 

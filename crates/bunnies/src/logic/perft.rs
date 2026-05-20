@@ -1,3 +1,8 @@
+//! Perft (performance test) helpers for move-generation validation.
+//!
+//! [`crate::types::Position::perft`] performs in-place make/unmake traversal and returns
+//! the number of leaf nodes at a given depth.
+
 use crate::types::{Color, MoveList, Position, ZobristPolicy};
 
 fn count_nodes<const N: usize, const STM: Color, Z: ZobristPolicy>(

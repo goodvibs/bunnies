@@ -1,4 +1,4 @@
-//! Board struct and methods
+//! Board representation and low-level piece/color occupancy operations.
 
 use super::{
     bitboard::{Bitboard, BitboardUtils},
@@ -14,7 +14,7 @@ use crate::{
 
 /// A struct representing the positions of all pieces on the board, for both colors.
 ///
-/// [`Self::piece_masks`] are authoritative for attacks; [`Self::pieces`] is a mailbox (`pieces[square]`)
+/// `piece_masks` are authoritative for attacks; `pieces` is a mailbox (`pieces[square]`)
 /// mirroring piece placement for O(1) [`Self::piece_at`].
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct Board {
@@ -84,6 +84,7 @@ impl Board {
     }
 
     #[inline]
+    /// Returns the occupancy mask for piece type `P`.
     pub const fn piece_mask<const P: Piece>(&self) -> Bitboard {
         self.piece_masks[P as usize]
     }
@@ -95,6 +96,7 @@ impl Board {
     }
 
     #[inline]
+    /// Returns the occupancy mask for color `C`.
     pub const fn color_mask<const C: Color>(&self) -> Bitboard {
         self.color_masks[C as usize]
     }
@@ -106,16 +108,19 @@ impl Board {
     }
 
     #[inline]
+    /// Returns occupancy of all pieces (both colors).
     pub const fn pieces(&self) -> Bitboard {
         self.piece_mask::<{ Piece::ALL_PIECES }>()
     }
 
     #[inline]
+    /// Returns occupancy of bishops and queens.
     pub const fn diagonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Bishop }>() | self.piece_mask::<{ Piece::Queen }>()
     }
 
     #[inline]
+    /// Returns occupancy of rooks and queens.
     pub const fn orthogonal_sliders(&self) -> Bitboard {
         self.piece_mask::<{ Piece::Rook }>() | self.piece_mask::<{ Piece::Queen }>()
     }
@@ -140,6 +145,7 @@ impl Board {
     }
 
     #[inline]
+    /// Returns non-sliding attackers (pawn/knight/king) on any square in `mask`.
     pub fn non_sliding_attacks_on_mask(&self, mask: Bitboard, by: Color) -> Bitboard {
         (multi_pawn_attacks(mask, by.other()) & self.piece_mask::<{ Piece::Pawn }>())
             | (multi_knight_attacks(mask) & self.piece_mask::<{ Piece::Knight }>())
@@ -147,12 +153,14 @@ impl Board {
     }
 
     #[inline]
+    /// Returns non-sliding attackers (pawn/knight/king) on `square`.
     pub fn non_sliding_attacks_on_square(&self, square: Square, by: Color) -> Bitboard {
         (multi_pawn_attacks(square.mask(), by.other()) & self.piece_mask::<{ Piece::Pawn }>())
             | (single_knight_attacks(square) & self.piece_mask::<{ Piece::Knight }>())
             | (single_king_attacks(square) & self.piece_mask::<{ Piece::King }>())
     }
 
+    /// Returns whether any square in `mask` is attacked by `by_color`.
     pub fn is_mask_attacked(&self, mask: Bitboard, by_color: Color) -> bool {
         let attackers = self.color_mask_at(by_color);
 
@@ -169,11 +177,13 @@ impl Board {
     }
 
     #[inline]
+    /// Returns whether `square` is attacked by `by_color`.
     pub fn is_square_attacked(&self, square: Square, by_color: Color) -> bool {
         self.is_square_attacked_after_move(square, by_color, 0)
     }
 
     #[inline]
+    /// Returns whether `square` is attacked by `by_color` after applying `move_mask` occupancy delta.
     pub fn is_square_attacked_after_move(
         &self,
         square: Square,
@@ -271,13 +281,14 @@ impl Board {
         self.move_piece(piece, from, to);
     }
 
-    /// Returns the piece type at `square` (from the mailbox; kept in sync with [`Self::piece_masks`]).
+    /// Returns the piece type at `square` (from the mailbox; kept in sync with `piece_masks`).
     #[inline]
     pub const fn piece_at(&self, square: Square) -> Piece {
         self.pieces[square as usize]
     }
 
     #[inline]
+    /// Returns whether `square` currently contains any non-null piece.
     pub const fn is_occupied_at(&self, square: Square) -> bool {
         (self.pieces[square as usize] as u8) != (Piece::Null as u8)
     }

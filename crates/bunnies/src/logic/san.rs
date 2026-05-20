@@ -1,7 +1,14 @@
+//! Standard Algebraic Notation (SAN) rendering for moves.
+
 use crate::types::{File, Move, MoveFlag, Piece};
 
 impl Move {
-    /// Returns the SAN (Standard Algebraic Notation) representation of the move.
+    /// Renders this move in SAN format with full disambiguation and check/mate indicators.
+    ///
+    /// `moved_piece` should be the piece from the origin square before move execution.
+    /// `disambiguation_str` is the already-computed SAN disambiguator (e.g. `"b"` / `"3"` / `"b3"`).
+    /// `is_check` and `is_checkmate` refer to the resulting position.
+    /// `is_capture` should reflect board semantics (including en-passant).
     pub fn san(
         &self,
         moved_piece: Piece,

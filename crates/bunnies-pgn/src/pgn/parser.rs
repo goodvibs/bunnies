@@ -1,3 +1,5 @@
+//! PGN parser with position tracking and variation support.
+
 use logos::{Lexer, Logos};
 
 use crate::{
@@ -23,16 +25,26 @@ use crate::{
     position::Position,
 };
 
-/// The main parser for PGN strings. `N` is the context stack capacity for [`Position<N>`] used
-/// while parsing (must fit the longest half-move path in the game, including variations).
+/// Streaming PGN parser with integrated position validation.
+///
+/// `N` is the position stack depth; choose a value that fits your longest
+/// main line plus deepest variation nesting. The parser validates moves
+/// against the current position and builds a traversable move tree.
 pub struct PgnParser<'a, const N: usize> {
+    /// Logos lexer producing PGN tokens.
     pub lexer: Lexer<'a, PgnToken>,
+    /// Current parser state (tags, moves, or result found).
     pub parse_state: PgnParsingState,
+    /// Accumulated parse result being constructed.
     pub constructed_object: PgnObject<N>,
     buffered_position_manager: PgnBufferedPositionBrancher<N>,
 }
 
 impl<'a, const N: usize> PgnParser<'a, N> {
+    /// Creates a parser over the provided PGN string.
+    ///
+    /// The parser starts in [`PgnParsingState::Tags`] and initializes
+    /// a fresh game tree at the standard chess initial position.
     pub fn new(pgn: &str) -> PgnParser<'_, N> {
         let lexer = PgnToken::lexer(pgn);
         let pgn_object = PgnObject::new();
@@ -49,6 +61,10 @@ impl<'a, const N: usize> PgnParser<'a, N> {
         }
     }
 
+    /// Parses the token stream into [`PgnObject`], validating legality of every move.
+    ///
+    /// Returns an error for malformed tokens, illegal/ambiguous moves, or
+    /// incomplete variation structure.
     pub fn parse(&mut self) -> Result<(), PgnError> {
         while let Some(token) = self.lexer.next() {
             let token = token?;

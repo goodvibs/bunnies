@@ -1,11 +1,21 @@
+//! Compact 16-bit chess move encoding.
+
 use super::{board::Board, move_flag::MoveFlag, piece::Piece, square::Square};
 
-/// Represents a move in the game.
-/// Internally, it is stored as a 16-bit unsigned integer.
+/// A chess move encoded in 16 bits.
+///
+/// Bit layout: `TTTTTT FFFFFF PP GG` where:
+/// - `T` (6 bits): destination square index (0-63)
+/// - `F` (6 bits): source square index (0-63)
+/// - `P` (2 bits): promotion piece offset (Piece value minus 2, for Knight/Queen/Rook/Bishop)
+/// - `G` (2 bits): move flag (normal, promotion, en passant, castling)
+///
+/// Use [`Move::new`] to construct, and [`Move::from`], [`Move::to`], [`Move::promotion`], [`Move::flag`]
+/// to decompose. The default value (0) is a valid move from A8 to A8 with null flag.
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
-    /// format: {6 bit to}{6 bit from}{2 bit promotion Piece value minus 2}{2 bit MoveFlag value}
+    /// The raw 16-bit encoded move value.
     pub value: u16,
 }
 
@@ -32,6 +42,9 @@ impl Move {
         Move::new(from, to, Move::DEFAULT_PROMOTION_VALUE, flag)
     }
 
+    /// Creates a promotion move (flag set to [`MoveFlag::Promotion`]).
+    ///
+    /// `promotion` must be one of [`Piece::PROMOTION_PIECES`].
     pub const fn new_promotion(from: Square, to: Square, promotion: Piece) -> Move {
         Move::new(from, to, promotion, MoveFlag::Promotion)
     }
@@ -60,6 +73,10 @@ impl Move {
         unsafe { MoveFlag::from(flag_int) }
     }
 
+    /// Returns `true` if this move captures a piece on `board`.
+    ///
+    /// Normal moves and promotions capture when destination is occupied.
+    /// En passant is always treated as capture; castling never captures.
     pub const fn is_capture_on_board(&self, board: &Board) -> bool {
         match self.flag() {
             MoveFlag::NormalMove | MoveFlag::Promotion => board.is_occupied_at(self.to()),

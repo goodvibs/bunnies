@@ -1,3 +1,5 @@
+//! Chess board squares (A1-H8) and square geometry operations.
+
 use std::fmt::Display;
 
 use super::{
@@ -53,10 +55,13 @@ const DIAGONALS_BL_TO_TR: Array<Bitboard, 15> = build_diagonals(
     QueenLikeMoveDirection::Up,
 );
 
+/// A chess square using 0..63 indexing (0=A8, 63=H1) matching the bunnies bitboard layout.
+///
+/// The ordering is rank-major from Black's perspective (A8..H8, then A7..H7, etc.),
+/// which naturally maps to bitboard representation where bit 63 = A8 and bit 0 = H1.
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
 #[derive_const(PartialEq)]
-/// Represents a square on the chess board.
 pub enum Square {
     A8 = 0,
     B8 = 1,
@@ -125,7 +130,9 @@ pub enum Square {
 }
 
 impl Square {
-    /// Returns a square from a bitboard with **exactly one** bit set, or `None` if the mask is empty or has multiple bits.
+    /// Extracts the single square from a bitboard with exactly one bit set.
+    ///
+    /// Returns `None` if the mask is empty or has multiple bits set.
     #[inline]
     pub const fn from_bitboard(bitboard: Bitboard) -> Option<Square> {
         if bitboard == 0 || !bitboard.is_power_of_two() {
@@ -137,7 +144,7 @@ impl Square {
         })
     }
 
-    /// Returns the square for the given [`Rank`] and [`File`] (same layout as chmog `fromRankAndFile`).
+    /// Constructs a square from rank and file (same layout as chmog `fromRankAndFile`).
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Square {
         {
@@ -146,11 +153,12 @@ impl Square {
         }
     }
 
-    /// Returns the bitboard mask for the square.
+    /// Returns the bitboard mask with only this square's bit set.
     pub const fn mask(self) -> Bitboard {
         1 << (63 - self as u8)
     }
 
+    /// Returns the file (column) of this square.
     pub const fn file(self) -> File {
         {
             let value = self as u8 % 8;
@@ -158,37 +166,40 @@ impl Square {
         }
     }
 
+    /// Returns the rank (row) of this square.
     pub const fn rank(self) -> Rank {
         unsafe { (7 - self as u8 / 8).try_into().unwrap_unchecked() }
     }
 
-    /// Returns the combined file and rank mask for the square.
+    /// Bitboard mask of the rank and file passing through this square.
     pub const fn orthogonals_mask(self) -> Bitboard {
         self.file().mask() | self.rank().mask()
     }
 
-    /// Returns the combined diagonals mask for the square (both `/` and `\` diagonals through this square).
+    /// Bitboard mask of both diagonals passing through this square.
     pub const fn diagonals_mask(self) -> Bitboard {
         DIAGONALS_MASK_LOOKUP[self as usize]
     }
 
-    /// Returns the combined orthogonals and diagonals mask for the square.
+    /// Combined mask of orthogonals and diagonals (queen-like lines from this square).
     pub fn orthogonals_and_diagonals_mask(self) -> Bitboard {
         self.orthogonals_mask() | self.diagonals_mask()
     }
 
-    /// True if `other` lies on either diagonal through this square (including `other == self`).
+    /// True if `other` lies on either diagonal through this square.
     pub const fn is_diagonal_to(self, other: Square) -> bool {
         diagonals_union_impl(self) & other.mask() != 0
     }
 
-    /// Returns whether the square is on the same rank, file, or diagonal as another square (including `other == self`).
+    /// True if `other` is on same rank, file, or diagonal as this square.
     pub const fn is_on_same_line_as(self, other: Square) -> bool {
         same_line(self, other)
     }
 
-    /// Offset from this square by `delta` in rank-major index space, or `None` if the sum is outside `0..64`.
-    /// Callers stepping orthogonally or diagonally should still enforce file/rank edges; see [`Square::up`], etc.
+    /// Square offset by `delta`, or `None` if outside the board.
+    ///
+    /// For orthogonal/diagonal steps, prefer the named methods ([`up`](Self::up), [`down`](Self::down), etc.)
+    /// which correctly handle board edges.
     pub const fn relative(self, delta: SquareDelta) -> Option<Square> {
         let idx = self as u8 as i16 + delta as i16;
         if idx >= 0 && idx <= 63 {
@@ -201,7 +212,7 @@ impl Square {
         }
     }
 
-    /// Returns the square above the current square, if it exists.
+    /// Square above this one (toward rank 8), or `None` at the top edge.
     pub const fn up(self) -> Option<Square> {
         if self.rank() == Rank::Eight {
             None
@@ -210,7 +221,7 @@ impl Square {
         }
     }
 
-    /// Returns the square below the current square, if it exists.
+    /// Square below this one (toward rank 1), or `None` at the bottom edge.
     pub const fn down(self) -> Option<Square> {
         if self.rank() == Rank::One {
             None
@@ -219,7 +230,7 @@ impl Square {
         }
     }
 
-    /// Returns the square to the left of the current square, if it exists.
+    /// Square to the left (toward file A), or `None` at the left edge.
     pub const fn left(self) -> Option<Square> {
         if self.file() == File::A {
             None
@@ -228,7 +239,7 @@ impl Square {
         }
     }
 
-    /// Returns the square to the right of the current square, if it exists.
+    /// Square to the right (toward file H), or `None` at the right edge.
     pub const fn right(self) -> Option<Square> {
         if self.file() == File::H {
             None
@@ -237,7 +248,7 @@ impl Square {
         }
     }
 
-    /// Returns the square northwest of the current square, if it exists.
+    /// Square diagonally up-left, or `None` at either edge.
     pub const fn up_left(self) -> Option<Square> {
         if self.rank() == Rank::Eight || self.file() == File::A {
             None
@@ -246,7 +257,7 @@ impl Square {
         }
     }
 
-    /// Returns the square northeast of the current square, if it exists.
+    /// Square diagonally up-right, or `None` at either edge.
     pub const fn up_right(self) -> Option<Square> {
         if self.rank() == Rank::Eight || self.file() == File::H {
             None
@@ -255,7 +266,7 @@ impl Square {
         }
     }
 
-    /// Returns the square southwest of the current square, if it exists.
+    /// Square diagonally down-left, or `None` at either edge.
     pub const fn down_left(self) -> Option<Square> {
         if self.rank() == Rank::One || self.file() == File::A {
             None
@@ -264,7 +275,7 @@ impl Square {
         }
     }
 
-    /// Returns the square southeast of the current square, if it exists.
+    /// Square diagonally down-right, or `None` at either edge.
     pub const fn down_right(self) -> Option<Square> {
         if self.rank() == Rank::One || self.file() == File::H {
             None
@@ -273,6 +284,7 @@ impl Square {
         }
     }
 
+    /// Adjacent square in the given direction, or `None` at board edge.
     pub const fn neighbor_in_direction(self, direction: QueenLikeMoveDirection) -> Option<Square> {
         match direction {
             QueenLikeMoveDirection::Up => self.up(),
@@ -286,7 +298,7 @@ impl Square {
         }
     }
 
-    /// Returns the square corresponding to the current square, but as seen from the opposite side of the board.
+    /// The square rotated 180 degrees (view from opponent's perspective).
     pub const fn rotated_perspective(self) -> Square {
         {
             let value = 63 - self as u8;
@@ -294,21 +306,22 @@ impl Square {
         }
     }
 
-    /// Returns the character corresponding to the file of the square.
+    /// Lowercase file letter ('a'-'h').
     pub const fn file_char(self) -> char {
         (b'a' + self.file() as u8) as char
     }
 
-    /// Returns the character corresponding to the rank of the square.
+    /// Rank digit character ('1'-'8').
     pub const fn rank_char(self) -> char {
         (b'1' + self.rank() as u8) as char
     }
 
-    /// Returns a string representing the square in algebraic notation.
+    /// Algebraic notation string (e.g., "e4", "h1").
     pub const fn algebraic(self) -> &'static str {
         Self::ALL_ALGEBRAIC[self as usize]
     }
 
+    /// Lookup table of all algebraic notations (A8, B8, ..., H1).
     pub const ALL_ALGEBRAIC: Array<&'static str, 64> = Array([
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "a7", "b7", "c7", "d7", "e7", "f7", "g7",
         "h7", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a5", "b5", "c5", "d5", "e5", "f5",

@@ -18,8 +18,10 @@ use crate::{
     types::WithoutZobrist,
 };
 
+/// Convenience alias for [`Position`] with incremental Zobrist hashing enabled.
 pub type PositionWithZobrist<const N: usize, const STM: Color> = Position<N, STM, WithZobrist>;
 
+/// Convenience alias for [`Position`] with hashing hooks compiled out.
 pub type PositionWithoutZobrist<const N: usize, const STM: Color> =
     Position<N, STM, WithoutZobrist>;
 
@@ -34,7 +36,9 @@ pub type PositionWithoutZobrist<const N: usize, const STM: Color> =
 /// panic on `debug_assert!`; release builds may exhibit **undefined behavior** (out-of-bounds write).
 #[derive(Clone)]
 pub struct Position<const N: usize, const STM: Color, Z: ZobristPolicy = WithZobrist> {
+    /// Piece placement and color occupancy masks.
     pub board: Board,
+    /// Half-move index from the game start (`0` at initial position).
     pub halfmove: u16,
     pub(crate) contexts: [PositionContext<Z::HashState>; N],
     pub(crate) num_contexts: usize,
@@ -66,7 +70,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     /// Builds a [`Position`] with a different const `STM` from the same fields (layout does not depend on `STM`).
     ///
     /// Only use when the underlying state already corresponds to side to move `NEXT` (for example after
-    /// `make_move_in_place` or `unmake_move_in_place`).
+    /// a [`Position::make_move`] / [`Position::unmake_move`] transition and matching bookkeeping).
     #[inline]
     pub fn rebrand_stm<const NEXT: Color>(self) -> Position<N, NEXT, Z> {
         let Position {
@@ -142,22 +146,28 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         .expect("king present for side")
     }
 
+    /// Returns the current (top) context entry.
     pub const fn context(&self) -> &PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 0);
         &self.contexts[self.num_contexts - 1]
     }
 
+    /// Returns a mutable reference to the current (top) context entry.
     pub const fn mut_context(&mut self) -> &mut PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 0);
         &mut self.contexts[self.num_contexts - 1]
     }
 
+    /// Pushes a context entry onto the stack (requires spare capacity in `N`).
     pub const fn push_context(&mut self, context: PositionContext<Z::HashState>) {
         debug_assert!(self.num_contexts < N);
         self.contexts[self.num_contexts] = context;
         self.num_contexts += 1;
     }
 
+    /// Pops and returns the top context entry.
+    ///
+    /// The root context cannot be popped.
     pub const fn pop_context(&mut self) -> PositionContext<Z::HashState> {
         debug_assert!(self.num_contexts > 1);
         let popped = self.contexts[self.num_contexts - 1];
@@ -171,47 +181,55 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     }
 
     #[inline(always)]
+    /// Places `piece` on `square` and updates hash state according to `Z`.
     pub fn put_piece_at(&mut self, piece: Piece, square: Square) {
         self.board.put_piece_at(piece, square);
         Z::on_put_piece(&mut self.mut_context().zobrist_hash, piece, square);
     }
 
     #[inline(always)]
+    /// Places both `color` and `piece` on `square`, including hash updates.
     pub fn put_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.board.put_piece_and_color(color, piece, square);
         Z::on_put_piece(&mut self.mut_context().zobrist_hash, piece, square);
     }
 
     #[inline(always)]
+    /// Removes `piece` from `square` and updates hash state according to `Z`.
     pub fn remove_piece_at(&mut self, piece: Piece, square: Square) {
         self.board.remove_piece_at(piece, square);
         Z::on_remove_piece(&mut self.mut_context().zobrist_hash, piece, square);
     }
 
     #[inline(always)]
+    /// Removes both `color` and `piece` from `square`, including hash updates.
     pub fn remove_piece_and_color(&mut self, color: Color, piece: Piece, square: Square) {
         self.board.remove_piece_and_color(color, piece, square);
         Z::on_remove_piece(&mut self.mut_context().zobrist_hash, piece, square);
     }
 
     #[inline(always)]
+    /// Moves `piece` from `from` to `to` and updates hash state according to `Z`.
     pub fn move_piece(&mut self, piece: Piece, from: Square, to: Square) {
         self.board.move_piece(piece, from, to);
         Z::on_move_piece(&mut self.mut_context().zobrist_hash, piece, from, to);
     }
 
     #[inline(always)]
+    /// Moves only color occupancy from `from` to `to`.
     pub fn move_color(&mut self, color: Color, from: Square, to: Square) {
         self.board.move_color(color, from, to);
     }
 
     #[inline(always)]
+    /// Moves `piece` and color occupancy from `from` to `to`, including hash updates.
     pub fn move_piece_and_color(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
         self.board.move_piece_and_color(color, piece, from, to);
         Z::on_move_piece(&mut self.mut_context().zobrist_hash, piece, from, to);
     }
 
     #[inline(always)]
+    /// Sets castling rights for the current context and updates the hash incrementally.
     pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         let context = self.mut_context();
         let old = context.castling_rights;
@@ -220,6 +238,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     }
 
     #[inline(always)]
+    /// Sets the current en-passant file marker and updates the hash incrementally.
     pub fn set_double_pawn_push_file(
         &mut self,
         double_pawn_push_file: crate::types::DoublePawnPushFile,
@@ -231,6 +250,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
     }
 
     #[inline(always)]
+    /// Toggles the side-to-move contribution in the current hash state.
     pub fn flip_side_to_move_hash(&mut self) {
         Z::on_side_to_move_flip(&mut self.mut_context().zobrist_hash);
     }
@@ -240,6 +260,7 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         self.halfmove / 2 + 1
     }
 
+    /// Recomputes pinned pieces and checking pieces for the compile-time side to move.
     pub const fn update_pins_and_checks(&mut self) {
         self.update_pins_and_checks_for_stm(STM);
     }
@@ -301,15 +322,20 @@ impl<const N: usize, const STM: Color, Z: ZobristPolicy> Position<N, STM, Z> {
         context.checkers = checkers;
     }
 
+    /// Returns whether the current side to move is in check.
     pub const fn is_current_side_in_check(&self) -> bool {
         self.context().checkers != 0
     }
 
+    /// Returns whether both sides have insufficient mating material.
+    ///
+    /// Set `USCF` to `true` for USCF-style insufficient-material rules.
     pub fn is_insufficient_material<const USCF: bool>(&self) -> bool {
         self.board
             .are_both_sides_insufficient_material::<{ USCF }>()
     }
 
+    /// Returns whether the 50-move rule threshold is reached (`halfmove_clock >= 100`).
     pub const fn is_fifty_move_rule_reached(&self) -> bool {
         self.context().halfmove_clock >= 100
     }
