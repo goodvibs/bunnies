@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 /// A thin wrapper around `[T; N]` enabling const trait implementations.
 ///
-/// Used throughout bunnies for lookup tables and fixed-size collections
+/// Used throughout uglychild for lookup tables and fixed-size collections
 /// that need to work in const contexts where standard library arrays
 /// don't yet implement required traits.
 pub struct Array<T, const N: usize>(pub [T; N]);

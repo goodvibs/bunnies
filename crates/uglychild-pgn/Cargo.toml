@@ -1,0 +1,13 @@
+[package]
+name = "uglychild-pgn"
+version = "0.1.0"
+edition = "2024"
+description = "PGN parser and renderer for the uglychild chess library."
+license = "MIT"
+publish = false
+
+[dependencies]
+uglychild = { path = "../uglychild" }
+indexmap = "2.14.0"
+logos = "0.16.1"
+regex = "1.12.3"

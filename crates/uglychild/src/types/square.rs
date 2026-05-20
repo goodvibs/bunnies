@@ -55,7 +55,7 @@ const DIAGONALS_BL_TO_TR: Array<Bitboard, 15> = build_diagonals(
     QueenLikeMoveDirection::Up,
 );
 
-/// A chess square using 0..63 indexing (0=A8, 63=H1) matching the bunnies bitboard layout.
+/// A chess square using 0..63 indexing (0=A8, 63=H1) matching the uglychild bitboard layout.
 ///
 /// The ordering is rank-major from Black's perspective (A8..H8, then A7..H7, etc.),
 /// which naturally maps to bitboard representation where bit 63 = A8 and bit 0 = H1.

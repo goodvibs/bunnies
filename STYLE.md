@@ -1,6 +1,6 @@
 # Naming and Terminology Conventions
 
-This document defines naming conventions for `bunnies` and `bunnies-pgn`.
+This document defines naming conventions for `uglychild` and `uglychild-pgn`.
 
 ## Primary Endpoint Terms
 

@@ -13,7 +13,7 @@ pub enum TerminalReason {
     InsufficientMaterial,
     /// 100 half-moves without capture or pawn move.
     FiftyMoveRule,
-    /// Position repeated three times (not yet tracked in bunnies).
+    /// Position repeated three times (not yet tracked in uglychild).
     ThreefoldRepetition,
     /// Other draw by agreement or rule.
     OtherDraw,

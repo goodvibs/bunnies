@@ -36,23 +36,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1628fb46dfa0b37568d12e5edd512553eccf6a22a78e8bde00bb4aed84d5bdbf"
 
 [[package]]
-name = "bunnies"
-version = "0.5.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "bunnies-pgn"
-version = "0.1.0"
-dependencies = [
- "bunnies",
- "indexmap",
- "logos",
- "regex",
-]
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -517,6 +500,23 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "uglychild"
+version = "0.5.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "uglychild-pgn"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "logos",
+ "regex",
+ "uglychild",
 ]
 
 [[package]]

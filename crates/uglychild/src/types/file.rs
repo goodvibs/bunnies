@@ -18,7 +18,7 @@ pub enum File {
 }
 
 impl File {
-    /// MSB column in bunnies’ bitboard layout (same as former `FILE_A`).
+    /// MSB column in uglychild's bitboard layout (same as former `FILE_A`).
     const FILE_A: Bitboard = 0x8080_8080_8080_8080;
 
     /// Full-file bitboard for this file.

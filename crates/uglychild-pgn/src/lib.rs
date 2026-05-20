@@ -1,6 +1,6 @@
-//! PGN parsing and rendering utilities built on top of `bunnies`.
+//! PGN parsing and rendering utilities built on top of `uglychild`.
 //!
-//! This crate re-exports core chess types from `bunnies` and adds:
+//! This crate re-exports core chess types from `uglychild` and adds:
 //! - [`pgn`] for tokenization, parsing, move-tree construction, and rendering
 //! - convenience re-export modules (`position`, `r#move`, `types`) for API parity.
 #![feature(const_trait_impl)]
@@ -11,11 +11,11 @@
 #![allow(incomplete_features)]
 #![warn(missing_docs)]
 
-pub use bunnies::{types::*, *};
+pub use uglychild::{types::*, *};
 
 /// Re-exports of starting-position helpers and position state types.
 pub mod position {
-    pub use bunnies::{
+    pub use uglychild::{
         logic::fen::INITIAL_FEN,
         types::{Board, Position},
     };
@@ -23,12 +23,12 @@ pub mod position {
 
 /// Re-exports of move primitives used by the PGN parser.
 pub mod r#move {
-    pub use bunnies::types::{Move, MoveFlag, MoveList};
+    pub use uglychild::types::{Move, MoveFlag, MoveList};
 }
 
-/// Re-exports of shared chess domain types from `bunnies`.
+/// Re-exports of shared chess domain types from `uglychild`.
 pub mod types {
-    pub use bunnies::types::*;
+    pub use uglychild::types::*;
 }
 
 /// PGN parser, AST-like game object, tokens, and rendering configuration.

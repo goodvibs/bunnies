@@ -8,7 +8,7 @@ use crate::utilities::{BitCombinationsIterator, MaskBitsIterator, MaskSquaresIte
 
 /// A 64-bit bitboard where each bit represents a chess square.
 ///
-/// Layout: MSB (bit 63) = A8, LSB (bit 0) = H1. This matches the bunnies board layout
+/// Layout: MSB (bit 63) = A8, LSB (bit 0) = H1. This matches the uglychild board layout
 /// where square indices 0..63 map to A8..H1 respectively.
 pub type Bitboard = u64;
 

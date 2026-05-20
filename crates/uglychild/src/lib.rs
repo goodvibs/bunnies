@@ -1,4 +1,4 @@
-//! `bunnies` is a const-friendly chess engine core focused on fast move generation,
+//! `uglychild` is a const-friendly chess engine core focused on fast move generation,
 //! compact board representations, and strongly typed game state transitions.
 //!
 //! The crate is organized into:

@@ -1,5 +1,5 @@
-use bunnies::logic::fen::INITIAL_FEN;
-use bunnies::types::{
+use uglychild::logic::fen::INITIAL_FEN;
+use uglychild::types::{
     Color, Position, PositionWithoutZobrist, WithoutZobrist, ZobristPolicy,
 };
 
