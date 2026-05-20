@@ -1,7 +1,5 @@
 # bunnies
 
-[![Crates.io](https://img.shields.io/crates/v/bunnies)](https://crates.io/crates/bunnies)
-
 A fast chess library for chess engines or any chess program that values performance. **API is not stable; currently in alpha**.
 
 `bunnies` is currently one of the fastest chess move generators that exists. Without any specialized AVX/BMI2 instructions like PEXT, `bunnies` is able to generate up to 1.5 billion nodes/thread/sec, as measured on an Mac M3 chip.
