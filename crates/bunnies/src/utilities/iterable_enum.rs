@@ -20,6 +20,7 @@ macro_rules! impl_u8_conversions {
             }
         }
 
+        #[allow(clippy::from_over_into)]
         impl const Into<u8> for $enum {
             fn into(self) -> u8 {
                 self as u8
