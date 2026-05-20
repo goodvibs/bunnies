@@ -1,4 +1,7 @@
-use crate::utilities::Array;
+use crate::{
+    impl_u8_conversions,
+    utilities::{Array, IterableEnum},
+};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
@@ -110,17 +113,6 @@ impl Piece {
         }
     }
 
-    /// An array of all Pieces (7 in total).
-    pub const ALL: Array<Piece, 7> = Array([
-        Piece::Null,
-        Piece::Pawn,
-        Piece::Knight,
-        Piece::Bishop,
-        Piece::Rook,
-        Piece::Queen,
-        Piece::King,
-    ]);
-
     /// An array of all Pieces representing actual pieces (6 in total).
     pub const PIECES: Array<Piece, 6> = Array([
         Piece::Pawn,
@@ -146,3 +138,17 @@ impl Piece {
 
     pub const SLIDING_PIECES: Array<Piece, 3> = Array([Piece::Bishop, Piece::Rook, Piece::Queen]);
 }
+
+impl const IterableEnum<7> for Piece {
+    const ALL: Array<Piece, 7> = Array([
+        Piece::Null,
+        Piece::Pawn,
+        Piece::Knight,
+        Piece::Bishop,
+        Piece::Rook,
+        Piece::Queen,
+        Piece::King,
+    ]);
+}
+
+impl_u8_conversions!(Piece, 7);

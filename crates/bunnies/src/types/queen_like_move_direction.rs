@@ -1,4 +1,8 @@
-use crate::types::{Array, Square};
+use crate::{
+    impl_u8_conversions,
+    types::{Array, Square},
+    utilities::IterableEnum,
+};
 
 #[repr(u8)]
 #[derive(Copy, Clone, Eq, Debug)]
@@ -16,18 +20,6 @@ pub enum QueenLikeMoveDirection {
 }
 
 impl QueenLikeMoveDirection {
-    /// An array of all QueenLikeMoveDirections (8 directions).
-    pub const ALL: Array<QueenLikeMoveDirection, 8> = Array([
-        QueenLikeMoveDirection::Up,
-        QueenLikeMoveDirection::Down,
-        QueenLikeMoveDirection::UpRight,
-        QueenLikeMoveDirection::DownLeft,
-        QueenLikeMoveDirection::Right,
-        QueenLikeMoveDirection::Left,
-        QueenLikeMoveDirection::DownRight,
-        QueenLikeMoveDirection::UpLeft,
-    ]);
-
     /// Returns the QueenLikeMoveDirection corresponding to the given value.
     /// # Safety
     /// The value must be in the range 0..=7.
@@ -94,6 +86,21 @@ impl QueenLikeMoveDirection {
         }
     }
 }
+
+impl const IterableEnum<8> for QueenLikeMoveDirection {
+    const ALL: Array<QueenLikeMoveDirection, 8> = Array([
+        QueenLikeMoveDirection::Up,
+        QueenLikeMoveDirection::Down,
+        QueenLikeMoveDirection::UpRight,
+        QueenLikeMoveDirection::DownLeft,
+        QueenLikeMoveDirection::Right,
+        QueenLikeMoveDirection::Left,
+        QueenLikeMoveDirection::DownRight,
+        QueenLikeMoveDirection::UpLeft,
+    ]);
+}
+
+impl_u8_conversions!(QueenLikeMoveDirection, 8);
 
 #[cfg(test)]
 mod tests {

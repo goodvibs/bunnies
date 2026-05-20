@@ -1,4 +1,8 @@
-use crate::types::{Array, Square};
+use crate::{
+    impl_u8_conversions,
+    types::{Array, Square},
+    utilities::IterableEnum,
+};
 
 #[repr(u8)]
 #[derive(Copy, Clone, Eq, Debug)]
@@ -16,18 +20,6 @@ pub enum KnightMoveDirection {
 }
 
 impl KnightMoveDirection {
-    /// An array of all KnightMoveDirections (8 directions).
-    pub const ALL: Array<KnightMoveDirection, 8> = Array([
-        KnightMoveDirection::TwoUpOneRight,
-        KnightMoveDirection::TwoDownOneLeft,
-        KnightMoveDirection::TwoRightOneUp,
-        KnightMoveDirection::TwoLeftOneDown,
-        KnightMoveDirection::TwoRightOneDown,
-        KnightMoveDirection::TwoLeftOneUp,
-        KnightMoveDirection::TwoDownOneRight,
-        KnightMoveDirection::TwoUpOneLeft,
-    ]);
-
     /// Returns the KnightMoveDirection opposite to the current direction.
     pub const fn opposite(&self) -> KnightMoveDirection {
         unsafe { KnightMoveDirection::from(7u8.wrapping_sub(*self as u8)) }
@@ -87,6 +79,21 @@ impl KnightMoveDirection {
         }
     }
 }
+
+impl const IterableEnum<8> for KnightMoveDirection {
+    const ALL: Array<KnightMoveDirection, 8> = Array([
+        KnightMoveDirection::TwoUpOneRight,
+        KnightMoveDirection::TwoDownOneLeft,
+        KnightMoveDirection::TwoRightOneUp,
+        KnightMoveDirection::TwoLeftOneDown,
+        KnightMoveDirection::TwoRightOneDown,
+        KnightMoveDirection::TwoLeftOneUp,
+        KnightMoveDirection::TwoDownOneRight,
+        KnightMoveDirection::TwoUpOneLeft,
+    ]);
+}
+
+impl_u8_conversions!(KnightMoveDirection, 8);
 
 #[cfg(test)]
 mod tests {
