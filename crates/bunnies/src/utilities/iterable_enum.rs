@@ -5,7 +5,6 @@ pub const trait IterableEnum<const N: usize>: Copy + TryFrom<u8> + Into<u8> {
     const ALL: Array<Self, N>;
 }
 
-#[macro_export]
 macro_rules! impl_u8_conversions {
     ($enum:ty, $count:expr) => {
         impl const TryFrom<u8> for $enum {
@@ -28,3 +27,5 @@ macro_rules! impl_u8_conversions {
         }
     };
 }
+
+pub(crate) use impl_u8_conversions;

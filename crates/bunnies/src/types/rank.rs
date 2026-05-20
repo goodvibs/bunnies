@@ -3,7 +3,7 @@
 use super::bitboard::Bitboard;
 use super::color::Color;
 use crate::{
-    impl_u8_conversions,
+    utilities::impl_u8_conversions,
     utilities::{Array, IterableEnum},
 };
 

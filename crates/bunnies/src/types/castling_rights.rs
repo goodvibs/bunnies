@@ -3,10 +3,8 @@
 use super::color::Color;
 use super::flank::Flank;
 use super::square::Square;
-use crate::{
-    impl_u8_conversions,
-    utilities::{Array, IterableEnum},
-};
+use crate::utilities::impl_u8_conversions;
+use crate::utilities::{Array, IterableEnum};
 
 /// All 16 combinations of the four castling flags (KQkq). The discriminant equals the **nibble** value
 /// used in FEN / Zobrist (`K=8, Q=4, k=2, q=1`).

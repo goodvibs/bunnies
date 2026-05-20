@@ -4,9 +4,9 @@ use super::bitboard::Bitboard;
 use super::file::File;
 use super::rank::Rank;
 use super::square_delta::{SquareDelta, SquareDeltaUtils};
-use crate::impl_u8_conversions;
 use crate::types::{Array, BitboardUtils, QueenLikeMoveDirection};
 use crate::utilities::IterableEnum;
+use crate::utilities::impl_u8_conversions;
 
 const fn resolve_square_mask(maybe_square: Option<Square>) -> Bitboard {
     match maybe_square {

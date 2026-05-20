@@ -3,7 +3,7 @@
 use super::bitboard::Bitboard;
 use super::flank::Flank;
 use crate::{
-    impl_u8_conversions,
+    utilities::impl_u8_conversions,
     utilities::{Array, IterableEnum},
 };
 

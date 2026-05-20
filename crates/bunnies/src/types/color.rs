@@ -1,9 +1,7 @@
 use super::rank::Rank;
 use super::square::Square;
-use crate::{
-    impl_u8_conversions,
-    utilities::{Array, IterableEnum},
-};
+use crate::utilities::impl_u8_conversions;
+use crate::utilities::{Array, IterableEnum};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, Debug, std::marker::ConstParamTy)]
