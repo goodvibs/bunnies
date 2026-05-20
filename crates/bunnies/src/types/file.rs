@@ -6,7 +6,6 @@ use crate::{
     impl_u8_conversions,
     utilities::{Array, IterableEnum},
 };
-use std::hash::{Hash, Hasher};
 
 /// One of eight files (a–h). `A = 0` … `H = 7`, matching [`crate::Square::file`].
 #[repr(u8)]
@@ -41,12 +40,6 @@ impl File {
 impl const PartialEq for File {
     fn eq(&self, other: &Self) -> bool {
         *self as u8 == *other as u8
-    }
-}
-
-impl Hash for File {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (*self as u8).hash(state);
     }
 }
 
